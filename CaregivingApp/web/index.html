@@ -279,7 +279,7 @@
         }
 
         // 管理员登录处理
-        document.getElementById('admin-login-form').addEventListener('submit', (e) => {
+        document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const usernameInput = document.querySelector('#admin-tab input[type="text"]');
@@ -291,14 +291,32 @@
             const isUsernameValid = validateInput(usernameInput, usernameError);
             const isPasswordValid = validateInput(passwordInput, passwordError);
             
-            // 验证通过则跳转
             if (isUsernameValid && isPasswordValid) {
-                window.location.href = '/admin-login.html'; // 跳转到管理员登录页
+                try {
+                    const response = await fetch('/api/login/admin', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            username: usernameInput.value.trim(),
+                            password: passwordInput.value
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    if (data.success) {
+                        localStorage.setItem('admin_token', data.data.token);
+                        window.location.href = '/admin-dashboard.html';
+                    } else {
+                        alert(data.message || '登录失败');
+                    }
+                } catch (error) {
+                    alert('网络错误，请稍后重试');
+                }
             }
         });
 
         // 用户登录处理
-        document.getElementById('user-login-form').addEventListener('submit', (e) => {
+        document.getElementById('user-login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const accountInput = document.querySelector('#user-tab input[type="text"]');
@@ -310,28 +328,63 @@
             const isAccountValid = validateInput(accountInput, accountError);
             const isPasswordValid = validateInput(passwordInput, passwordError);
             
-            // 验证通过则跳转
             if (isAccountValid && isPasswordValid) {
-                window.location.href = '/user-login.html'; // 跳转到用户登录页
+                try {
+                    const response = await fetch('/api/user/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            email: accountInput.value.trim(),
+                            password: passwordInput.value
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    if (data.success) {
+                        localStorage.setItem('user_token', data.data.token);
+                        window.location.href = '/user-dashboard.html';
+                    } else {
+                        alert(data.message || '登录失败');
+                    }
+                } catch (error) {
+                    alert('网络错误，请稍后重试');
+                }
             }
         });
 
         // 护工登录处理
-        document.getElementById('caregiver-login-form').addEventListener('submit', (e) => {
+        document.getElementById('caregiver-login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const idInput = document.querySelector('#caregiver-tab input[type="text"]');
             const passwordInput = document.querySelector('#caregiver-tab input[type="password"]');
-            const idError = document.getElementById('caregiver-id-error');
             const passwordError = document.getElementById('caregiver-password-error');
             
             // 验证输入
-            const isIdValid = validateInput(idInput, idError);
+            const isIdValid = validateInput(idInput, document.getElementById('caregiver-id-error'));
             const isPasswordValid = validateInput(passwordInput, passwordError);
             
-            // 验证通过则跳转
             if (isIdValid && isPasswordValid) {
-                window.location.href = '/caregiver-login.html'; // 跳转到护工登录页
+                try {
+                    const response = await fetch('/api/caregiver/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            phone: idInput.value.trim(),
+                            password: passwordInput.value
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    if (data.success) {
+                        localStorage.setItem('caregiver_token', data.data.token);
+                        window.location.href = '/caregiver-dashboard.html';
+                    } else {
+                        alert(data.message || '登录失败');
+                    }
+                } catch (error) {
+                    alert('网络错误，请稍后重试');
+                }
             }
         });
 

@@ -320,8 +320,30 @@ class DataStore:
         return user
 
     @staticmethod
+    def add_user_by_phone(name: str, phone: str, password: str) -> User:
+        """通过手机号和姓名注册用户"""
+        # 生成一个临时的邮箱（使用手机号+时间戳）
+        import time
+        temp_email = f"user_{phone}_{int(time.time())}@temp.com"
+        
+        user = User(
+            email=temp_email,
+            password_hash=hash_password(password),
+            name=name,
+            phone=phone,
+            is_approved=False
+        )
+        db.session.add(user)
+        db.session.commit()
+        return user
+
+    @staticmethod
     def get_user_by_email(email: str) -> Optional[User]:
         return User.query.filter_by(email=email).first()
+
+    @staticmethod
+    def get_user_by_phone(phone: str) -> Optional[User]:
+        return User.query.filter_by(phone=phone).first()
 
     @staticmethod
     def verify_user(email: str, password: str) -> Optional[User]:
@@ -370,18 +392,16 @@ class DataStore:
 
     @staticmethod
     def get_pending_users() -> List[User]:
+        """获取待审核用户，包括通过手机号注册的用户"""
         return User.query.filter(
-            User.is_approved == False,
-            User.id_file != None,
-            User.id_file != ''
+            User.is_approved == False
         ).order_by(User.created_at.desc()).all()
 
     @staticmethod
     def get_approved_users() -> List[User]:
+        """获取已审核用户，包括通过手机号注册的用户"""
         return User.query.filter(
-            User.is_approved == True,
-            User.id_file != None,
-            User.id_file != ''
+            User.is_approved == True
         ).order_by(
             User.approved_at.desc() if User.approved_at else User.created_at.desc()
         ).all()
@@ -761,14 +781,6 @@ def index():
         return "网站首页模板不存在", 500
     return render_template('index.html')
 
-@app.route('/admin-login.html')
-def admin_login_page():
-    template_path = os.path.join(WEB_FOLDER, 'admin-login.html')
-    if not os.path.exists(template_path):
-        logger.error(f"admin-login.html模板文件不存在: {template_path}")
-        return "管理员登录模板不存在", 500
-    return render_template('admin-login.html')
-
 @app.route('/user-register.html')
 def user_register_page():
     template_path = os.path.join(WEB_FOLDER, 'user-register.html')
@@ -776,14 +788,6 @@ def user_register_page():
         logger.error(f"user-register.html模板文件不存在: {template_path}")
         return "用户注册模板不存在", 500
     return render_template('user-register.html')
-
-@app.route('/user-login.html')
-def user_login_page():
-    template_path = os.path.join(WEB_FOLDER, 'user-login.html')
-    if not os.path.exists(template_path):
-        logger.error(f"user-login.html模板文件不存在: {template_path}")
-        return "用户登录模板不存在", 500
-    return render_template('user-login.html')
 
 @app.route('/caregiver-register.html')
 def caregiver_register_page():
@@ -794,18 +798,10 @@ def caregiver_register_page():
         return "护工注册模板不存在", 500
     return render_template('caregiver-register.html')
 
-@app.route('/caregiver-login.html')
-def caregiver_login_page():
-    template_path = os.path.join(WEB_FOLDER, 'caregiver-login.html')
-    if not os.path.exists(template_path):
-        logger.error(f"caregiver-login.html模板文件不存在: {template_path}")
-        return "护工登录模板不存在", 500
-    return render_template('caregiver-login.html')
-
 @app.route('/admin-dashboard.html')
 def admin_dashboard():
     if not (g.user and g.user.get('user_type') == 'admin'):
-        return redirect(url_for('admin_login_page'))
+        return redirect(url_for('index'))
 
     template_path = os.path.join(WEB_FOLDER, 'admin-dashboard.html')
     if not os.path.exists(template_path):
@@ -833,7 +829,7 @@ def admin_dashboard():
 @app.route('/admin-caregivers.html')
 def admin_caregivers():
     if not (g.user and g.user.get('user_type') == 'admin'):
-        return redirect(url_for('admin_login_page'))
+        return redirect(url_for('index'))
 
     template_path = os.path.join(WEB_FOLDER, 'admin-caregivers.html')
     if not os.path.exists(template_path):
@@ -851,7 +847,7 @@ def admin_caregivers():
 @app.route('/admin-users.html')
 def admin_users():
     if not (g.user and g.user.get('user_type') == 'admin'):
-        return redirect(url_for('admin_login_page'))
+        return redirect(url_for('index'))
 
     template_path = os.path.join(WEB_FOLDER, 'admin-users.html')
     if not os.path.exists(template_path):
@@ -869,7 +865,7 @@ def admin_users():
 @app.route('/admin-job-analysis.html')
 def admin_job_analysis():
     if not (g.user and g.user.get('user_type') == 'admin'):
-        return redirect(url_for('admin_login_page'))
+        return redirect(url_for('index'))
 
     template_path = os.path.join(WEB_FOLDER, 'admin-job-analysis.html')
     if not os.path.exists(template_path):
@@ -883,6 +879,32 @@ def admin_job_analysis():
         salary=salary_result.result if salary_result else None,
         skills=skill_result.result if skill_result else None
     )
+
+# 用户仪表盘页面
+@app.route('/user-dashboard.html')
+def user_dashboard():
+    if not (g.user and g.user.get('user_type') == 'user'):
+        return redirect(url_for('index'))
+
+    template_path = os.path.join(WEB_FOLDER, 'user-dashboard.html')
+    if not os.path.exists(template_path):
+        logger.error(f"user-dashboard.html模板文件不存在: {template_path}")
+        return "用户仪表盘模板不存在", 500
+
+    return render_template('user-dashboard.html')
+
+# 护工仪表盘页面
+@app.route('/caregiver-dashboard.html')
+def caregiver_dashboard():
+    if not (g.user and g.user.get('user_type') == 'caregiver'):
+        return redirect(url_for('index'))
+
+    template_path = os.path.join(WEB_FOLDER, 'caregiver-dashboard.html')
+    if not os.path.exists(template_path):
+        logger.error(f"caregiver-dashboard.html模板文件不存在: {template_path}")
+        return "护工仪表盘模板不存在", 500
+
+    return render_template('caregiver-dashboard.html')
 
 # 访问上传的文件
 @app.route('/uploads/<filename>')
@@ -1001,7 +1023,40 @@ def upload_user_avatar():
         logger.error(f"用户头像上传失败: {e}")
         return jsonify({'success': False, 'message': f'文件上传失败：{str(e)}'}), 500
 
-# 用户注册接口
+# 用户注册接口（适配前端表单）
+@app.route('/api/register', methods=['POST'])
+def user_register_form():
+    data = request.json
+    fullname = data.get('fullname')
+    phone = data.get('phone')
+    password = data.get('password')
+    user_type = data.get('userType')
+
+    if not fullname or not fullname.strip():
+        return jsonify({'code': 400, 'message': '请输入您的真实姓名'}), 400
+
+    if not phone or not phone.strip():
+        return jsonify({'code': 400, 'message': '请输入手机号码'}), 400
+
+    if not password or len(password) < 6:
+        return jsonify({'code': 400, 'message': '密码长度不能少于6位'}), 400
+
+    # 检查手机号是否已被注册
+    if DataStore.get_user_by_phone(phone):
+        return jsonify({'code': 400, 'message': '该手机号已被注册'}), 400
+
+    try:
+        user = DataStore.add_user_by_phone(fullname, phone, password)
+        return jsonify({
+            'code': 200,
+            'data': user.to_dict(),
+            'message': '注册成功，等待管理员审核'
+        })
+    except Exception as e:
+        logger.error(f"用户注册失败: {e}")
+        return jsonify({'code': 500, 'message': f'注册失败：{str(e)}'}), 500
+
+# 用户注册接口（原有API）
 @app.route('/api/user/register', methods=['POST'])
 def user_register():
     data = request.json
@@ -1990,6 +2045,8 @@ def initialize_sample_data():
         caregiver1 = Caregiver(
             name="李敏",
             phone="13700137001",
+            id_file="sample_id_001.jpg",  # 添加身份证文件
+            cert_file="sample_cert_001.jpg",  # 添加证书文件
             gender="女",
             age=45,
             avatar_url="https://picsum.photos/id/26/120/120",
@@ -2011,6 +2068,8 @@ def initialize_sample_data():
         caregiver2 = Caregiver(
             name="王芳",
             phone="13700137002",
+            id_file="sample_id_002.jpg",  # 添加身份证文件
+            cert_file="sample_cert_002.jpg",  # 添加证书文件
             gender="女",
             age=38,
             avatar_url="https://picsum.photos/id/91/120/120",
@@ -2032,6 +2091,8 @@ def initialize_sample_data():
         caregiver3 = Caregiver(
             name="张伟",
             phone="13700137003",
+            id_file="sample_id_003.jpg",  # 添加身份证文件
+            cert_file="sample_cert_003.jpg",  # 添加证书文件
             gender="男",
             age=50,
             avatar_url="https://picsum.photos/id/177/120/120",

@@ -239,7 +239,7 @@
                     
                     <!-- 已有账号 -->
                     <p class="text-center text-gray-600 text-sm">
-                        已有账号？<a href="login.html" class="text-primary hover:underline font-medium">立即登录</a>
+                        已有账号？<a href="/user-login.html" class="text-primary hover:underline font-medium">立即登录</a>
                     </p>
                 </form>
             </div>
@@ -384,7 +384,7 @@
                                 redirectCountdown--;
                                 if (redirectCountdown <= 0) {
                                     clearInterval(redirectTimer);
-                                    window.location.href = 'login.html'; // 跳转到登录页
+                                    window.location.href = '/user-login.html'; // 跳转到登录页
                                 }
                             }, 1000);
                         } else {
@@ -404,7 +404,7 @@
             
             // 前往登录按钮
             gotoLoginBtn.addEventListener('click', function() {
-                window.location.href = 'login.html'; // 跳转到登录页
+                window.location.href = '/user-login.html'; // 跳转到登录页
             });
             
             // 输入框实时验证

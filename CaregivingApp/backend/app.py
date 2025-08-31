@@ -2,7 +2,7 @@ from flask import Flask, render_template, redirect, url_for, g, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 import os
 import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date, timezone
 from typing import Dict, List, Any, Optional
 import requests
 from bs4 import BeautifulSoup
@@ -76,8 +76,20 @@ class User(db.Model):
     password_hash = db.Column(db.String(256), nullable=False)
     id_file = db.Column(db.String(200))  # 用户身份证文件
     is_approved = db.Column(db.Boolean, default=False)  # 是否审核通过
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     approved_at = db.Column(db.DateTime, index=True)
+    
+    # 扩展用户信息字段
+    name = db.Column(db.String(100))
+    gender = db.Column(db.String(10))
+    birth_date = db.Column(db.Date)
+    address = db.Column(db.String(200))
+    emergency_contact = db.Column(db.String(100))  # 紧急联系人姓名
+    phone = db.Column(db.String(20))  # 用户本人电话（原emergency_phone修改为phone）
+    emergency_contact_phone = db.Column(db.String(20))  # 新增：紧急联系人电话
+    special_needs = db.Column(db.Text)
+    avatar_url = db.Column(db.String(200))
+    is_verified = db.Column(db.Boolean, default=False)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -87,8 +99,22 @@ class User(db.Model):
             "id_file_url": f"/uploads/{self.id_file}" if (self.id_file and self.id_file.strip()) else None,
             "is_approved": self.is_approved,
             "created_at": self.created_at.strftime("%Y-%m-%d %H:%M"),
-            "approved_at": self.approved_at.strftime("%Y-%m-%d %H:%M") if self.approved_at else None
+            "approved_at": self.approved_at.strftime("%Y-%m-%d %H:%M") if self.approved_at else None,
+            # 扩展字段
+            "name": self.name,
+            "gender": self.gender,
+            "birth_date": self.birth_date.strftime("%Y-%m-%d") if self.birth_date else None,
+            "address": self.address,
+            "emergency_contact": self.emergency_contact,
+            "phone": self.phone,  # 用户本人电话
+            "emergency_contact_phone": self.emergency_contact_phone,  # 紧急联系人电话
+            "special_needs": self.special_needs,
+            "avatar_url": self.avatar_url,
+            "is_verified": self.is_verified
         }
+
+    def set_password(self, password: str):
+        self.password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 class Caregiver(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -98,8 +124,25 @@ class Caregiver(db.Model):
     cert_file = db.Column(db.String(200), nullable=False)  # 不允许为空
     password_hash = db.Column(db.String(256), nullable=False)
     is_approved = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     approved_at = db.Column(db.DateTime, index=True)
+    
+    # 扩展护工信息字段
+    gender = db.Column(db.String(10))
+    age = db.Column(db.Integer)
+    avatar_url = db.Column(db.String(200))
+    id_card = db.Column(db.String(18))  # 身份证号
+    qualification = db.Column(db.String(100))  # 资格证书
+    introduction = db.Column(db.Text)  # 个人介绍
+    experience_years = db.Column(db.Integer)  # 工作年限
+    hourly_rate = db.Column(db.Float)  # 时薪
+    rating = db.Column(db.Float, default=0)  # 评分
+    review_count = db.Column(db.Integer, default=0)  # 评价数量
+    status = db.Column(db.String(20), default="pending")  # 状态
+    available = db.Column(db.Boolean, default=True)  # 是否可用
+    
+    # 服务类型多对多关系
+    service_types = db.relationship('ServiceType', secondary='caregiver_service', backref='caregivers')
 
     def to_dict(self) -> Dict[str, Any]:
         valid_id_file = self.id_file and self.id_file.strip()
@@ -118,8 +161,36 @@ class Caregiver(db.Model):
             "cert_file_url": f"/uploads/{self.cert_file}" if valid_cert_file else None,
             "is_approved": self.is_approved,
             "created_at": self.created_at.strftime("%Y-%m-%d %H:%M"),
-            "approved_at": self.approved_at.strftime("%Y-%m-%d %H:%M") if self.approved_at else None
+            "approved_at": self.approved_at.strftime("%Y-%m-%d %H:%M") if self.approved_at else None,
+            # 扩展字段
+            "gender": self.gender,
+            "age": self.age,
+            "avatar_url": self.avatar_url,
+            "id_card": self.id_card,
+            "qualification": self.qualification,
+            "introduction": self.introduction,
+            "experience_years": self.experience_years,
+            "hourly_rate": self.hourly_rate,
+            "rating": self.rating,
+            "review_count": self.review_count,
+            "status": self.status,
+            "available": self.available,
+            "service_types": [st.name for st in self.service_types]
         }
+
+    def set_password(self, password: str):
+        self.password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+class ServiceType(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    description = db.Column(db.String(200))
+
+# 护工与服务类型的多对多关联表
+caregiver_service = db.Table('caregiver_service',
+    db.Column('caregiver_id', db.Integer, db.ForeignKey('caregiver.id'), primary_key=True),
+    db.Column('service_type_id', db.Integer, db.ForeignKey('service_type.id'), primary_key=True)
+)
 
 class JobData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -131,13 +202,59 @@ class JobData(db.Model):
     experience = db.Column(db.String(50))
     education = db.Column(db.String(20))
     skills = db.Column(db.String(200))
-    crawl_time = db.Column(db.DateTime, default=datetime.utcnow)
+    crawl_time = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 class AnalysisResult(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     type = db.Column(db.String(50))
     result = db.Column(db.JSON)
-    create_time = db.Column(db.DateTime, default=datetime.utcnow)
+    create_time = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+# 预约模型
+class Appointment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    caregiver_id = db.Column(db.Integer, db.ForeignKey('caregiver.id'), nullable=False)
+    service_type = db.Column(db.String(50), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    start_time = db.Column(db.Time, nullable=False)
+    end_time = db.Column(db.Time, nullable=False)
+    notes = db.Column(db.Text)
+    status = db.Column(db.String(20), default="pending")  # pending, confirmed, completed, cancelled
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    
+    # 关联
+    user = db.relationship('User', backref=db.backref('appointments', lazy=True))
+    caregiver = db.relationship('Caregiver', backref=db.backref('appointments', lazy=True))
+
+# 长期聘用模型
+class Employment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    caregiver_id = db.Column(db.Integer, db.ForeignKey('caregiver.id'), nullable=False)
+    service_type = db.Column(db.String(50), nullable=False)
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date)  # 可以为空，表示长期有效
+    frequency = db.Column(db.String(50))  # 每周几次
+    duration_per_session = db.Column(db.String(20))  # 每次时长
+    status = db.Column(db.String(20), default="active")  # active, terminated, completed
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    
+    # 关联
+    user = db.relationship('User', backref=db.backref('employments', lazy=True))
+    caregiver = db.relationship('Caregiver', backref=db.backref('employments', lazy=True))
+
+# 消息模型
+class Message(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    sender_id = db.Column(db.Integer, nullable=False)
+    sender_type = db.Column(db.String(20), nullable=False)  # user, caregiver, admin
+    recipient_id = db.Column(db.Integer, nullable=False)
+    recipient_type = db.Column(db.String(20), nullable=False)  # user, caregiver, admin
+    content = db.Column(db.Text, nullable=False)
+    is_read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 # --------------------------
 # 辅助函数
@@ -157,7 +274,7 @@ def generate_token(user_id: int, user_type: str = 'user') -> str:
     payload = {
         "user_id": user_id,
         "user_type": user_type,
-        "exp": datetime.utcnow() + timedelta(hours=2)
+        "exp": datetime.now(timezone.utc) + timedelta(hours=2)
     }
     return jwt.encode(payload, APP_SECRET, algorithm="HS256")
 
@@ -214,6 +331,40 @@ class DataStore:
         return None
 
     @staticmethod
+    def get_user_by_id(user_id: int) -> Optional[User]:
+        return User.query.get(user_id)
+
+    @staticmethod
+    def update_user_profile(user_id: int, data: dict) -> bool:
+        user = User.query.get(user_id)
+        if not user:
+            return False
+            
+        # 更新可修改的字段，包含修改后的phone和新增的emergency_contact_phone
+        updatable_fields = [
+            'name', 'gender', 'birth_date', 'address',
+            'emergency_contact', 'phone', 'emergency_contact_phone',
+            'special_needs', 'avatar_url'
+        ]
+        
+        for field in updatable_fields:
+            if field in data:
+                setattr(user, field, data[field])
+                
+        db.session.commit()
+        return True
+
+    @staticmethod
+    def update_user_password(user_id: int, old_password: str, new_password: str) -> bool:
+        user = User.query.get(user_id)
+        if not user or not verify_password(user.password_hash, old_password):
+            return False
+            
+        user.password_hash = hash_password(new_password)
+        db.session.commit()
+        return True
+
+    @staticmethod
     def get_all_users() -> List[User]:
         return User.query.all()
 
@@ -263,7 +414,7 @@ class DataStore:
         if not user or user.is_approved:
             return False
         user.is_approved = True
-        user.approved_at = datetime.utcnow()
+        user.approved_at = datetime.now(timezone.utc)
         db.session.commit()
         return True
 
@@ -286,6 +437,10 @@ class DataStore:
         return Caregiver.query.filter_by(phone=phone).first()
 
     @staticmethod
+    def get_caregiver_by_id(caregiver_id: int) -> Optional[Caregiver]:
+        return Caregiver.query.get(caregiver_id)
+
+    @staticmethod
     def verify_caregiver(phone: str, password: str) -> Optional[Caregiver]:
         caregiver = Caregiver.query.filter_by(phone=phone).first()
         if caregiver and caregiver.is_approved and verify_password(caregiver.password_hash, password):
@@ -301,12 +456,33 @@ class DataStore:
         ).order_by(Caregiver.created_at.desc()).all()
 
     @staticmethod
-    def get_approved_caregivers() -> List[Caregiver]:
-        return Caregiver.query.filter(
+    def get_approved_caregivers(filters: dict = None) -> List[Caregiver]:
+        query = Caregiver.query.filter(
             Caregiver.is_approved == True,
             Caregiver.id_file != '',
             Caregiver.cert_file != ''
-        ).order_by(Caregiver.approved_at.desc() if Caregiver.approved_at else Caregiver.created_at.desc()).all()
+        )
+        
+        # 应用筛选条件
+        if filters:
+            if 'service_type' in filters and filters['service_type']:
+                query = query.join(caregiver_service).join(ServiceType).filter(
+                    ServiceType.name == filters['service_type']
+                )
+            if 'experience' in filters and filters['experience']:
+                query = query.filter(Caregiver.experience_years >= int(filters['experience']))
+            if 'min_rating' in filters and filters['min_rating']:
+                query = query.filter(Caregiver.rating >= float(filters['min_rating']))
+            if 'price_range' in filters and filters['price_range']:
+                min_price, max_price = filters['price_range'].split('-')
+                query = query.filter(
+                    Caregiver.hourly_rate >= float(min_price),
+                    Caregiver.hourly_rate <= float(max_price)
+                )
+        
+        return query.order_by(
+            Caregiver.approved_at.desc() if Caregiver.approved_at else Caregiver.created_at.desc()
+        ).all()
 
     @staticmethod
     def approve_caregiver(caregiver_id: int) -> bool:
@@ -314,7 +490,7 @@ class DataStore:
         if not caregiver or caregiver.is_approved:
             return False
         caregiver.is_approved = True
-        caregiver.approved_at = datetime.utcnow()
+        caregiver.approved_at = datetime.now(timezone.utc)
         db.session.commit()
         return True
 
@@ -341,6 +517,155 @@ class DataStore:
             db.session.rollback()
             logger.error(f"拒绝护工失败: {e}")
             return False
+
+    # 服务类型相关操作
+    @staticmethod
+    def get_all_service_types() -> List[ServiceType]:
+        return ServiceType.query.all()
+
+    # 预约相关操作
+    @staticmethod
+    def create_appointment(data: dict) -> Appointment:
+        appointment = Appointment(
+            user_id=data['user_id'],
+            caregiver_id=data['caregiver_id'],
+            service_type=data['service_type'],
+            date=data['date'],
+            start_time=data['start_time'],
+            end_time=data['end_time'],
+            notes=data.get('notes', '')
+        )
+        db.session.add(appointment)
+        db.session.commit()
+        return appointment
+
+    @staticmethod
+    def get_user_appointments(user_id: int, status: str = None) -> List[Appointment]:
+        query = Appointment.query.filter_by(user_id=user_id)
+        if status:
+            query = query.filter_by(status=status)
+        return query.order_by(Appointment.date.desc(), Appointment.start_time.desc()).all()
+
+    @staticmethod
+    def get_appointment_by_id(appointment_id: int) -> Optional[Appointment]:
+        return Appointment.query.get(appointment_id)
+
+    @staticmethod
+    def cancel_appointment(appointment_id: int) -> bool:
+        appointment = Appointment.query.get(appointment_id)
+        if not appointment:
+            return False
+            
+        # 检查是否可以取消（例如：未过期）
+        appointment_date = datetime.combine(appointment.date, appointment.start_time)
+        if appointment_date < datetime.now():
+            return False
+            
+        appointment.status = "cancelled"
+        db.session.commit()
+        return True
+
+    @staticmethod
+    def update_appointment_status(appointment_id: int, status: str) -> bool:
+        appointment = Appointment.query.get(appointment_id)
+        if not appointment:
+            return False
+            
+        valid_statuses = ["pending", "confirmed", "completed", "cancelled"]
+        if status not in valid_statuses:
+            return False
+            
+        appointment.status = status
+        db.session.commit()
+        return True
+
+    # 聘用相关操作
+    @staticmethod
+    def create_employment(data: dict) -> Employment:
+        employment = Employment(
+            user_id=data['user_id'],
+            caregiver_id=data['caregiver_id'],
+            service_type=data['service_type'],
+            start_date=data['start_date'],
+            end_date=data.get('end_date'),
+            frequency=data['frequency'],
+            duration_per_session=data['duration_per_session'],
+            notes=data.get('notes', '')
+        )
+        db.session.add(employment)
+        db.session.commit()
+        return employment
+
+    @staticmethod
+    def get_user_employments(user_id: int, status: str = None) -> List[Employment]:
+        query = Employment.query.filter_by(user_id=user_id)
+        if status:
+            query = query.filter_by(status=status)
+        return query.order_by(Employment.start_date.desc()).all()
+
+    @staticmethod
+    def get_employment_by_id(employment_id: int) -> Optional[Employment]:
+        return Employment.query.get(employment_id)
+
+    @staticmethod
+    def terminate_employment(employment_id: int) -> bool:
+        employment = Employment.query.get(employment_id)
+        if not employment:
+            return False
+            
+        employment.status = "terminated"
+        employment.end_date = date.today()
+        db.session.commit()
+        return True
+
+    @staticmethod
+    def update_employment_schedule(employment_id: int, data: dict) -> bool:
+        employment = Employment.query.get(employment_id)
+        if not employment:
+            return False
+            
+        updatable_fields = ['frequency', 'duration_per_session', 'notes']
+        for field in updatable_fields:
+            if field in data:
+                setattr(employment, field, data[field])
+                
+        db.session.commit()
+        return True
+
+    # 消息相关操作
+    @staticmethod
+    def send_message(data: dict) -> Message:
+        message = Message(
+            sender_id=data['sender_id'],
+            sender_type=data['sender_type'],
+            recipient_id=data['recipient_id'],
+            recipient_type=data['recipient_type'],
+            content=data['content']
+        )
+        db.session.add(message)
+        db.session.commit()
+        return message
+
+    @staticmethod
+    def get_user_messages(user_id: int) -> List[Message]:
+        return Message.query.filter_by(
+            recipient_id=user_id,
+            recipient_type='user'
+        ).order_by(Message.created_at.desc()).all()
+
+    @staticmethod
+    def get_message_by_id(message_id: int) -> Optional[Message]:
+        return Message.query.get(message_id)
+
+    @staticmethod
+    def mark_message_as_read(message_id: int) -> bool:
+        message = Message.query.get(message_id)
+        if not message:
+            return False
+            
+        message.is_read = True
+        db.session.commit()
+        return True
 
 # --------------------------
 # 爬虫逻辑
@@ -627,6 +952,55 @@ def upload_user_id():
         logger.error(f"用户身份证上传失败: {e}")
         return jsonify({'success': False, 'message': f'文件上传失败：{str(e)}'}), 500
 
+# 用户头像上传接口
+@app.route('/api/user/upload-avatar', methods=['POST'])
+def upload_user_avatar():
+    if not g.user or g.user.get('user_type') != 'user':
+        return jsonify({'success': False, 'message': '请先登录'}), 401
+        
+    if 'avatar' not in request.files:
+        return jsonify({'success': False, 'message': '请上传头像文件'}), 400
+
+    avatar = request.files['avatar']
+
+    if avatar.filename == '':
+        return jsonify({'success': False, 'message': '文件不能为空'}), 400
+
+    if not allowed_file(avatar.filename):
+        return jsonify({'success': False, 'message': '仅支持png、jpg、jpeg、gif格式'}), 400
+
+    try:
+        file_ext = avatar.filename.rsplit('.', 1)[1].lower()
+        filename = f"avatar_{uuid.uuid4().hex}.{file_ext}"
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        
+        avatar.save(file_path)
+        
+        # 更新用户头像URL
+        user = DataStore.get_user_by_id(g.user.get('user_id'))
+        if user:
+            # 删除旧头像
+            if user.avatar_url and user.avatar_url.startswith('/uploads/'):
+                old_filename = user.avatar_url.split('/')[-1]
+                old_path = os.path.join(app.config['UPLOAD_FOLDER'], old_filename)
+                if os.path.exists(old_path):
+                    try:
+                        os.remove(old_path)
+                    except Exception as e:
+                        logger.warning(f"删除旧头像失败: {e}")
+            
+            user.avatar_url = f"/uploads/{filename}"
+            db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'data': {'avatar_url': f"/uploads/{filename}"},
+            'message': '头像上传成功'
+        })
+    except Exception as e:
+        logger.error(f"用户头像上传失败: {e}")
+        return jsonify({'success': False, 'message': f'文件上传失败：{str(e)}'}), 500
+
 # 用户注册接口
 @app.route('/api/user/register', methods=['POST'])
 def user_register():
@@ -681,7 +1055,66 @@ def user_login():
     else:
         return jsonify({'success': False, 'message': '邮箱或密码错误'}), 401
 
-# 护工证件文件上传接口（优化版）
+# 获取用户个人信息
+@app.route('/api/user/profile', methods=['GET'])
+def get_user_profile():
+    if not g.user or g.user.get('user_type') != 'user':
+        return jsonify({'success': False, 'message': '请先登录'}), 401
+        
+    user = DataStore.get_user_by_id(g.user.get('user_id'))
+    if not user:
+        return jsonify({'success': False, 'message': '用户不存在'}), 404
+        
+    return jsonify({
+        'success': True,
+        'data': user.to_dict()
+    })
+
+# 更新用户个人信息
+@app.route('/api/user/profile', methods=['PUT'])
+def update_user_profile():
+    if not g.user or g.user.get('user_type') != 'user':
+        return jsonify({'success': False, 'message': '请先登录'}), 401
+        
+    data = request.json
+    success = DataStore.update_user_profile(g.user.get('user_id'), data)
+    
+    if success:
+        updated_user = DataStore.get_user_by_id(g.user.get('user_id'))
+        return jsonify({
+            'success': True,
+            'data': updated_user.to_dict(),
+            'message': '个人信息更新成功'
+        })
+    return jsonify({'success': False, 'message': '更新失败'}), 500
+
+# 修改密码接口
+@app.route('/api/user/password', methods=['PUT'])
+def update_user_password():
+    if not g.user or g.user.get('user_type') != 'user':
+        return jsonify({'success': False, 'message': '请先登录'}), 401
+        
+    data = request.json
+    old_password = data.get('old_password')
+    new_password = data.get('new_password')
+    
+    if not old_password or not new_password or len(new_password) < 6:
+        return jsonify({'success': False, 'message': '请输入有效的密码信息'}), 400
+        
+    success = DataStore.update_user_password(
+        g.user.get('user_id'), 
+        old_password, 
+        new_password
+    )
+    
+    if success:
+        return jsonify({
+            'success': True,
+            'message': '密码修改成功'
+        })
+    return jsonify({'success': False, 'message': '原密码错误或修改失败'}), 400
+
+# 护工证件文件上传接口
 @app.route('/api/caregiver/upload', methods=['POST'])
 def upload_files():
     try:
@@ -703,13 +1136,6 @@ def upload_files():
         # 记录文件基本信息
         logger.info(f"身份证文件: {id_file.filename}, 大小: {id_file.content_length}")
         logger.info(f"证书文件: {cert_file.filename}, 大小: {cert_file.content_length}")
-        
-        # 添加调试信息
-        logger.info(f"请求头: {request.headers}")
-        logger.info(f"表单数据: {request.form}")
-        logger.info(f"文件存储路径: {app.config['UPLOAD_FOLDER']}")
-        logger.info(f"当前工作目录: {os.getcwd()}")
-        logger.info(f"上传文件夹权限: {os.access(app.config['UPLOAD_FOLDER'], os.W_OK)}")
         
         # 检查文件名是否为空
         if id_file.filename == '':
@@ -752,24 +1178,11 @@ def upload_files():
             id_path = os.path.join(app.config['UPLOAD_FOLDER'], id_filename)
             cert_path = os.path.join(app.config['UPLOAD_FOLDER'], cert_filename)
             
-            # 保存文件 - 使用chunk方式保存大文件并记录实际写入大小
-            id_size = 0
-            with open(id_path, 'wb') as f:
-                while chunk := id_file.read(4096):
-                    actual_size = len(chunk)
-                    id_size += actual_size
-                    f.write(chunk)
-            logger.info(f"身份证文件实际写入大小: {id_size}字节")
+            # 保存文件
+            id_file.save(id_path)
+            cert_file.save(cert_path)
             
-            cert_size = 0
-            with open(cert_path, 'wb') as f:
-                while chunk := cert_file.read(4096):
-                    actual_size = len(chunk)
-                    cert_size += actual_size
-                    f.write(chunk)
-            logger.info(f"证书文件实际写入大小: {cert_size}字节")
-            
-            # 验证文件是否保存成功（增强版检查）
+            # 验证文件是否保存成功
             if not os.path.exists(id_path) or os.path.getsize(id_path) == 0:
                 raise Exception("身份证文件保存失败或内容为空")
             
@@ -1053,11 +1466,686 @@ def analyze_skills():
     except Exception as e:
         return jsonify({'success': False, 'message': f'分析失败：{str(e)}'}), 500
 
+# 护工查询与筛选接口
+@app.route('/api/caregivers', methods=['GET'])
+def get_caregivers():
+    # 获取筛选参数
+    filters = {
+        'service_type': request.args.get('service_type'),
+        'experience': request.args.get('experience'),
+        'min_rating': request.args.get('min_rating'),
+        'price_range': request.args.get('price_range')
+    }
+    
+    # 过滤空值
+    filters = {k: v for k, v in filters.items() if v is not None and v.strip() != ''}
+    
+    caregivers = DataStore.get_approved_caregivers(filters)
+    return jsonify({
+        'success': True,
+        'data': [c.to_dict() for c in caregivers],
+        'count': len(caregivers)
+    })
+
+# 获取护工详情接口
+@app.route('/api/caregivers/<int:caregiver_id>', methods=['GET'])
+def get_caregiver_detail(caregiver_id):
+    caregiver = DataStore.get_caregiver_by_id(caregiver_id)
+    if not caregiver or not caregiver.is_approved:
+        return jsonify({'success': False, 'message': '护工不存在或未通过审核'}), 404
+        
+    return jsonify({
+        'success': True,
+        'data': caregiver.to_dict()
+    })
+
+# 获取服务类型列表
+@app.route('/api/service-types', methods=['GET'])
+def get_service_types():
+    service_types = DataStore.get_all_service_types()
+    return jsonify({
+        'success': True,
+        'data': [{'id': st.id, 'name': st.name, 'description': st.description} for st in service_types]
+    })
+
+# 创建预约接口
+@app.route('/api/appointments', methods=['POST'])
+def create_appointment():
+    if not g.user or g.user.get('user_type') != 'user':
+        return jsonify({'success': False, 'message': '请先登录'}), 401
+        
+    data = request.json
+    required_fields = ['caregiver_id', 'service_type', 'date', 'start_time', 'end_time']
+    for field in required_fields:
+        if field not in data or not data[field]:
+            return jsonify({'success': False, 'message': f'请提供{field}信息'}), 400
+    
+    try:
+        # 转换日期时间格式
+        appointment_data = {
+            'user_id': g.user.get('user_id'),
+            'caregiver_id': int(data['caregiver_id']),
+            'service_type': data['service_type'],
+            'date': datetime.strptime(data['date'], '%Y-%m-%d').date(),
+            'start_time': datetime.strptime(data['start_time'], '%H:%M').time(),
+            'end_time': datetime.strptime(data['end_time'], '%H:%M').time(),
+            'notes': data.get('notes', '')
+        }
+        
+        # 检查时间是否合理（结束时间晚于开始时间）
+        if appointment_data['start_time'] >= appointment_data['end_time']:
+            return jsonify({'success': False, 'message': '结束时间必须晚于开始时间'}), 400
+            
+        # 检查护工是否存在且已批准
+        caregiver = DataStore.get_caregiver_by_id(appointment_data['caregiver_id'])
+        if not caregiver or not caregiver.is_approved:
+            return jsonify({'success': False, 'message': '护工不存在或未通过审核'}), 400
+        
+        appointment = DataStore.create_appointment(appointment_data)
+        return jsonify({
+            'success': True,
+            'data': {
+                'id': appointment.id,
+                'status': appointment.status,
+                'created_at': appointment.created_at.strftime('%Y-%m-%d %H:%M')
+            },
+            'message': '预约创建成功，等待护工确认'
+        })
+    except Exception as e:
+        logger.error(f"创建预约失败: {e}")
+        return jsonify({'success': False, 'message': f'创建预约失败：{str(e)}'}), 500
+
+# 获取用户预约列表
+@app.route('/api/user/appointments', methods=['GET'])
+def get_user_appointments():
+    if not g.user or g.user.get('user_type') != 'user':
+        return jsonify({'success': False, 'message': '请先登录'}), 401
+        
+    status = request.args.get('status')
+    appointments = DataStore.get_user_appointments(g.user.get('user_id'), status)
+    
+    # 格式化返回数据
+    result = []
+    for appt in appointments:
+        caregiver = DataStore.get_caregiver_by_id(appt.caregiver_id)
+        result.append({
+            'id': appt.id,
+            'caregiver': {
+                'id': caregiver.id,
+                'name': caregiver.name,
+                'avatar_url': caregiver.avatar_url
+            } if caregiver else None,
+            'service_type': appt.service_type,
+            'date': appt.date.strftime('%Y-%m-%d'),
+            'start_time': appt.start_time.strftime('%H:%M'),
+            'end_time': appt.end_time.strftime('%H:%M'),
+            'status': appt.status,
+            'notes': appt.notes,
+            'created_at': appt.created_at.strftime('%Y-%m-%d %H:%M')
+        })
+        
+    return jsonify({
+        'success': True,
+        'data': result,
+        'count': len(result)
+    })
+
+# 取消预约接口
+@app.route('/api/appointments/<int:appointment_id>/cancel', methods=['PUT'])
+def cancel_appointment(appointment_id):
+    if not g.user or g.user.get('user_type') != 'user':
+        return jsonify({'success': False, 'message': '请先登录'}), 401
+        
+    appointment = DataStore.get_appointment_by_id(appointment_id)
+    if not appointment:
+        return jsonify({'success': False, 'message': '预约不存在'}), 404
+        
+    # 验证预约属于当前用户
+    if appointment.user_id != g.user.get('user_id'):
+        return jsonify({'success': False, 'message': '无权操作此预约'}), 403
+        
+    success = DataStore.cancel_appointment(appointment_id)
+    if success:
+        return jsonify({
+            'success': True,
+            'message': '预约已取消'
+        })
+    return jsonify({'success': False, 'message': '取消失败，可能已过期或状态不允许取消'}), 400
+
+# 更新预约状态（护工确认）
+@app.route('/api/appointments/<int:appointment_id>/status', methods=['PUT'])
+def update_appointment_status(appointment_id):
+    if not g.user or g.user.get('user_type') != 'caregiver':
+        return jsonify({'success': False, 'message': '请先登录护工账号'}), 401
+        
+    data = request.json
+    status = data.get('status')
+    if not status:
+        return jsonify({'success': False, 'message': '请提供状态信息'}), 400
+        
+    appointment = DataStore.get_appointment_by_id(appointment_id)
+    if not appointment:
+        return jsonify({'success': False, 'message': '预约不存在'}), 404
+        
+    # 验证预约属于当前护工
+    if appointment.caregiver_id != g.user.get('user_id'):
+        return jsonify({'success': False, 'message': '无权操作此预约'}), 403
+        
+    success = DataStore.update_appointment_status(appointment_id, status)
+    if success:
+        return jsonify({
+            'success': True,
+            'message': f'预约状态已更新为{status}'
+        })
+    return jsonify({'success': False, 'message': '更新状态失败'}), 400
+
+# 创建长期聘用接口
+@app.route('/api/employments', methods=['POST'])
+def create_employment():
+    if not g.user or g.user.get('user_type') != 'user':
+        return jsonify({'success': False, 'message': '请先登录'}), 401
+        
+    data = request.json
+    required_fields = ['caregiver_id', 'service_type', 'start_date', 'frequency', 'duration_per_session']
+    for field in required_fields:
+        if field not in data or not data[field]:
+            return jsonify({'success': False, 'message': f'请提供{field}信息'}), 400
+    
+    try:
+        # 转换日期格式
+        employment_data = {
+            'user_id': g.user.get('user_id'),
+            'caregiver_id': int(data['caregiver_id']),
+            'service_type': data['service_type'],
+            'start_date': datetime.strptime(data['start_date'], '%Y-%m-%d').date(),
+            'end_date': datetime.strptime(data['end_date'], '%Y-%m-%d').date() if data.get('end_date') else None,
+            'frequency': data['frequency'],
+            'duration_per_session': data['duration_per_session'],
+            'notes': data.get('notes', '')
+        }
+        
+        # 检查护工是否存在且已批准
+        caregiver = DataStore.get_caregiver_by_id(employment_data['caregiver_id'])
+        if not caregiver or not caregiver.is_approved:
+            return jsonify({'success': False, 'message': '护工不存在或未通过审核'}), 400
+        
+        employment = DataStore.create_employment(employment_data)
+        return jsonify({
+            'success': True,
+            'data': {
+                'id': employment.id,
+                'status': employment.status,
+                'created_at': employment.created_at.strftime('%Y-%m-%d %H:%M')
+            },
+            'message': '长期聘用关系创建成功'
+        })
+    except Exception as e:
+        logger.error(f"创建长期聘用失败: {e}")
+        return jsonify({'success': False, 'message': f'创建失败：{str(e)}'}), 500
+
+# 获取用户聘用列表
+@app.route('/api/user/employments', methods=['GET'])
+def get_user_employments():
+    if not g.user or g.user.get('user_type') != 'user':
+        return jsonify({'success': False, 'message': '请先登录'}), 401
+        
+    status = request.args.get('status')
+    employments = DataStore.get_user_employments(g.user.get('user_id'), status)
+    
+    # 格式化返回数据
+    result = []
+    for emp in employments:
+        caregiver = DataStore.get_caregiver_by_id(emp.caregiver_id)
+        result.append({
+            'id': emp.id,
+            'caregiver': {
+                'id': caregiver.id,
+                'name': caregiver.name,
+                'avatar_url': caregiver.avatar_url
+            } if caregiver else None,
+            'service_type': emp.service_type,
+            'start_date': emp.start_date.strftime('%Y-%m-%d'),
+            'end_date': emp.end_date.strftime('%Y-%m-%d') if emp.end_date else None,
+            'frequency': emp.frequency,
+            'duration_per_session': emp.duration_per_session,
+            'status': emp.status,
+            'notes': emp.notes,
+            'created_at': emp.created_at.strftime('%Y-%m-%d %H:%M')
+        })
+        
+    return jsonify({
+        'success': True,
+        'data': result,
+        'count': len(result)
+    })
+
+# 获取聘用详情
+@app.route('/api/employments/<int:employment_id>', methods=['GET'])
+def get_employment_detail(employment_id):
+    if not g.user:
+        return jsonify({'success': False, 'message': '请先登录'}), 401
+        
+    employment = DataStore.get_employment_by_id(employment_id)
+    if not employment:
+        return jsonify({'success': False, 'message': '聘用记录不存在'}), 404
+        
+    # 验证权限（用户或护工）
+    if (g.user.get('user_type') == 'user' and employment.user_id != g.user.get('user_id')) or \
+       (g.user.get('user_type') == 'caregiver' and employment.caregiver_id != g.user.get('user_id')):
+        return jsonify({'success': False, 'message': '无权查看此聘用记录'}), 403
+        
+    caregiver = DataStore.get_caregiver_by_id(employment.caregiver_id)
+    user = DataStore.get_user_by_id(employment.user_id)
+    
+    return jsonify({
+        'success': True,
+        'data': {
+            'id': employment.id,
+            'caregiver': {
+                'id': caregiver.id,
+                'name': caregiver.name,
+                'avatar_url': caregiver.avatar_url,
+                'phone': caregiver.phone
+            } if caregiver else None,
+            'user': {
+                'id': user.id,
+                'name': user.name,
+                'phone': user.phone  # 这里使用用户本人电话
+            } if user else None,
+            'service_type': employment.service_type,
+            'start_date': employment.start_date.strftime('%Y-%m-%d'),
+            'end_date': employment.end_date.strftime('%Y-%m-%d') if employment.end_date else None,
+            'frequency': employment.frequency,
+            'duration_per_session': employment.duration_per_session,
+            'status': employment.status,
+            'notes': employment.notes,
+            'created_at': employment.created_at.strftime('%Y-%m-%d %H:%M')
+        }
+    })
+
+# 终止聘用接口
+@app.route('/api/employments/<int:employment_id>/terminate', methods=['PUT'])
+def terminate_employment(employment_id):
+    if not g.user or g.user.get('user_type') != 'user':
+        return jsonify({'success': False, 'message': '请先登录'}), 401
+        
+    employment = DataStore.get_employment_by_id(employment_id)
+    if not employment:
+        return jsonify({'success': False, 'message': '聘用记录不存在'}), 404
+        
+    # 验证属于当前用户
+    if employment.user_id != g.user.get('user_id'):
+        return jsonify({'success': False, 'message': '无权操作此聘用记录'}), 403
+        
+    # 检查是否已终止
+    if employment.status == 'terminated':
+        return jsonify({'success': False, 'message': '此聘用记录已终止'}), 400
+        
+    success = DataStore.terminate_employment(employment_id)
+    if success:
+        return jsonify({
+            'success': True,
+            'message': '长期聘用已终止'
+        })
+    return jsonify({'success': False, 'message': '操作失败'}), 500
+
+# 调整服务安排
+@app.route('/api/employments/<int:employment_id>/schedule', methods=['PUT'])
+def update_employment_schedule(employment_id):
+    if not g.user or g.user.get('user_type') != 'user':
+        return jsonify({'success': False, 'message': '请先登录'}), 401
+        
+    employment = DataStore.get_employment_by_id(employment_id)
+    if not employment:
+        return jsonify({'success': False, 'message': '聘用记录不存在'}), 404
+        
+    # 验证属于当前用户
+    if employment.user_id != g.user.get('user_id'):
+        return jsonify({'success': False, 'message': '无权操作此聘用记录'}), 403
+        
+    # 检查是否已终止
+    if employment.status == 'terminated':
+        return jsonify({'success': False, 'message': '此聘用记录已终止，无法调整'}), 400
+        
+    data = request.json
+    update_data = {
+        'frequency': data.get('frequency'),
+        'duration_per_session': data.get('duration_per_session'),
+        'notes': data.get('notes')
+    }
+    
+    # 过滤空值
+    update_data = {k: v for k, v in update_data.items() if v is not None}
+    
+    if not update_data:
+        return jsonify({'success': False, 'message': '请提供需要更新的信息'}), 400
+        
+    success = DataStore.update_employment_schedule(employment_id, update_data)
+    if success:
+        return jsonify({
+            'success': True,
+            'message': '服务安排已更新'
+        })
+    return jsonify({'success': False, 'message': '操作失败'}), 500
+
+# 获取消息列表
+@app.route('/api/user/messages', methods=['GET'])
+def get_user_messages():
+    if not g.user or g.user.get('user_type') != 'user':
+        return jsonify({'success': False, 'message': '请先登录'}), 401
+        
+    messages = DataStore.get_user_messages(g.user.get('user_id'))
+    
+    # 格式化返回数据
+    result = []
+    for msg in messages:
+        # 获取发送方信息
+        sender = None
+        if msg.sender_type == 'caregiver':
+            caregiver = DataStore.get_caregiver_by_id(msg.sender_id)
+            if caregiver:
+                sender = {
+                    'id': caregiver.id,
+                    'name': caregiver.name,
+                    'avatar_url': caregiver.avatar_url,
+                    'type': 'caregiver'
+                }
+        
+        result.append({
+            'id': msg.id,
+            'sender': sender,
+            'content': msg.content,
+            'is_read': msg.is_read,
+            'created_at': msg.created_at.strftime('%Y-%m-%d %H:%M')
+        })
+        
+    return jsonify({
+        'success': True,
+        'data': result,
+        'unread_count': sum(1 for msg in messages if not msg.is_read),
+        'total_count': len(result)
+    })
+
+# 获取消息详情
+@app.route('/api/user/messages/<int:message_id>', methods=['GET'])
+def get_message_detail(message_id):
+    if not g.user or g.user.get('user_type') != 'user':
+        return jsonify({'success': False, 'message': '请先登录'}), 401
+        
+    message = DataStore.get_message_by_id(message_id)
+    if not message or message.recipient_id != g.user.get('user_id') or message.recipient_type != 'user':
+        return jsonify({'success': False, 'message': '消息不存在或无权查看'}), 404
+        
+    # 标记为已读
+    if not message.is_read:
+        DataStore.mark_message_as_read(message_id)
+        
+    # 获取发送方信息
+    sender = None
+    if message.sender_type == 'caregiver':
+        caregiver = DataStore.get_caregiver_by_id(message.sender_id)
+        if caregiver:
+            sender = {
+                'id': caregiver.id,
+                'name': caregiver.name,
+                'avatar_url': caregiver.avatar_url,
+                'type': 'caregiver'
+            }
+    
+    return jsonify({
+        'success': True,
+        'data': {
+            'id': message.id,
+            'sender': sender,
+            'content': message.content,
+            'is_read': message.is_read,
+            'created_at': message.created_at.strftime('%Y-%m-%d %H:%M')
+        }
+    })
+
+# 发送消息接口
+@app.route('/api/user/messages', methods=['POST'])
+def send_message():
+    if not g.user or g.user.get('user_type') != 'user':
+        return jsonify({'success': False, 'message': '请先登录'}), 401
+        
+    data = request.json
+    recipient_id = data.get('recipient_id')
+    content = data.get('content')
+    
+    if not recipient_id or not content:
+        return jsonify({'success': False, 'message': '请提供接收方ID和消息内容'}), 400
+        
+    # 检查接收方是否存在
+    caregiver = DataStore.get_caregiver_by_id(recipient_id)
+    if not caregiver or not caregiver.is_approved:
+        return jsonify({'success': False, 'message': '接收方不存在或未通过审核'}), 400
+        
+    try:
+        message = DataStore.send_message({
+            'sender_id': g.user.get('user_id'),
+            'sender_type': 'user',
+            'recipient_id': recipient_id,
+            'recipient_type': 'caregiver',
+            'content': content
+        })
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'id': message.id,
+                'created_at': message.created_at.strftime('%Y-%m-%d %H:%M')
+            },
+            'message': '消息发送成功'
+        })
+    except Exception as e:
+        logger.error(f"发送消息失败: {e}")
+        return jsonify({'success': False, 'message': f'发送失败：{str(e)}'}), 500
+
 # --------------------------
-# 初始化数据库
+# 初始化数据库和示例数据
 # --------------------------
+def initialize_sample_data():
+    with app.app_context():
+        # 检查是否已有数据
+        if ServiceType.query.count() > 0:
+            print("示例数据已存在，跳过初始化")
+            return
+        
+        print("开始初始化示例数据...")
+        
+        # 添加服务类型
+        service_types = [
+            ServiceType(name="老年护理", description="为老年人提供日常照料和护理服务"),
+            ServiceType(name="母婴护理", description="为产妇和新生儿提供专业护理服务"),
+            ServiceType(name="医疗护理", description="提供专业医疗护理服务，包括术后护理等"),
+            ServiceType(name="康复护理", description="为需要康复的人士提供专业康复训练和护理")
+        ]
+        db.session.add_all(service_types)
+        db.session.commit()
+        print(f"已添加 {len(service_types)} 种服务类型")
+        
+        # 添加示例用户（修改phone字段）
+        user = User(
+            email="user@example.com",
+            name="张阿姨",
+            gender="女",
+            birth_date=date(1965, 8, 12),
+            address="北京市朝阳区建国路88号",
+            emergency_contact="李小明（儿子）",
+            phone="13800138000",  # 用户本人电话
+            emergency_contact_phone="13900139000",  # 紧急联系人电话
+            special_needs="本人需要定期进行康复护理，希望护工有相关经验，每周一、三、五上午需要服务。",
+            avatar_url="https://picsum.photos/id/64/120/120",
+            is_verified=True,
+            is_approved=True,
+            approved_at=datetime.now(timezone.utc)
+        )
+        user.set_password("123456")
+        db.session.add(user)
+        db.session.commit()
+        print(f"已添加示例用户: {user.name}")
+        
+        # 添加示例护工
+        caregiver1 = Caregiver(
+            name="李敏",
+            phone="13700137001",
+            gender="女",
+            age=45,
+            avatar_url="https://picsum.photos/id/26/120/120",
+            id_card="1101011978XXXX1234",
+            qualification="高级护理证书",
+            introduction="擅长老年日常护理、康复辅助，有耐心，责任心强，持有专业护理证书。",
+            experience_years=5,
+            hourly_rate=180.0,
+            rating=4.8,
+            review_count=126,
+            status="approved",
+            available=True,
+            is_approved=True,
+            approved_at=datetime.now(timezone.utc)
+        )
+        caregiver1.set_password("123456")
+        caregiver1.service_types = [service_types[0], service_types[3]]  # 老年护理、康复护理
+        
+        caregiver2 = Caregiver(
+            name="王芳",
+            phone="13700137002",
+            gender="女",
+            age=38,
+            avatar_url="https://picsum.photos/id/91/120/120",
+            id_card="1101021985XXXX5678",
+            qualification="高级母婴护理师证书",
+            introduction="专业母婴护理师，擅长新生儿照料、产后恢复指导，服务细致周到。",
+            experience_years=8,
+            hourly_rate=220.0,
+            rating=4.9,
+            review_count=98,
+            status="approved",
+            available=True,
+            is_approved=True,
+            approved_at=datetime.now(timezone.utc)
+        )
+        caregiver2.set_password("123456")
+        caregiver2.service_types = [service_types[1]]  # 母婴护理
+        
+        caregiver3 = Caregiver(
+            name="张伟",
+            phone="13700137003",
+            gender="男",
+            age=50,
+            avatar_url="https://picsum.photos/id/177/120/120",
+            id_card="1101031973XXXX9012",
+            qualification="护师资格证",
+            introduction="原医院护士，擅长术后护理、医疗辅助，熟悉各种医疗设备使用。",
+            experience_years=10,
+            hourly_rate=260.0,
+            rating=4.7,
+            review_count=76,
+            status="approved",
+            available=True,
+            is_approved=True,
+            approved_at=datetime.now(timezone.utc)
+        )
+        caregiver3.set_password("123456")
+        caregiver3.service_types = [service_types[2], service_types[3]]  # 医疗护理、康复护理
+        
+        db.session.add_all([caregiver1, caregiver2, caregiver3])
+        db.session.commit()
+        print(f"已添加 {3} 名护工")
+        
+        # 添加示例预约
+        appointment1 = Appointment(
+            user_id=user.id,
+            caregiver_id=caregiver1.id,
+            service_type="老年护理",
+            date=date(2023, 10, 15),
+            start_time=datetime.strptime("09:00", "%H:%M").time(),
+            end_time=datetime.strptime("11:00", "%H:%M").time(),
+            notes="请携带血压计",
+            status="confirmed"
+        )
+        
+        appointment2 = Appointment(
+            user_id=user.id,
+            caregiver_id=caregiver2.id,
+            service_type="母婴护理咨询",
+            date=date(2023, 10, 18),
+            start_time=datetime.strptime("14:00", "%H:%M").time(),
+            end_time=datetime.strptime("16:00", "%H:%M").time(),
+            status="pending"
+        )
+        
+        appointment3 = Appointment(
+            user_id=user.id,
+            caregiver_id=caregiver3.id,
+            service_type="术后护理",
+            date=date(2023, 10, 8),
+            start_time=datetime.strptime("10:00", "%H:%M").time(),
+            end_time=datetime.strptime("13:00", "%H:%M").time(),
+            status="completed"
+        )
+        
+        db.session.add_all([appointment1, appointment2, appointment3])
+        db.session.commit()
+        print(f"已添加 {3} 条预约记录")
+        
+        # 添加示例长期聘用
+        employment = Employment(
+            user_id=user.id,
+            caregiver_id=caregiver1.id,
+            service_type="老年护理",
+            start_date=date(2023, 9, 1),
+            frequency="每周3次",
+            duration_per_session="2小时",
+            status="active",
+            notes="主要提供日常照料和简单康复训练"
+        )
+        
+        db.session.add(employment)
+        db.session.commit()
+        print(f"已添加 {1} 条长期聘用记录")
+        
+        # 添加示例消息
+        message1 = Message(
+            sender_id=caregiver1.id,
+            sender_type="caregiver",
+            recipient_id=user.id,
+            recipient_type="user",
+            content="您好，我看到了您的预约请求，10月15日上午9点可以为您提供服务",
+            created_at=datetime(2023, 10, 10, 9, 15, tzinfo=timezone.utc)
+        )
+        
+        message2 = Message(
+            sender_id=user.id,
+            sender_type="user",
+            recipient_id=caregiver1.id,
+            recipient_type="caregiver",
+            content="好的，非常感谢！到时候需要准备什么吗？",
+            is_read=True,
+            created_at=datetime(2023, 10, 10, 9, 20, tzinfo=timezone.utc)
+        )
+        
+        message3 = Message(
+            sender_id=caregiver1.id,
+            sender_type="caregiver",
+            recipient_id=user.id,
+            recipient_type="user",
+            content="已确认您10月15日的预约，我会准时到达。请准备好您的医保卡和既往病史资料即可。",
+            created_at=datetime(2023, 10, 10, 9, 23, tzinfo=timezone.utc)
+        )
+        
+        db.session.add_all([message1, message2, message3])
+        db.session.commit()
+        print(f"已添加 {3} 条消息记录")
+        
+        print("示例数据初始化完成")
+
+# 创建数据库表并初始化示例数据
 with app.app_context():
     db.create_all()
+    # 初始化示例数据（仅在首次运行时执行）
+    initialize_sample_data()
 
 # --------------------------
 # 启动服务

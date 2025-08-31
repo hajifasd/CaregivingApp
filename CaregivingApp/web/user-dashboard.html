@@ -126,6 +126,7 @@
                         <p class="text-sm font-medium">张阿姨</p>
                         <p class="text-xs text-gray-500">普通用户</p>
                     </div>
+                        <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-primary">登出</button>
                 </div>
             </div>
         </header>
@@ -1333,11 +1334,20 @@
     <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-20 hidden md:hidden"></div>
     
     <script>
+        // 全局变量
+        let currentUser = null;
+        
         // 设置当前日期
         document.addEventListener('DOMContentLoaded', function() {
             const now = new Date();
             const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
             document.getElementById('current-date').textContent = now.toLocaleDateString('zh-CN', options);
+            
+            // 检查用户登录状态
+            checkUserLogin();
+            
+            // 加载用户仪表盘数据
+            loadDashboardData();
             
             // 侧边栏切换
             const sidebarToggle = document.getElementById('sidebar-toggle');
@@ -1439,6 +1449,246 @@
                     changeAvatarBtn.classList.add('hidden');
                     uploadAvatarBtn.classList.add('hidden');
                 });
+            }
+        });
+        
+        // ==================== 用户仪表盘功能函数 ====================
+        
+        // 检查用户登录状态
+        function checkUserLogin() {
+            const token = localStorage.getItem('user_token');
+            if (!token) {
+                alert('请先登录');
+                window.location.href = '/';
+                return;
+            }
+            
+            // 验证token有效性（这里简化处理，实际应该调用验证API）
+            currentUser = {
+                token: token,
+                // 可以从token中解析用户信息，或调用API获取
+            };
+        }
+        
+        // 加载仪表盘数据
+        async function loadDashboardData() {
+            try {
+                const token = localStorage.getItem('user_token');
+                if (!token) return;
+                
+                // 获取统计数据
+                const statsResponse = await fetch('/api/user/dashboard/stats', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (statsResponse.ok) {
+                    const statsData = await statsResponse.json();
+                    if (statsData.success) {
+                        updateDashboardStats(statsData.data);
+                    }
+                }
+                
+                // 获取预约列表
+                const appointmentsResponse = await fetch('/api/user/appointments?limit=5', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (appointmentsResponse.ok) {
+                    const appointmentsData = await appointmentsResponse.json();
+                    if (appointmentsData.success) {
+                        updateRecentAppointments(appointmentsData.data.appointments);
+                    }
+                }
+                
+            } catch (error) {
+                console.error('加载仪表盘数据失败:', error);
+            }
+        }
+        
+        // 更新统计数据
+        function updateDashboardStats(stats) {
+            // 更新待处理预约数量
+            const pendingElement = document.querySelector('.bg-white.rounded-xl.p-6.card-shadow:nth-child(1) h3');
+            if (pendingElement) {
+                pendingElement.textContent = stats.pending_appointments;
+            }
+            
+            // 更新当前聘用数量
+            const employmentElement = document.querySelector('.bg-white.rounded-xl.p-6.card-shadow:nth-child(2) h3');
+            if (employmentElement) {
+                employmentElement.textContent = stats.active_employments;
+            }
+            
+            // 更新未读消息数量
+            const messagesElement = document.querySelector('.bg-white.rounded-xl.p-6.card-shadow:nth-child(4) h3');
+            if (messagesElement) {
+                messagesElement.textContent = stats.unread_messages;
+            }
+        }
+        
+        // 更新近期预约
+        function updateRecentAppointments(appointments) {
+            const tbody = document.querySelector('#dashboard-content table tbody');
+            if (!tbody || appointments.length === 0) return;
+            
+            // 清空现有内容
+            tbody.innerHTML = '';
+            
+            // 添加预约数据
+            appointments.forEach(appointment => {
+                if (appointment.caregiver) {
+                    const row = document.createElement('tr');
+                    row.className = 'border-b border-gray-100 hover:bg-gray-50';
+                    row.innerHTML = `
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <img src="${appointment.caregiver.avatar_url || 'https://picsum.photos/id/26/50/50'}" alt="${appointment.caregiver.name}" class="w-10 h-10 rounded-full object-cover">
+                                <div>
+                                    <p class="font-medium">${appointment.caregiver.name}</p>
+                                    <p class="text-sm text-gray-500">ID: CG${appointment.caregiver.id.toString().padStart(8, '0')}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-sm">${appointment.service_type}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <p class="text-sm">${appointment.date}</p>
+                            <p class="text-sm text-gray-500">${appointment.start_time} - ${appointment.end_time}</p>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full">${getStatusText(appointment.status)}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <button class="text-primary hover:text-primary/80 text-sm mr-3">详情</button>
+                            <button class="text-danger hover:text-danger/80 text-sm">取消</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                }
+            });
+        }
+        
+        // 获取状态文本
+        function getStatusText(status) {
+            const statusMap = {
+                'pending': '待确认',
+                'confirmed': '已确认',
+                'completed': '已完成',
+                'cancelled': '已取消'
+            };
+            return statusMap[status] || status;
+        }
+        
+        // 加载护工列表数据
+        async function loadCaregivers() {
+            try {
+                const token = localStorage.getItem('user_token');
+                if (!token) return;
+                
+                // 这里可以调用护工列表API
+                // const response = await fetch('/api/caregivers', {
+                //     headers: { 'Authorization': `Bearer ${token}` }
+                // });
+                
+            } catch (error) {
+                console.error('加载护工列表失败:', error);
+            }
+        }
+        
+        // 加载预约列表数据
+        async function loadAppointments() {
+            try {
+                const token = localStorage.getItem('user_token');
+                if (!token) return;
+                
+                const response = await fetch('/api/user/appointments', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        updateAppointmentsTable(data.data.appointments);
+                    }
+                }
+                
+            } catch (error) {
+                console.error('加载预约列表失败:', error);
+            }
+        }
+        
+        // 更新预约表格
+        function updateAppointmentsTable(appointments) {
+            const tbody = document.querySelector('#appointments-content table tbody');
+            if (!tbody) return;
+            
+            // 清空现有内容
+            tbody.innerHTML = '';
+            
+            // 添加预约数据
+            appointments.forEach(appointment => {
+                if (appointment.caregiver) {
+                    const row = document.createElement('tr');
+                    row.className = 'border-b border-gray-100 hover:bg-gray-50';
+                    row.innerHTML = `
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <img src="${appointment.caregiver.avatar_url || 'https://picsum.photos/id/26/50/50'}" alt="${appointment.caregiver.name}" class="w-10 h-10 rounded-full object-cover">
+                                <div>
+                                    <p class="font-medium">${appointment.caregiver.name}</p>
+                                    <p class="text-sm text-gray-500">ID: CG${appointment.caregiver.id.toString().padStart(8, '0')}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-sm">${appointment.service_type}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <p class="text-sm">${appointment.date}</p>
+                            <p class="text-sm text-gray-500">${appointment.start_time} - ${appointment.end_time}</p>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-sm">2小时</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-sm font-medium">¥360</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full">${getStatusText(appointment.status)}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <button class="text-primary hover:text-primary/80 text-sm mr-3">详情</button>
+                            <button class="text-danger hover:text-danger/80 text-sm">取消</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                }
+            });
+        }
+        
+        // 页面切换时加载对应数据
+        document.addEventListener('click', function(e) {
+            if (e.target.matches('[data-target="appointments-content"]')) {
+                loadAppointments();
+            } else if (e.target.matches('[data-target="caregivers-content"]')) {
+                loadCaregivers();
+            }
+        });
+        
+        // 登出功能
+        document.addEventListener('click', function(e) {
+            if (e.target.matches('#logout-btn')) {
+                // 清除localStorage
+                localStorage.removeItem('user_token');
+                // 清除cookie
+                document.cookie = 'user_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+                // 跳转回首页
+                window.location.href = '/';
             }
         });
     </script>

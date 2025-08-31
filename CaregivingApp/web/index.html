@@ -180,36 +180,41 @@
                 一站式护工资源管理与就业数据分析平台<br>
                 支持管理员、用户、护工多角色协作
             </p>
+            <div class="mt-6">
+                <a href="/admin-login.html" class="inline-flex items-center gap-2 text-primary hover:text-primary/80 font-medium text-sm">
+                    <i class="fa fa-shield"></i>
+                    <span>管理员专用入口</span>
+                    <i class="fa fa-external-link text-xs"></i>
+                </a>
+            </div>
         </div>
 
         <!-- 右侧多端登录区 -->
         <div class="login-section">
             <div class="login-tabs">
-                <div class="login-tab active" data-target="admin-tab">管理员登录</div>
-                <div class="login-tab" data-target="user-tab">用户登录</div>
+                <div class="login-tab" data-target="admin-tab">管理员登录</div>
+                <div class="login-tab active" data-target="user-tab">用户登录</div>
                 <div class="login-tab" data-target="caregiver-tab">护工登录</div>
             </div>
 
             <!-- 管理员登录 -->
-            <div class="tab-content active" id="admin-tab">
+            <div class="tab-content" id="admin-tab">
                 <h2 class="tab-title">管理员端</h2>
-                <form id="admin-login-form">
-                    <div class="form-group">
-                        <label class="form-label">用户名</label>
-                        <input type="text" class="form-input" placeholder="请输入管理员账号" required>
-                        <div class="error-message" id="admin-username-error">请输入用户名</div>
+                <div class="text-center py-8">
+                    <div class="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                        <i class="fa fa-shield text-primary text-3xl"></i>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">密码</label>
-                        <input type="password" class="form-input" placeholder="请输入密码" required>
-                        <div class="error-message" id="admin-password-error">请输入密码</div>
+                    <h3 class="text-lg font-medium text-gray-800 mb-2">管理员专用登录</h3>
+                    <p class="text-gray-600 mb-6">请使用独立的管理员登录页面</p>
+                    <a href="/admin-login.html" class="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                        <i class="fa fa-external-link"></i>
+                        <span>前往管理员登录</span>
+                    </a>
                     </div>
-                    <button type="submit" class="btn btn-primary">登录管理员端</button>
-                </form>
             </div>
 
             <!-- 用户登录 -->
-            <div class="tab-content" id="user-tab">
+            <div class="tab-content active" id="user-tab">
                 <h2 class="tab-title">用户端</h2>
                 <form id="user-login-form">
                     <div class="form-group">
@@ -278,42 +283,7 @@
             return true;
         }
 
-        // 管理员登录处理
-        document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const usernameInput = document.querySelector('#admin-tab input[type="text"]');
-            const passwordInput = document.querySelector('#admin-tab input[type="password"]');
-            const usernameError = document.getElementById('admin-username-error');
-            const passwordError = document.getElementById('admin-password-error');
-            
-            // 验证输入
-            const isUsernameValid = validateInput(usernameInput, usernameError);
-            const isPasswordValid = validateInput(passwordInput, passwordError);
-            
-            if (isUsernameValid && isPasswordValid) {
-                try {
-                    const response = await fetch('/api/login/admin', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            username: usernameInput.value.trim(),
-                            password: passwordInput.value
-                        })
-                    });
-                    
-                    const data = await response.json();
-                    if (data.success) {
-                        localStorage.setItem('admin_token', data.data.token);
-                        window.location.href = '/admin-dashboard.html';
-                    } else {
-                        alert(data.message || '登录失败');
-                    }
-                } catch (error) {
-                    alert('网络错误，请稍后重试');
-                }
-            }
-        });
+        // 管理员登录已移至独立页面 /admin-login.html
 
         // 用户登录处理
         document.getElementById('user-login-form').addEventListener('submit', async (e) => {
@@ -342,6 +312,8 @@
                     const data = await response.json();
                     if (data.success) {
                         localStorage.setItem('user_token', data.data.token);
+                        // 同时存储到cookie，确保页面跳转时能携带token
+                        document.cookie = `user_token=${data.data.token}; path=/; max-age=7200`; // 2小时过期
                         window.location.href = '/user-dashboard.html';
                     } else {
                         alert(data.message || '登录失败');
@@ -378,6 +350,8 @@
                     const data = await response.json();
                     if (data.success) {
                         localStorage.setItem('caregiver_token', data.data.token);
+                        // 同时存储到cookie，确保页面跳转时能携带token
+                        document.cookie = `caregiver_token=${data.data.token}; path=/; max-age=7200`; // 2小时过期
                         window.location.href = '/caregiver-dashboard.html';
                     } else {
                         alert(data.message || '登录失败');

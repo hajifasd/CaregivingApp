@@ -1,3 +1,27 @@
+"""
+护工资源管理系统 - 后端主应用
+====================================
+
+主要功能：
+- 用户管理（注册、登录、审核）
+- 护工管理（注册、登录、审核）
+- 管理员功能（用户审核、数据分析）
+- 文件上传和管理
+- 职位数据分析
+
+技术栈：
+- Flask: Web框架
+- SQLAlchemy: ORM数据库操作
+- SQLite: 数据库
+- JWT: 用户认证
+- BeautifulSoup: 网页爬虫
+- bcrypt: 密码加密
+
+作者: AI Assistant
+创建时间: 2024
+"""
+
+# ==================== 导入依赖 ====================
 from flask import Flask, render_template, redirect, url_for, g, request, jsonify, session, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 import os
@@ -12,21 +36,26 @@ import uuid
 import bcrypt
 import logging
 
-# 配置
+# ==================== 系统配置 ====================
+# 基础目录配置
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# 明确指定web文件夹路径（假设与backend文件夹同级）
-WEB_FOLDER = os.path.join(os.path.dirname(BASE_DIR), 'web')
-UPLOAD_FOLDER = os.path.join(WEB_FOLDER, "uploads")  # 上传文件保存到web/uploads
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
-APP_SECRET = os.getenv("APP_SECRET", "caregiving-system-secret-key-2024")
-DATABASE_URI = 'sqlite:///{}'.format(os.path.join(BASE_DIR, "caregiving.db"))
+# 前端文件目录配置
+WEB_FOLDER = os.path.join(os.path.dirname(BASE_DIR), 'web')  # web文件夹路径
+UPLOAD_FOLDER = os.path.join(WEB_FOLDER, "uploads")          # 文件上传目录
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}   # 允许上传的文件类型
 
-# 初始化日志
+# 安全配置
+APP_SECRET = os.getenv("APP_SECRET", "caregiving-system-secret-key-2024")  # JWT密钥
+DATABASE_URI = 'sqlite:///{}'.format(os.path.join(BASE_DIR, "caregiving.db"))  # 数据库连接URI
+
+# ==================== 日志配置 ====================
+# 配置日志级别和格式
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# 验证web文件夹是否存在
+# ==================== 目录验证和创建 ====================
+# 验证web文件夹是否存在，不存在则自动创建
 if not os.path.exists(WEB_FOLDER):
     logger.error(f"web文件夹不存在: {WEB_FOLDER}")
     logger.error(f"请确保web文件夹与backend文件夹同级，或修改WEB_FOLDER路径配置")
@@ -37,7 +66,8 @@ if not os.path.exists(WEB_FOLDER):
     except Exception as e:
         logger.error(f"创建web文件夹失败: {str(e)}")
 
-# 初始化Flask应用
+# ==================== Flask应用初始化 ====================
+# 创建Flask应用实例
 app = Flask(
     __name__,
     static_folder=WEB_FOLDER,  # 静态文件目录（CSS、JS等）
@@ -45,17 +75,19 @@ app = Flask(
     template_folder=WEB_FOLDER # 模板文件目录（HTML文件）
 )
 
-# 应用配置
-app.config['SECRET_KEY'] = os.getenv("FLASK_SECRET_KEY", 'your_unique_secret_key')
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URI
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB文件限制
+# ==================== 应用配置 ====================
+# Flask应用配置参数
+app.config['SECRET_KEY'] = os.getenv("FLASK_SECRET_KEY", 'your_unique_secret_key')  # 会话密钥
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER                                          # 文件上传目录
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URI                                 # 数据库连接
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False                                 # 关闭SQLAlchemy修改跟踪
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024                                 # 文件上传大小限制(16MB)
 
-# 确保上传文件夹存在并具有正确权限
+# ==================== 上传目录权限检查 ====================
+# 确保上传文件夹存在并具有正确的读写权限
 try:
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-    # 检查文件夹是否可写
+    # 检查文件夹是否可写（创建测试文件）
     test_file = os.path.join(UPLOAD_FOLDER, "test_write_permission.tmp")
     with open(test_file, "w") as f:
         f.write("test")
@@ -64,32 +96,58 @@ try:
 except Exception as e:
     logger.error(f"上传文件夹创建或权限检查失败: {str(e)}")
 
-# 初始化数据库
+# ==================== 数据库初始化 ====================
+# 初始化SQLAlchemy数据库连接
 db = SQLAlchemy(app)
 
-# --------------------------
-# 数据模型
-# --------------------------
+# ==================== 数据模型定义 ====================
+# 用户数据模型 - 存储普通用户信息
 class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(256), nullable=False)
-    id_file = db.Column(db.String(200))  # 用户身份证文件
-    is_approved = db.Column(db.Boolean, default=False)  # 是否审核通过
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
-    approved_at = db.Column(db.DateTime, index=True)
+    """用户数据模型
     
-    # 扩展用户信息字段
-    name = db.Column(db.String(100))
-    gender = db.Column(db.String(10))
-    birth_date = db.Column(db.Date)
-    address = db.Column(db.String(200))
-    emergency_contact = db.Column(db.String(100))  # 紧急联系人姓名
-    phone = db.Column(db.String(20))  # 用户本人电话（原emergency_phone修改为phone）
-    emergency_contact_phone = db.Column(db.String(20))  # 新增：紧急联系人电话
-    special_needs = db.Column(db.Text)
-    avatar_url = db.Column(db.String(200))
-    is_verified = db.Column(db.Boolean, default=False)
+    字段说明：
+    - id: 用户唯一标识
+    - email: 用户邮箱（唯一）
+    - password_hash: 加密后的密码
+    - id_file: 身份证文件路径
+    - is_approved: 是否通过审核
+    - created_at: 创建时间
+    - approved_at: 审核通过时间
+    - name: 用户姓名
+    - gender: 性别
+    - birth_date: 出生日期
+    - address: 地址
+    - emergency_contact: 紧急联系人姓名
+    - phone: 用户本人电话
+    - emergency_contact_phone: 紧急联系人电话
+    - special_needs: 特殊需求
+    - avatar_url: 头像URL
+    - is_verified: 是否已验证
+    """
+    __tablename__ = 'user'  # 指定表名
+    
+    # 基础字段
+    id = db.Column(db.Integer, primary_key=True)                    # 主键ID
+    email = db.Column(db.String(120), unique=True, nullable=False)  # 邮箱（唯一，必填）
+    password_hash = db.Column(db.String(256), nullable=False)       # 密码哈希（必填）
+    id_file = db.Column(db.String(200))                            # 身份证文件路径
+    
+    # 审核状态字段
+    is_approved = db.Column(db.Boolean, default=False)              # 是否审核通过
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)  # 创建时间
+    approved_at = db.Column(db.DateTime, index=True)                # 审核通过时间
+    
+    # 用户信息字段
+    name = db.Column(db.String(100))                               # 用户姓名
+    gender = db.Column(db.String(10))                              # 性别
+    birth_date = db.Column(db.Date)                                # 出生日期
+    address = db.Column(db.String(200))                            # 地址
+    emergency_contact = db.Column(db.String(100))                  # 紧急联系人姓名
+    phone = db.Column(db.String(20))                               # 用户本人电话
+    emergency_contact_phone = db.Column(db.String(20))             # 紧急联系人电话
+    special_needs = db.Column(db.Text)                             # 特殊需求
+    avatar_url = db.Column(db.String(200))                         # 头像URL
+    is_verified = db.Column(db.Boolean, default=False)             # 是否已验证
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -117,29 +175,59 @@ class User(db.Model):
         self.password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 class Caregiver(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    phone = db.Column(db.String(20), unique=True, nullable=False)
-    id_file = db.Column(db.String(200), nullable=False)  # 不允许为空
-    cert_file = db.Column(db.String(200), nullable=False)  # 不允许为空
-    password_hash = db.Column(db.String(256), nullable=False)
-    is_approved = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
-    approved_at = db.Column(db.DateTime, index=True)
+    """护工数据模型
     
-    # 扩展护工信息字段
-    gender = db.Column(db.String(10))
-    age = db.Column(db.Integer)
-    avatar_url = db.Column(db.String(200))
-    id_card = db.Column(db.String(18))  # 身份证号
-    qualification = db.Column(db.String(100))  # 资格证书
-    introduction = db.Column(db.Text)  # 个人介绍
-    experience_years = db.Column(db.Integer)  # 工作年限
-    hourly_rate = db.Column(db.Float)  # 时薪
-    rating = db.Column(db.Float, default=0)  # 评分
-    review_count = db.Column(db.Integer, default=0)  # 评价数量
-    status = db.Column(db.String(20), default="pending")  # 状态
-    available = db.Column(db.Boolean, default=True)  # 是否可用
+    字段说明：
+    - id: 护工唯一标识
+    - name: 护工姓名（必填）
+    - phone: 手机号（唯一，必填）
+    - id_file: 身份证文件路径（必填）
+    - cert_file: 证书文件路径（必填）
+    - password_hash: 加密后的密码（必填）
+    - is_approved: 是否通过审核
+    - created_at: 创建时间
+    - approved_at: 审核通过时间
+    - gender: 性别
+    - age: 年龄
+    - avatar_url: 头像URL
+    - id_card: 身份证号
+    - qualification: 资格证书
+    - introduction: 个人介绍
+    - experience_years: 工作年限
+    - hourly_rate: 时薪
+    - rating: 评分
+    - review_count: 评价数量
+    - status: 状态
+    - available: 是否可用
+    """
+    __tablename__ = 'caregiver'  # 指定表名
+    
+    # 基础字段
+    id = db.Column(db.Integer, primary_key=True)                    # 主键ID
+    name = db.Column(db.String(100), nullable=False)                # 护工姓名（必填）
+    phone = db.Column(db.String(20), unique=True, nullable=False)   # 手机号（唯一，必填）
+    id_file = db.Column(db.String(200), nullable=False)             # 身份证文件路径（必填）
+    cert_file = db.Column(db.String(200), nullable=False)           # 证书文件路径（必填）
+    password_hash = db.Column(db.String(256), nullable=False)       # 密码哈希（必填）
+    
+    # 审核状态字段
+    is_approved = db.Column(db.Boolean, default=False)              # 是否审核通过
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)  # 创建时间
+    approved_at = db.Column(db.DateTime, index=True)                # 审核通过时间
+    
+    # 护工信息字段
+    gender = db.Column(db.String(10))                               # 性别
+    age = db.Column(db.Integer)                                     # 年龄
+    avatar_url = db.Column(db.String(200))                          # 头像URL
+    id_card = db.Column(db.String(18))                             # 身份证号
+    qualification = db.Column(db.String(100))                       # 资格证书
+    introduction = db.Column(db.Text)                               # 个人介绍
+    experience_years = db.Column(db.Integer)                        # 工作年限
+    hourly_rate = db.Column(db.Float)                               # 时薪
+    rating = db.Column(db.Float, default=0)                         # 评分
+    review_count = db.Column(db.Integer, default=0)                 # 评价数量
+    status = db.Column(db.String(20), default="pending")            # 状态
+    available = db.Column(db.Boolean, default=True)                 # 是否可用
     
     # 服务类型多对多关系
     service_types = db.relationship('ServiceType', secondary='caregiver_service', backref='caregivers')
@@ -182,131 +270,289 @@ class Caregiver(db.Model):
         self.password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 class ServiceType(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), unique=True, nullable=False)
-    description = db.Column(db.String(200))
+    """服务类型数据模型
+    
+    字段说明：
+    - id: 服务类型唯一标识
+    - name: 服务类型名称（唯一，必填）
+    - description: 服务类型描述
+    """
+    __tablename__ = 'service_type'
+    
+    id = db.Column(db.Integer, primary_key=True)                    # 主键ID
+    name = db.Column(db.String(50), unique=True, nullable=False)    # 服务类型名称（唯一，必填）
+    description = db.Column(db.String(200))                         # 服务类型描述
 
+# ==================== 关联表 ====================
 # 护工与服务类型的多对多关联表
 caregiver_service = db.Table('caregiver_service',
-    db.Column('caregiver_id', db.Integer, db.ForeignKey('caregiver.id'), primary_key=True),
-    db.Column('service_type_id', db.Integer, db.ForeignKey('service_type.id'), primary_key=True)
+    db.Column('caregiver_id', db.Integer, db.ForeignKey('caregiver.id'), primary_key=True),      # 护工ID
+    db.Column('service_type_id', db.Integer, db.ForeignKey('service_type.id'), primary_key=True) # 服务类型ID
 )
 
 class JobData(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    job_name = db.Column(db.String(100))
-    company = db.Column(db.String(100))
-    city = db.Column(db.String(20))
-    salary_low = db.Column(db.Integer)
-    salary_high = db.Column(db.Integer)
-    experience = db.Column(db.String(50))
-    education = db.Column(db.String(20))
-    skills = db.Column(db.String(200))
-    crawl_time = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    """职位数据模型 - 存储从招聘网站爬取的职位信息
+    
+    字段说明：
+    - id: 职位唯一标识
+    - job_name: 职位名称
+    - company: 公司名称
+    - city: 城市
+    - salary_low: 最低薪资
+    - salary_high: 最高薪资
+    - experience: 经验要求
+    - education: 学历要求
+    - skills: 技能要求
+    - crawl_time: 爬取时间
+    """
+    __tablename__ = 'job_data'
+    
+    id = db.Column(db.Integer, primary_key=True)                    # 主键ID
+    job_name = db.Column(db.String(100))                            # 职位名称
+    company = db.Column(db.String(100))                             # 公司名称
+    city = db.Column(db.String(20))                                 # 城市
+    salary_low = db.Column(db.Integer)                              # 最低薪资
+    salary_high = db.Column(db.Integer)                             # 最高薪资
+    experience = db.Column(db.String(50))                           # 经验要求
+    education = db.Column(db.String(20))                            # 学历要求
+    skills = db.Column(db.String(200))                              # 技能要求
+    crawl_time = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))  # 爬取时间
 
 class AnalysisResult(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    type = db.Column(db.String(50))
-    result = db.Column(db.JSON)
-    create_time = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    """数据分析结果模型 - 存储职位数据分析的结果
+    
+    字段说明：
+    - id: 结果唯一标识
+    - type: 分析类型（如：salary_by_city, skill_counts等）
+    - result: 分析结果（JSON格式）
+    - create_time: 创建时间
+    """
+    __tablename__ = 'analysis_result'
+    
+    id = db.Column(db.Integer, primary_key=True)                    # 主键ID
+    type = db.Column(db.String(50))                                 # 分析类型
+    result = db.Column(db.JSON)                                      # 分析结果（JSON格式）
+    create_time = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))  # 创建时间
 
-# 预约模型
+# ==================== 业务模型 ====================
 class Appointment(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    caregiver_id = db.Column(db.Integer, db.ForeignKey('caregiver.id'), nullable=False)
-    service_type = db.Column(db.String(50), nullable=False)
-    date = db.Column(db.Date, nullable=False)
-    start_time = db.Column(db.Time, nullable=False)
-    end_time = db.Column(db.Time, nullable=False)
-    notes = db.Column(db.Text)
-    status = db.Column(db.String(20), default="pending")  # pending, confirmed, completed, cancelled
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    """预约模型 - 存储用户与护工的预约信息
     
-    # 关联
-    user = db.relationship('User', backref=db.backref('appointments', lazy=True))
-    caregiver = db.relationship('Caregiver', backref=db.backref('appointments', lazy=True))
+    字段说明：
+    - id: 预约唯一标识
+    - user_id: 用户ID（外键关联）
+    - caregiver_id: 护工ID（外键关联）
+    - service_type: 服务类型
+    - date: 预约日期
+    - start_time: 开始时间
+    - end_time: 结束时间
+    - notes: 备注信息
+    - status: 预约状态（pending待确认, confirmed已确认, completed已完成, cancelled已取消）
+    - created_at: 创建时间
+    """
+    __tablename__ = 'appointment'
+    
+    id = db.Column(db.Integer, primary_key=True)                    # 主键ID
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)        # 用户ID（必填）
+    caregiver_id = db.Column(db.Integer, db.ForeignKey('caregiver.id'), nullable=False)  # 护工ID（必填）
+    service_type = db.Column(db.String(50), nullable=False)         # 服务类型（必填）
+    date = db.Column(db.Date, nullable=False)                       # 预约日期（必填）
+    start_time = db.Column(db.Time, nullable=False)                 # 开始时间（必填）
+    end_time = db.Column(db.Time, nullable=False)                   # 结束时间（必填）
+    notes = db.Column(db.Text)                                      # 备注信息
+    status = db.Column(db.String(20), default="pending")            # 预约状态
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))  # 创建时间
+    
+    # 关联关系
+    user = db.relationship('User', backref=db.backref('appointments', lazy=True))           # 用户关联
+    caregiver = db.relationship('Caregiver', backref=db.backref('appointments', lazy=True)) # 护工关联
 
-# 长期聘用模型
 class Employment(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    caregiver_id = db.Column(db.Integer, db.ForeignKey('caregiver.id'), nullable=False)
-    service_type = db.Column(db.String(50), nullable=False)
-    start_date = db.Column(db.Date, nullable=False)
-    end_date = db.Column(db.Date)  # 可以为空，表示长期有效
-    frequency = db.Column(db.String(50))  # 每周几次
-    duration_per_session = db.Column(db.String(20))  # 每次时长
-    status = db.Column(db.String(20), default="active")  # active, terminated, completed
-    notes = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    """长期聘用模型 - 存储用户与护工的长期聘用关系
     
-    # 关联
-    user = db.relationship('User', backref=db.backref('employments', lazy=True))
-    caregiver = db.relationship('Caregiver', backref=db.backref('employments', lazy=True))
+    字段说明：
+    - id: 聘用唯一标识
+    - user_id: 用户ID（外键关联）
+    - caregiver_id: 护工ID（外键关联）
+    - service_type: 服务类型
+    - start_date: 开始日期
+    - end_date: 结束日期（可为空，表示长期有效）
+    - frequency: 服务频率（每周几次）
+    - duration_per_session: 每次服务时长
+    - status: 聘用状态（active活跃, terminated终止, completed完成）
+    - notes: 备注信息
+    - created_at: 创建时间
+    """
+    __tablename__ = 'employment'
+    
+    id = db.Column(db.Integer, primary_key=True)                    # 主键ID
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)        # 用户ID（必填）
+    caregiver_id = db.Column(db.Integer, db.ForeignKey('caregiver.id'), nullable=False)  # 护工ID（必填）
+    service_type = db.Column(db.String(50), nullable=False)         # 服务类型（必填）
+    start_date = db.Column(db.Date, nullable=False)                 # 开始日期（必填）
+    end_date = db.Column(db.Date)                                   # 结束日期（可为空，表示长期有效）
+    frequency = db.Column(db.String(50))                            # 服务频率（每周几次）
+    duration_per_session = db.Column(db.String(20))                 # 每次服务时长
+    status = db.Column(db.String(20), default="active")             # 聘用状态
+    notes = db.Column(db.Text)                                      # 备注信息
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))  # 创建时间
+    
+    # 关联关系
+    user = db.relationship('User', backref=db.backref('employments', lazy=True))           # 用户关联
+    caregiver = db.relationship('Caregiver', backref=db.backref('employments', lazy=True)) # 护工关联
 
-# 消息模型
 class Message(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    sender_id = db.Column(db.Integer, nullable=False)
-    sender_type = db.Column(db.String(20), nullable=False)  # user, caregiver, admin
-    recipient_id = db.Column(db.Integer, nullable=False)
-    recipient_type = db.Column(db.String(20), nullable=False)  # user, caregiver, admin
-    content = db.Column(db.Text, nullable=False)
-    is_read = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    """消息模型 - 存储用户、护工、管理员之间的消息
+    
+    字段说明：
+    - id: 消息唯一标识
+    - sender_id: 发送者ID
+    - sender_type: 发送者类型（user用户, caregiver护工, admin管理员）
+    - recipient_id: 接收者ID
+    - recipient_type: 接收者类型（user用户, caregiver护工, admin管理员）
+    - content: 消息内容
+    - is_read: 是否已读
+    - created_at: 创建时间
+    """
+    __tablename__ = 'message'
+    
+    id = db.Column(db.Integer, primary_key=True)                    # 主键ID
+    sender_id = db.Column(db.Integer, nullable=False)               # 发送者ID（必填）
+    sender_type = db.Column(db.String(20), nullable=False)          # 发送者类型（必填）
+    recipient_id = db.Column(db.Integer, nullable=False)            # 接收者ID（必填）
+    recipient_type = db.Column(db.String(20), nullable=False)       # 接收者类型（必填）
+    content = db.Column(db.Text, nullable=False)                    # 消息内容（必填）
+    is_read = db.Column(db.Boolean, default=False)                  # 是否已读
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))  # 创建时间
 
-# --------------------------
-# 辅助函数
-# --------------------------
+# ==================== 辅助函数 ====================
 def allowed_file(filename: str) -> bool:
-    """检查文件是否为允许的格式"""
+    """检查文件是否为允许的格式
+    
+    Args:
+        filename: 文件名
+        
+    Returns:
+        bool: 是否为允许的文件格式
+    """
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def hash_password(password: str) -> str:
+    """使用bcrypt加密密码
+    
+    Args:
+        password: 明文密码
+        
+    Returns:
+        str: 加密后的密码哈希
+    """
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 def verify_password(hashed_password: str, input_password: str) -> bool:
+    """验证密码是否正确
+    
+    Args:
+        hashed_password: 存储的密码哈希
+        input_password: 输入的密码
+        
+    Returns:
+        bool: 密码是否正确
+    """
     return bcrypt.checkpw(input_password.encode(), hashed_password.encode())
 
 def generate_token(user_id: int, user_type: str = 'user') -> str:
+    """生成JWT认证令牌
+    
+    Args:
+        user_id: 用户ID
+        user_type: 用户类型（user, caregiver, admin）
+        
+    Returns:
+        str: JWT令牌字符串
+    """
     payload = {
         "user_id": user_id,
         "user_type": user_type,
-        "exp": datetime.now(timezone.utc) + timedelta(hours=2)
+        "exp": datetime.now(timezone.utc) + timedelta(hours=2)  # 2小时过期
     }
     return jwt.encode(payload, APP_SECRET, algorithm="HS256")
 
 def verify_token(token: str) -> Optional[Dict[str, Any]]:
+    """验证JWT令牌
+    
+    Args:
+        token: JWT令牌字符串
+        
+    Returns:
+        Optional[Dict]: 解码后的载荷信息，验证失败返回None
+    """
     try:
         return jwt.decode(token, APP_SECRET, algorithms=["HS256"])
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         return None
 
-# 请求钩子：验证登录状态
+# ==================== 请求钩子 ====================
 @app.before_request
 def check_login_status():
-    g.user = None
+    """请求前钩子：验证用户登录状态
+    
+    功能：
+    1. 检查请求是否需要登录验证
+    2. 验证JWT令牌的有效性
+    3. 将用户信息存储到g.user中供后续使用
+    
+    公开路由（无需登录）：
+    - index: 首页
+    - static: 静态文件
+    - user_register_page: 用户注册页面
+    - caregiver_register_page: 护工注册页面
+    """
+    g.user = None  # 初始化用户信息
+    
+    # 定义公开路由（无需登录验证）
     public_routes = [
-        'index', 'admin_login_page', 'static',
-        'user_register_page', 'caregiver_register_page',
-        'user_login_page', 'caregiver_login_page'
+        'index', 'static',  # 首页和静态文件
+        'admin_login_page',  # 管理员登录页面
+        'user_register_page', 'caregiver_register_page'  # 注册页面
     ]
+    
+    # 如果是公开路由，直接放行
     if request.endpoint in public_routes:
         return
 
+    # 获取认证令牌（优先从请求头获取，其次从session获取，最后从cookie获取）
     token = request.headers.get('Authorization') or session.get('token')
-    if token and token.startswith('Bearer '):
-        payload = verify_token(token[7:])
+    
+    # 如果没有Bearer前缀，尝试从cookie获取
+    if not token:
+        token = request.cookies.get('user_token') or request.cookies.get('admin_token') or request.cookies.get('caregiver_token')
+    
+    # 验证令牌格式和有效性
+    if token:
+        # 如果token没有Bearer前缀，直接验证
+        if token.startswith('Bearer '):
+            payload = verify_token(token[7:])  # 去掉"Bearer "前缀
+        else:
+            payload = verify_token(token)  # 直接验证token
+            
         if payload:
-            g.user = payload
+            g.user = payload  # 将用户信息存储到g.user中
 
-# --------------------------
-# 数据操作工具类
-# --------------------------
+# ==================== 数据操作工具类 ====================
 class DataStore:
-    # 用户相关操作
+    """数据操作工具类
+    
+    提供用户、护工、管理员等数据的增删改查操作
+    所有方法都是静态方法，无需实例化即可调用
+    
+    主要功能：
+    - 用户管理：注册、查询、审核
+    - 护工管理：注册、查询、审核
+    - 数据分析：职位数据爬取和分析
+    """
+    
+    # ==================== 用户相关操作 ====================
     @staticmethod
     def add_user(email: str, password: str, id_file: str = None) -> User:
         user = User(
@@ -769,11 +1015,18 @@ def crawl_page(page: int, city_code: str) -> None:
             print(f"爬取第{page}页失败：{str(e)}")
             db.session.rollback()
 
-# --------------------------
-# 页面路由
-# --------------------------
+# ==================== 页面路由 ====================
 @app.route('/')
 def index():
+    """网站首页
+    
+    功能：
+    - 提供多角色登录界面（管理员、用户、护工）
+    - 展示系统介绍和功能说明
+    
+    Returns:
+        str: 渲染后的首页HTML
+    """
     # 检查模板文件是否存在
     template_path = os.path.join(WEB_FOLDER, 'index.html')
     if not os.path.exists(template_path):
@@ -781,8 +1034,34 @@ def index():
         return "网站首页模板不存在", 500
     return render_template('index.html')
 
+@app.route('/admin-login.html')
+def admin_login_page():
+    """管理员登录页面
+    
+    功能：
+    - 提供管理员专用登录界面
+    - 独立的管理员认证入口
+    
+    Returns:
+        str: 渲染后的管理员登录页面HTML
+    """
+    template_path = os.path.join(WEB_FOLDER, 'admin-login.html')
+    if not os.path.exists(template_path):
+        logger.error(f"admin-login.html模板文件不存在: {template_path}")
+        return "管理员登录模板不存在", 500
+    return render_template('admin-login.html')
+
 @app.route('/user-register.html')
 def user_register_page():
+    """用户注册页面
+    
+    功能：
+    - 提供用户注册表单
+    - 支持手机号+姓名注册方式
+    
+    Returns:
+        str: 渲染后的用户注册页面HTML
+    """
     template_path = os.path.join(WEB_FOLDER, 'user-register.html')
     if not os.path.exists(template_path):
         logger.error(f"user-register.html模板文件不存在: {template_path}")
@@ -791,6 +1070,15 @@ def user_register_page():
 
 @app.route('/caregiver-register.html')
 def caregiver_register_page():
+    """护工注册页面
+    
+    功能：
+    - 提供护工注册表单
+    - 需要上传身份证和证书文件
+    
+    Returns:
+        str: 渲染后的护工注册页面HTML
+    """
     # 检查模板文件是否存在
     template_path = os.path.join(WEB_FOLDER, 'caregiver-register.html')
     if not os.path.exists(template_path):
@@ -800,22 +1088,36 @@ def caregiver_register_page():
 
 @app.route('/admin-dashboard.html')
 def admin_dashboard():
+    """管理员仪表盘页面
+    
+    功能：
+    - 显示系统整体统计信息
+    - 包括用户数量、护工数量、职位数据等
+    - 需要管理员权限访问
+    
+    Returns:
+        str: 渲染后的管理员仪表盘HTML
+    """
+    # 权限验证：只有管理员可以访问
     if not (g.user and g.user.get('user_type') == 'admin'):
         return redirect(url_for('index'))
 
+    # 检查模板文件是否存在
     template_path = os.path.join(WEB_FOLDER, 'admin-dashboard.html')
     if not os.path.exists(template_path):
         logger.error(f"admin-dashboard.html模板文件不存在: {template_path}")
         return "管理员面板模板不存在", 500
 
-    user_count = User.query.count()
-    approved_user_count = User.query.filter_by(is_approved=True).count()
-    pending_user_count = User.query.filter_by(is_approved=False).count()
+    # 获取系统统计数据
+    user_count = User.query.count()                                    # 总用户数
+    approved_user_count = User.query.filter_by(is_approved=True).count()    # 已审核用户数
+    pending_user_count = User.query.filter_by(is_approved=False).count()    # 待审核用户数
 
-    approved_caregiver_count = Caregiver.query.filter_by(is_approved=True).count()
-    unapproved_caregiver_count = Caregiver.query.filter_by(is_approved=False).count()
-    job_count = JobData.query.count()
+    approved_caregiver_count = Caregiver.query.filter_by(is_approved=True).count()      # 已审核护工数
+    unapproved_caregiver_count = Caregiver.query.filter_by(is_approved=False).count()  # 待审核护工数
+    job_count = JobData.query.count()                                  # 职位数据总数
 
+    # 渲染模板并传递数据
     return render_template(
         'admin-dashboard.html',
         user_count=user_count,
@@ -937,34 +1239,56 @@ def admin_login():
         })
     return jsonify({'success': False, 'message': '用户名或密码错误'}), 401
 
-# 用户身份证上传接口
 @app.route('/api/user/upload-id', methods=['POST'])
 def upload_user_id():
+    """用户身份证上传接口
+    
+    功能：
+    - 接收用户上传的身份证文件
+    - 验证文件格式和内容
+    - 生成唯一文件名并保存到服务器
+    - 返回文件路径供后续使用
+    
+    请求参数：
+    - id-file: 身份证文件（multipart/form-data）
+    
+    返回格式：
+    - success: 是否成功
+    - data.id_file: 保存后的文件名
+    - message: 操作结果消息
+    """
+    # 检查是否上传了文件
     if 'id-file' not in request.files:
         return jsonify({'success': False, 'message': '请上传身份证文件'}), 400
 
     id_file = request.files['id-file']
 
+    # 验证文件名不为空
     if id_file.filename == '':
         return jsonify({'success': False, 'message': '文件不能为空'}), 400
 
+    # 验证文件格式
     if not allowed_file(id_file.filename):
         return jsonify({'success': False, 'message': '仅支持png、jpg、jpeg、gif、pdf格式'}), 400
 
+    # 验证文件内容不为空
     if id_file.content_length == 0:
         return jsonify({'success': False, 'message': '文件内容不能为空'}), 400
 
     try:
+        # 生成唯一文件名
         file_ext = id_file.filename.rsplit('.', 1)[1].lower()
         filename = f"user_id_{uuid.uuid4().hex}.{file_ext}"
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         
+        # 保存文件到服务器
         id_file.save(file_path)
         
         # 验证文件是否保存成功
         if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
             raise Exception("文件保存失败")
         
+        # 返回成功结果
         return jsonify({
             'success': True,
             'data': {'id_file': filename},
@@ -1091,13 +1415,21 @@ def user_register():
 @app.route('/api/user/login', methods=['POST'])
 def user_login():
     data = request.json
-    email = data.get('email')
+    account = data.get('email')  # 前端可能发送email字段，但实际是手机号
     password = data.get('password')
 
-    if not email or not password:
-        return jsonify({'success': False, 'message': '请输入邮箱和密码'}), 400
+    if not account or not password:
+        return jsonify({'success': False, 'message': '请输入账号和密码'}), 400
 
-    user = DataStore.verify_user(email, password)
+    # 尝试通过邮箱查找用户
+    user = DataStore.verify_user(account, password)
+    
+    # 如果邮箱登录失败，尝试通过手机号查找用户
+    if not user:
+        user_by_phone = DataStore.get_user_by_phone(account)
+        if user_by_phone and user_by_phone.is_approved and verify_password(user_by_phone.password_hash, password):
+            user = user_by_phone
+    
     if user:
         token = generate_token(user.id, 'user')
         return jsonify({
@@ -1105,10 +1437,10 @@ def user_login():
             'data': {'token': token, 'user': user.to_dict()},
             'message': '登录成功'
         })
-    elif DataStore.get_user_by_email(email) and not user:
+    elif (DataStore.get_user_by_email(account) or DataStore.get_user_by_phone(account)) and not user:
         return jsonify({'success': False, 'message': '您的申请尚未通过审核'}), 403
     else:
-        return jsonify({'success': False, 'message': '邮箱或密码错误'}), 401
+        return jsonify({'success': False, 'message': '账号或密码错误'}), 401
 
 # 获取用户个人信息
 @app.route('/api/user/profile', methods=['GET'])
@@ -1610,40 +1942,7 @@ def create_appointment():
         logger.error(f"创建预约失败: {e}")
         return jsonify({'success': False, 'message': f'创建预约失败：{str(e)}'}), 500
 
-# 获取用户预约列表
-@app.route('/api/user/appointments', methods=['GET'])
-def get_user_appointments():
-    if not g.user or g.user.get('user_type') != 'user':
-        return jsonify({'success': False, 'message': '请先登录'}), 401
-        
-    status = request.args.get('status')
-    appointments = DataStore.get_user_appointments(g.user.get('user_id'), status)
-    
-    # 格式化返回数据
-    result = []
-    for appt in appointments:
-        caregiver = DataStore.get_caregiver_by_id(appt.caregiver_id)
-        result.append({
-            'id': appt.id,
-            'caregiver': {
-                'id': caregiver.id,
-                'name': caregiver.name,
-                'avatar_url': caregiver.avatar_url
-            } if caregiver else None,
-            'service_type': appt.service_type,
-            'date': appt.date.strftime('%Y-%m-%d'),
-            'start_time': appt.start_time.strftime('%H:%M'),
-            'end_time': appt.end_time.strftime('%H:%M'),
-            'status': appt.status,
-            'notes': appt.notes,
-            'created_at': appt.created_at.strftime('%Y-%m-%d %H:%M')
-        })
-        
-    return jsonify({
-        'success': True,
-        'data': result,
-        'count': len(result)
-    })
+# 获取用户预约列表 - 已移动到用户仪表盘API部分
 
 # 取消预约接口
 @app.route('/api/appointments/<int:appointment_id>/cancel', methods=['PUT'])
@@ -1738,41 +2037,7 @@ def create_employment():
         logger.error(f"创建长期聘用失败: {e}")
         return jsonify({'success': False, 'message': f'创建失败：{str(e)}'}), 500
 
-# 获取用户聘用列表
-@app.route('/api/user/employments', methods=['GET'])
-def get_user_employments():
-    if not g.user or g.user.get('user_type') != 'user':
-        return jsonify({'success': False, 'message': '请先登录'}), 401
-        
-    status = request.args.get('status')
-    employments = DataStore.get_user_employments(g.user.get('user_id'), status)
-    
-    # 格式化返回数据
-    result = []
-    for emp in employments:
-        caregiver = DataStore.get_caregiver_by_id(emp.caregiver_id)
-        result.append({
-            'id': emp.id,
-            'caregiver': {
-                'id': caregiver.id,
-                'name': caregiver.name,
-                'avatar_url': caregiver.avatar_url
-            } if caregiver else None,
-            'service_type': emp.service_type,
-            'start_date': emp.start_date.strftime('%Y-%m-%d'),
-            'end_date': emp.end_date.strftime('%Y-%m-%d') if emp.end_date else None,
-            'frequency': emp.frequency,
-            'duration_per_session': emp.duration_per_session,
-            'status': emp.status,
-            'notes': emp.notes,
-            'created_at': emp.created_at.strftime('%Y-%m-%d %H:%M')
-        })
-        
-    return jsonify({
-        'success': True,
-        'data': result,
-        'count': len(result)
-    })
+# 获取用户聘用列表 - 已移动到用户仪表盘API部分
 
 # 获取聘用详情
 @app.route('/api/employments/<int:employment_id>', methods=['GET'])
@@ -1883,43 +2148,7 @@ def update_employment_schedule(employment_id):
         })
     return jsonify({'success': False, 'message': '操作失败'}), 500
 
-# 获取消息列表
-@app.route('/api/user/messages', methods=['GET'])
-def get_user_messages():
-    if not g.user or g.user.get('user_type') != 'user':
-        return jsonify({'success': False, 'message': '请先登录'}), 401
-        
-    messages = DataStore.get_user_messages(g.user.get('user_id'))
-    
-    # 格式化返回数据
-    result = []
-    for msg in messages:
-        # 获取发送方信息
-        sender = None
-        if msg.sender_type == 'caregiver':
-            caregiver = DataStore.get_caregiver_by_id(msg.sender_id)
-            if caregiver:
-                sender = {
-                    'id': caregiver.id,
-                    'name': caregiver.name,
-                    'avatar_url': caregiver.avatar_url,
-                    'type': 'caregiver'
-                }
-        
-        result.append({
-            'id': msg.id,
-            'sender': sender,
-            'content': msg.content,
-            'is_read': msg.is_read,
-            'created_at': msg.created_at.strftime('%Y-%m-%d %H:%M')
-        })
-        
-    return jsonify({
-        'success': True,
-        'data': result,
-        'unread_count': sum(1 for msg in messages if not msg.is_read),
-        'total_count': len(result)
-    })
+# 获取消息列表 - 已移动到用户仪表盘API部分
 
 # 获取消息详情
 @app.route('/api/user/messages/<int:message_id>', methods=['GET'])
@@ -2201,6 +2430,215 @@ def initialize_sample_data():
         print(f"已添加 {3} 条消息记录")
         
         print("示例数据初始化完成")
+
+# ==================== 用户仪表盘相关API ====================
+@app.route('/api/user/dashboard/stats', methods=['GET'])
+def get_user_dashboard_stats():
+    """获取用户仪表盘统计数据
+    
+    返回：
+    - 待处理预约数量
+    - 当前聘用数量
+    - 服务评价平均分
+    - 未读消息数量
+    """
+    if not g.user or g.user.get('user_type') != 'user':
+        return jsonify({'success': False, 'message': '请先登录'}), 401
+    
+    try:
+        user_id = g.user.get('user_id')
+        
+        # 获取待处理预约数量
+        pending_appointments = Appointment.query.filter_by(
+            user_id=user_id, 
+            status='pending'
+        ).count()
+        
+        # 获取当前聘用数量
+        active_employments = Employment.query.filter_by(
+            user_id=user_id, 
+            status='active'
+        ).count()
+        
+        # 获取用户评价（这里简化处理，实际应该有评价表）
+        avg_rating = 4.9  # 示例数据
+        
+        # 获取未读消息数量
+        unread_messages = Message.query.filter_by(
+            recipient_id=user_id,
+            recipient_type='user',
+            is_read=False
+        ).count()
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'pending_appointments': pending_appointments,
+                'active_employments': active_employments,
+                'avg_rating': avg_rating,
+                'unread_messages': unread_messages
+            }
+        })
+    except Exception as e:
+        logger.error(f"获取用户仪表盘统计数据失败: {e}")
+        return jsonify({'success': False, 'message': '获取统计数据失败'}), 500
+
+@app.route('/api/user/appointments', methods=['GET'])
+def get_user_appointments():
+    """获取用户预约列表
+    
+    查询参数：
+    - status: 预约状态筛选（可选）
+    - page: 页码（可选）
+    - limit: 每页数量（可选）
+    """
+    if not g.user or g.user.get('user_type') != 'user':
+        return jsonify({'success': False, 'message': '请先登录'}), 401
+    
+    try:
+        user_id = g.user.get('user_id')
+        status = request.args.get('status', '')
+        page = int(request.args.get('page', 1))
+        limit = int(request.args.get('limit', 10))
+        
+        # 构建查询
+        query = Appointment.query.filter_by(user_id=user_id)
+        if status:
+            query = query.filter_by(status=status)
+        
+        # 分页
+        appointments = query.order_by(Appointment.created_at.desc()).paginate(
+            page=page, per_page=limit, error_out=False
+        )
+        
+        # 格式化数据
+        appointment_list = []
+        for appointment in appointments.items:
+            caregiver = Caregiver.query.get(appointment.caregiver_id)
+            appointment_data = {
+                'id': appointment.id,
+                'caregiver': {
+                    'id': caregiver.id,
+                    'name': caregiver.name,
+                    'avatar_url': caregiver.avatar_url
+                } if caregiver else None,
+                'service_type': appointment.service_type,
+                'date': appointment.date.strftime('%Y-%m-%d'),
+                'start_time': appointment.start_time.strftime('%H:%M'),
+                'end_time': appointment.end_time.strftime('%H:%M'),
+                'status': appointment.status,
+                'created_at': appointment.created_at.strftime('%Y-%m-%d %H:%M')
+            }
+            appointment_list.append(appointment_data)
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'appointments': appointment_list,
+                'total': appointments.total,
+                'pages': appointments.pages,
+                'current_page': page
+            }
+        })
+    except Exception as e:
+        logger.error(f"获取用户预约列表失败: {e}")
+        return jsonify({'success': False, 'message': '获取预约列表失败'}), 500
+
+@app.route('/api/user/employments', methods=['GET'])
+def get_user_employments():
+    """获取用户聘用列表"""
+    if not g.user or g.user.get('user_type') != 'user':
+        return jsonify({'success': False, 'message': '请先登录'}), 401
+    
+    try:
+        user_id = g.user.get('user_id')
+        status = request.args.get('status', '')
+        
+        # 构建查询
+        query = Employment.query.filter_by(user_id=user_id)
+        if status:
+            query = query.filter_by(status=status)
+        
+        employments = query.order_by(Employment.created_at.desc()).all()
+        
+        # 格式化数据
+        employment_list = []
+        for employment in employments:
+            caregiver = Caregiver.query.get(employment.caregiver_id)
+            employment_data = {
+                'id': employment.id,
+                'caregiver': {
+                    'id': caregiver.id,
+                    'name': caregiver.name,
+                    'avatar_url': caregiver.avatar_url,
+                    'rating': caregiver.rating
+                } if caregiver else None,
+                'service_type': employment.service_type,
+                'start_date': employment.start_date.strftime('%Y-%m-%d'),
+                'end_date': employment.end_date.strftime('%Y-%m-%d') if employment.end_date else None,
+                'frequency': employment.frequency,
+                'duration_per_session': employment.duration_per_session,
+                'status': employment.status,
+                'notes': employment.notes
+            }
+            employment_list.append(employment_data)
+        
+        return jsonify({
+            'success': True,
+            'data': employment_list
+        })
+    except Exception as e:
+        logger.error(f"获取用户聘用列表失败: {e}")
+        return jsonify({'success': False, 'message': '获取聘用列表失败'}), 500
+
+@app.route('/api/user/messages', methods=['GET'])
+def get_user_messages():
+    """获取用户消息列表"""
+    if not g.user or g.user.get('user_type') != 'user':
+        return jsonify({'success': False, 'message': '请先登录'}), 401
+    
+    try:
+        user_id = g.user.get('user_id')
+        messages = Message.query.filter_by(
+            recipient_id=user_id,
+            recipient_type='user'
+        ).order_by(Message.created_at.desc()).limit(50).all()
+        
+        # 格式化数据
+        message_list = []
+        for message in messages:
+            sender = None
+            if message.sender_type == 'caregiver':
+                caregiver = Caregiver.query.get(message.sender_id)
+                if caregiver:
+                    sender = {
+                        'id': caregiver.id,
+                        'name': caregiver.name,
+                        'avatar_url': caregiver.avatar_url
+                    }
+            elif message.sender_type == 'admin':
+                sender = {
+                    'id': 0,
+                    'name': '系统通知',
+                    'avatar_url': None
+                }
+            
+            message_data = {
+                'id': message.id,
+                'sender': sender,
+                'content': message.content,
+                'is_read': message.is_read,
+                'created_at': message.created_at.strftime('%Y-%m-%d %H:%M')
+            }
+            message_list.append(message_data)
+        
+        return jsonify({
+            'success': True,
+            'data': message_list
+        })
+    except Exception as e:
+        logger.error(f"获取用户消息列表失败: {e}")
+        return jsonify({'success': False, 'message': '获取消息列表失败'}), 500
 
 # 创建数据库表并初始化示例数据
 with app.app_context():

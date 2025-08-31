@@ -3,148 +3,474 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>用户注册 - 护工预约平台</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        /* 保持与护工注册页一致的样式风格 */
-        .container {
-            max-width: 500px;
-            margin: 50px auto;
-            padding: 20px;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    <title>护理助手 - 用户注册</title>
+    <!-- 引入Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- 配置Tailwind自定义主题（与主应用保持一致） -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36CFC9',
+                        accent: '#722ED1',
+                        neutral: '#F5F7FA',
+                        'neutral-dark': '#4E5969',
+                        success: '#52C41A',
+                        warning: '#FAAD14',
+                        danger: '#FF4D4F',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
         }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-        input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-        .btn {
-            width: 100%;
-            padding: 12px;
-            background: #2f3b4b;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        .btn:hover {
-            background: #425063;
-        }
-        .form-switch {
-            margin-top: 15px;
-            text-align: center;
-        }
-        .message {
-            margin: 15px 0;
-            padding: 10px;
-            border-radius: 4px;
-            display: none;
-        }
-        .success {
-            background: #d4edda;
-            color: #155724;
-            display: block;
-        }
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            display: block;
-        }
-        .loading {
-            background: #e9f5ff;
-            color: #004085;
-            display: block;
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .form-input-focus {
+                @apply focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary;
+            }
+            .btn-primary {
+                @apply bg-primary hover:bg-primary/90 text-white font-medium transition-colors;
+            }
+            .btn-outline {
+                @apply border border-gray-300 hover:border-primary hover:text-primary transition-colors;
+            }
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <h1>用户注册</h1>
-        <div id="message" class="message"></div>
-        <form id="user-register-form">
-            <div class="form-group">
-                <label for="email">邮箱</label>
-                <input type="email" id="email" name="email" required>
+<body class="font-inter bg-gray-50 min-h-screen">
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <!-- 左侧品牌展示区 -->
+        <div class="hidden md:flex md:w-1/2 bg-primary p-12 text-white flex-col justify-between">
+            <div>
+                <div class="flex items-center gap-3 mb-16">
+                    <div class="w-10 h-10 rounded-lg bg-white flex items-center justify-center">
+                        <i class="fa fa-heartbeat text-primary text-xl"></i>
+                    </div>
+                    <h1 class="text-xl font-bold">护理助手</h1>
+                </div>
+                
+                <h2 class="text-[clamp(1.8rem,5vw,3rem)] font-bold leading-tight mb-6">
+                    专业护理服务<br>
+                    从这里开始
+                </h2>
+                <p class="text-white/80 text-lg max-w-md mb-12">
+                    注册成为护理助手用户，快速找到合适的护工，享受专业、贴心的护理服务。
+                </p>
+                
+                <div class="space-y-6">
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 mt-1">
+                            <i class="fa fa-shield"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold mb-2">安全可靠</h3>
+                            <p class="text-white/80">所有护工均经过严格筛选和背景调查，确保服务安全</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 mt-1">
+                            <i class="fa fa-star"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold mb-2">专业服务</h3>
+                            <p class="text-white/80">提供专业认证的护理服务，满足不同人群的护理需求</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 mt-1">
+                            <i class="fa fa-clock-o"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold mb-2">灵活预约</h3>
+                            <p class="text-white/80">根据您的时间灵活预约服务，轻松管理护理安排</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="password">设置密码</label>
-                <input type="password" id="password" name="password" required minlength="6">
+            
+            <div class="mt-16">
+                <p class="text-white/60 text-sm">© 2023 护理助手 版权所有</p>
             </div>
-            <div class="form-group">
-                <label for="confirm-password">确认密码</label>
-                <input type="password" id="confirm-password" name="confirm-password" required minlength="6">
+        </div>
+        
+        <!-- 右侧注册表单区 -->
+        <div class="w-full md:w-1/2 flex items-center justify-center p-6 md:p-12">
+            <div class="w-full max-w-md">
+                <!-- 移动端品牌标识 -->
+                <div class="flex items-center gap-3 mb-8 md:hidden">
+                    <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                        <i class="fa fa-heartbeat text-white text-xl"></i>
+                    </div>
+                    <h1 class="text-xl font-bold text-primary">护理助手</h1>
+                </div>
+                
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold mb-2">创建账号</h2>
+                    <p class="text-gray-500">填写以下信息完成注册</p>
+                </div>
+                
+                <!-- 注册表单 -->
+                <form id="register-form" class="space-y-5">
+                    <!-- 姓名 -->
+                    <div>
+                        <label for="fullname" class="block text-sm font-medium text-gray-700 mb-1">姓名</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                <i class="fa fa-user"></i>
+                            </span>
+                            <input type="text" id="fullname" name="fullname" 
+                                class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg form-input-focus"
+                                placeholder="请输入您的真实姓名" required>
+                            <div class="hidden error-message text-danger text-xs mt-1 flex items-center">
+                                <i class="fa fa-exclamation-circle mr-1"></i>
+                                <span>请输入您的真实姓名</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 手机号码 -->
+                    <div>
+                        <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">手机号码</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                <i class="fa fa-mobile"></i>
+                            </span>
+                            <input type="tel" id="phone" name="phone" 
+                                class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg form-input-focus"
+                                placeholder="请输入手机号码" required>
+                            <div class="hidden error-message text-danger text-xs mt-1 flex items-center">
+                                <i class="fa fa-exclamation-circle mr-1"></i>
+                                <span>请输入正确的手机号码</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 密码 -->
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">设置密码</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                <i class="fa fa-lock"></i>
+                            </span>
+                            <input type="password" id="password" name="password" 
+                                class="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg form-input-focus"
+                                placeholder="请设置密码（6-20位字符）" required>
+                            <button type="button" class="toggle-password absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" 
+                                data-target="password">
+                                <i class="fa fa-eye-slash"></i>
+                            </button>
+                            <div class="hidden error-message text-danger text-xs mt-1 flex items-center">
+                                <i class="fa fa-exclamation-circle mr-1"></i>
+                                <span>密码长度需在6-20位之间</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 确认密码 -->
+                    <div>
+                        <label for="confirm-password" class="block text-sm font-medium text-gray-700 mb-1">确认密码</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                <i class="fa fa-lock"></i>
+                            </span>
+                            <input type="password" id="confirm-password" name="confirm-password" 
+                                class="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg form-input-focus"
+                                placeholder="请再次输入密码" required>
+                            <button type="button" class="toggle-password absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" 
+                                data-target="confirm-password">
+                                <i class="fa fa-eye-slash"></i>
+                            </button>
+                            <div class="hidden error-message text-danger text-xs mt-1 flex items-center">
+                                <i class="fa fa-exclamation-circle mr-1"></i>
+                                <span>两次输入的密码不一致</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 用户类型 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">用户类型</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:border-primary transition-colors">
+                                <input type="radio" name="user-type" value="elderly" class="mr-3 text-primary" checked>
+                                <span>老年人/需要护理者</span>
+                            </label>
+                            <label class="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:border-primary transition-colors">
+                                <input type="radio" name="user-type" value="family" class="mr-3 text-primary">
+                                <span>家属/监护人</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- 同意条款 -->
+                    <div class="flex items-start">
+                        <div class="flex items-center h-5">
+                            <input id="terms" name="terms" type="checkbox" class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary" required>
+                        </div>
+                        <div class="ml-3 text-sm">
+                            <label for="terms" class="text-gray-600">我已阅读并同意<a href="#" class="text-primary hover:underline">《用户服务协议》</a>和<a href="#" class="text-primary hover:underline">《隐私政策》</a></label>
+                            <div class="hidden error-message text-danger text-xs mt-1 flex items-center">
+                                <i class="fa fa-exclamation-circle mr-1"></i>
+                                <span>请同意服务条款</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 注册按钮 -->
+                    <button type="submit" id="register-btn" 
+                        class="w-full py-3 rounded-lg btn-primary flex items-center justify-center gap-2">
+                        <span>注册账号</span>
+                        <i class="fa fa-arrow-right"></i>
+                    </button>
+                    
+                    <!-- 已有账号 -->
+                    <p class="text-center text-gray-600 text-sm">
+                        已有账号？<a href="login.html" class="text-primary hover:underline font-medium">立即登录</a>
+                    </p>
+                </form>
             </div>
-            <button type="submit" class="btn">注册</button>
-            <p class="form-switch">已有账号？ <a href="user-login.html">立即登录</a></p>
-        </form>
+        </div>
     </div>
-
+    
+    <!-- 注册成功弹窗 -->
+    <div id="success-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl p-8 max-w-md w-full mx-4 transform transition-all">
+            <div class="text-center">
+                <div class="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
+                    <i class="fa fa-check text-success text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2">注册成功！</h3>
+                <p class="text-gray-600 mb-6">您的账号已成功创建，即将跳转到登录页面</p>
+                <button id="goto-login-btn" class="w-full py-3 rounded-lg btn-primary">
+                    前往登录
+                </button>
+            </div>
+        </div>
+    </div>
+    
     <script>
-        document.getElementById('user-register-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const form = e.target;
-            const messageEl = document.getElementById('message');
-            const submitBtn = form.querySelector('.btn');
-
-            // 前端密码一致性校验
-            const password = form['password'].value;
-            const confirmPassword = form['confirm-password'].value;
-            if (password !== confirmPassword) {
-                messageEl.textContent = '两次输入的密码不一致';
-                messageEl.className = 'message error';
-                return;
-            }
-
-            // 显示加载状态
-            messageEl.textContent = '正在注册...';
-            messageEl.className = 'message loading';
-            submitBtn.disabled = true;
-            submitBtn.textContent = '注册中...';
-
-            try {
-                // 提交注册信息到后端
-                const response = await fetch('/api/user/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        email: form['email'].value,
-                        password: password
-                    })
+        document.addEventListener('DOMContentLoaded', function() {
+            const registerForm = document.getElementById('register-form');
+            const successModal = document.getElementById('success-modal');
+            const gotoLoginBtn = document.getElementById('goto-login-btn');
+            const passwordToggles = document.querySelectorAll('.toggle-password');
+            
+            // 密码显示/隐藏切换
+            passwordToggles.forEach(toggle => {
+                toggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('data-target');
+                    const passwordInput = document.getElementById(targetId);
+                    const icon = this.querySelector('i');
+                    
+                    if (passwordInput.type === 'password') {
+                        passwordInput.type = 'text';
+                        icon.classList.remove('fa-eye-slash');
+                        icon.classList.add('fa-eye');
+                    } else {
+                        passwordInput.type = 'password';
+                        icon.classList.remove('fa-eye');
+                        icon.classList.add('fa-eye-slash');
+                    }
                 });
-
-                const result = await response.json();
-                if (result.success) {
-                    messageEl.textContent = '注册成功！即将跳转到登录页';
-                    messageEl.className = 'message success';
-                    // 2秒后跳转到登录页
-                    setTimeout(() => {
-                        window.location.href = 'user-login.html';
-                    }, 2000);
+            });
+            
+            // 表单提交处理
+            registerForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // 验证表单
+                let isValid = true;
+                
+                // 验证姓名
+                const fullname = document.getElementById('fullname');
+                if (!fullname.value.trim()) {
+                    showError(fullname, '请输入您的真实姓名');
+                    isValid = false;
                 } else {
-                    throw new Error(result.message || '注册失败，请重试');
+                    hideError(fullname);
                 }
-
-            } catch (error) {
-                messageEl.textContent = error.message;
-                messageEl.className = 'message error';
-            } finally {
-                // 恢复按钮状态
-                submitBtn.disabled = false;
-                submitBtn.textContent = '注册';
+                
+                // 验证手机号
+                const phone = document.getElementById('phone');
+                if (!validatePhone(phone.value)) {
+                    showError(phone, '请输入正确的手机号码');
+                    isValid = false;
+                } else {
+                    hideError(phone);
+                }
+                
+                // 验证密码
+                const password = document.getElementById('password');
+                if (password.value.length < 6 || password.value.length > 20) {
+                    showError(password, '密码长度需在6-20位之间');
+                    isValid = false;
+                } else {
+                    hideError(password);
+                }
+                
+                // 验证确认密码
+                const confirmPassword = document.getElementById('confirm-password');
+                if (confirmPassword.value !== password.value) {
+                    showError(confirmPassword, '两次输入的密码不一致');
+                    isValid = false;
+                } else {
+                    hideError(confirmPassword);
+                }
+                
+                // 验证服务条款
+                const terms = document.getElementById('terms');
+                if (!terms.checked) {
+                    const termsError = terms.closest('div').nextElementSibling.querySelector('.error-message');
+                    termsError.classList.remove('hidden');
+                    isValid = false;
+                } else {
+                    const termsError = terms.closest('div').nextElementSibling.querySelector('.error-message');
+                    termsError.classList.add('hidden');
+                }
+                
+                // 表单验证通过
+                if (isValid) {
+                    // 显示加载状态
+                    const registerBtn = document.getElementById('register-btn');
+                    const originalText = registerBtn.innerHTML;
+                    registerBtn.disabled = true;
+                    registerBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> 注册中...';
+                    
+                    // 准备表单数据
+                    const formData = {
+                        fullname: fullname.value.trim(),
+                        phone: phone.value.trim(),
+                        password: password.value,
+                        confirmPassword: confirmPassword.value,
+                        userType: document.querySelector('input[name="user-type"]:checked').value
+                    };
+                    
+                    // 发送注册请求到后端API
+                    fetch('/api/register', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        // 恢复按钮状态
+                        registerBtn.disabled = false;
+                        registerBtn.innerHTML = originalText;
+                        
+                        if (data.code === 200) {
+                            // 显示成功弹窗
+                            successModal.classList.remove('hidden');
+                            
+                            // 5秒后自动跳转
+                            let redirectCountdown = 5;
+                            const redirectTimer = setInterval(() => {
+                                redirectCountdown--;
+                                if (redirectCountdown <= 0) {
+                                    clearInterval(redirectTimer);
+                                    window.location.href = 'login.html'; // 跳转到登录页
+                                }
+                            }, 1000);
+                        } else {
+                            // 显示错误信息
+                            alert(data.message || '注册失败，请稍后重试');
+                        }
+                    })
+                    .catch(error => {
+                        // 恢复按钮状态
+                        registerBtn.disabled = false;
+                        registerBtn.innerHTML = originalText;
+                        console.error('注册请求失败:', error);
+                        alert('网络错误，请稍后重试');
+                    });
+                }
+            });
+            
+            // 前往登录按钮
+            gotoLoginBtn.addEventListener('click', function() {
+                window.location.href = 'login.html'; // 跳转到登录页
+            });
+            
+            // 输入框实时验证
+            const inputs = registerForm.querySelectorAll('input:not([type="checkbox"])');
+            inputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    switch(this.id) {
+                        case 'fullname':
+                            if (this.value.trim()) {
+                                hideError(this);
+                            }
+                            break;
+                        case 'phone':
+                            if (validatePhone(this.value)) {
+                                hideError(this);
+                            }
+                            break;
+                        case 'password':
+                            if (this.value.length >= 6 && this.value.length <= 20) {
+                                hideError(this);
+                                
+                                // 同时验证确认密码
+                                const confirmPassword = document.getElementById('confirm-password');
+                                if (confirmPassword.value === this.value && confirmPassword.value) {
+                                    hideError(confirmPassword);
+                                }
+                            }
+                            break;
+                        case 'confirm-password':
+                            const password = document.getElementById('password');
+                            if (this.value === password.value && this.value) {
+                                hideError(this);
+                            }
+                            break;
+                    }
+                });
+            });
+            
+            // 同意条款切换
+            document.getElementById('terms').addEventListener('change', function() {
+                const termsError = this.closest('div').nextElementSibling.querySelector('.error-message');
+                if (this.checked) {
+                    termsError.classList.add('hidden');
+                }
+            });
+            
+            // 工具函数：显示错误信息
+            function showError(input, message) {
+                const errorElement = input.parentElement.querySelector('.error-message');
+                errorElement.querySelector('span').textContent = message;
+                errorElement.classList.remove('hidden');
+                input.classList.add('border-danger');
+                input.classList.remove('border-primary');
+            }
+            
+            // 工具函数：隐藏错误信息
+            function hideError(input) {
+                const errorElement = input.parentElement.querySelector('.error-message');
+                errorElement.classList.add('hidden');
+                input.classList.remove('border-danger');
+            }
+            
+            // 工具函数：验证手机号
+            function validatePhone(phone) {
+                const regex = /^1[3-9]\d{9}$/;
+                return regex.test(phone);
             }
         });
     </script>

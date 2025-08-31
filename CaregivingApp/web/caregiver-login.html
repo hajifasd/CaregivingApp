@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>护工登录</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* 基础样式重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 头部样式 */
+        .main-header {
+            background-color: #2f3b4b;
+            color: white;
+            padding: 15px 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .header-content i {
+            font-size: 24px;
+        }
+        
+        /* 主容器 */
+        .login-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+        }
+        
+        /* 登录卡片 */
+        .login-card {
+            background-color: white;
+            width: 100%;
+            max-width: 400px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        
+        .login-header i {
+            font-size: 48px;
+            color: #2f3b4b;
+            margin-bottom: 15px;
+        }
+        
+        .login-header h2 {
+            color: #2f3b4b;
+            font-size: 24px;
+        }
+        
+        /* 表单样式 */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #2f3b4b;
+        }
+        
+        /* 按钮样式 */
+        .btn {
+            width: 100%;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background-color: #2f3b4b;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #425063;
+        }
+        
+        /* 错误提示 */
+        .error-message {
+            color: #e74c3c;
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+            min-height: 20px;
+        }
+        
+        /* 页脚 */
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 14px;
+            border-top: 1px solid #e1e4e8;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .login-card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="main-header">
+        <div class="header-content">
+            <i class="fas fa-hands-helping"></i>
+            <h1>护工管理系统</h1>
+        </div>
+    </header>
+    
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <i class="fas fa-user-nurse"></i>
+                <h2>护工登录</h2>
+            </div>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="phone">
+                        <i class="fas fa-phone"></i> 手机号
+                    </label>
+                    <input type="tel" id="phone" required placeholder="请输入手机号">
+                </div>
+                <div class="form-group">
+                    <label for="password">
+                        <i class="fas fa-lock"></i> 密码
+                    </label>
+                    <input type="password" id="password" required placeholder="请输入密码">
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt"></i> 登录
+                </button>
+                <div id="error-message" class="error-message"></div>
+            </form>
+            
+            <div class="text-center mt-4">
+                <a href="/" class="text-blue-600 hover:underline">返回首页</a>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2024 护工管理系统 - 版权所有</p>
+    </footer>
+
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const phone = document.getElementById('phone').value;
+            const password = document.getElementById('password').value;
+            const errorEl = document.getElementById('error-message');
+            errorEl.textContent = '';
+
+            try {
+                const res = await fetch('/api/caregiver/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({phone, password})
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    localStorage.setItem('caregiver_token', data.data.token);
+                    window.location.href = '/caregiver-dashboard.html';
+                } else {
+                    errorEl.textContent = data.message || '登录失败，请检查手机号和密码';
+                }
+            } catch (err) {
+                errorEl.textContent = '网络错误，请稍后重试';
+            }
+        });
+    </script>
+</body>
+</html>

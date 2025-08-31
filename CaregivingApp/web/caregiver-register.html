@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>护工注册 - 护工预约平台</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* 保持原有样式风格，补充提示样式 */
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-container {
+            margin-top: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #2f3b4b;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .btn:hover {
+            background: #425063;
+        }
+        .form-switch {
+            margin-top: 15px;
+            text-align: center;
+        }
+        .message {
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+        .loading {
+            background: #e9f5ff;
+            color: #004085;
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8 max-w-2xl">
+        <div class="bg-white rounded-lg shadow-md p-6 md:p-8">
+            <div class="text-center mb-6">
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-800">护工注册</h1>
+                <p class="text-gray-600 mt-2">请填写您的详细信息以完成注册</p>
+            </div>
+            
+            <div id="message" class="mb-4 p-3 rounded hidden"></div>
+            
+            <form id="caregiver-register-form" class="space-y-5">
+                <div>
+                    <label for="name" class="block text-gray-700 font-medium mb-2">姓名</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                            <i class="fa fa-user"></i>
+                        </span>
+                        <input type="text" id="name" name="name" 
+                               class="pl-10 w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                               required>
+                    </div>
+                    <p id="name-error" class="text-red-500 text-sm mt-1 hidden">请输入您的姓名</p>
+                </div>
+                
+                <div>
+                    <label for="phone" class="block text-gray-700 font-medium mb-2">手机号</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                            <i class="fa fa-phone"></i>
+                        </span>
+                        <input type="tel" id="phone" name="phone" 
+                               class="pl-10 w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                               required>
+                    </div>
+                    <p id="phone-error" class="text-red-500 text-sm mt-1 hidden">请输入有效的手机号（11位数字）</p>
+                </div>
+                
+                <div>
+                    <label for="id_file" class="block text-gray-700 font-medium mb-2">身份证照片</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                            <i class="fa fa-id-card"></i>
+                        </span>
+                        <input type="file" id="id_file" name="id_file" accept="image/*"
+                               class="pl-10 w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                               required>
+                    </div>
+                    <p id="id_file-info" class="text-gray-500 text-sm mt-1">未选择文件</p>
+                    <p id="id_file-error" class="text-red-500 text-sm mt-1 hidden">请选择有效的身份证照片</p>
+                </div>
+                
+                <div>
+                    <label for="cert_file" class="block text-gray-700 font-medium mb-2">护工资格证书</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                            <i class="fa fa-certificate"></i>
+                        </span>
+                        <input type="file" id="cert_file" name="cert_file" accept="image/*,application/pdf"
+                               class="pl-10 w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                               required>
+                    </div>
+                    <p id="cert_file-info" class="text-gray-500 text-sm mt-1">未选择文件</p>
+                    <p id="cert_file-error" class="text-red-500 text-sm mt-1 hidden">请选择有效的资格证书</p>
+                </div>
+                
+                <div>
+                    <label for="password" class="block text-gray-700 font-medium mb-2">设置密码</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                            <i class="fa fa-lock"></i>
+                        </span>
+                        <input type="password" id="password" name="password"
+                               class="pl-10 w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                               required>
+                    </div>
+                    <p id="password-error" class="text-red-500 text-sm mt-1 hidden">密码长度不能少于6位</p>
+                </div>
+                
+                <button type="submit" id="submit-btn" 
+                        class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition font-medium">
+                    提交审核
+                </button>
+                
+                <div class="text-center mt-4">
+                    <p class="text-gray-600">已有账号？ <a href="caregiver-login.html" class="text-blue-600 hover:underline">立即登录</a></p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 工具函数：格式化文件大小
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // 显示错误信息
+        function showError(elementId, message) {
+            const errorEl = document.getElementById(elementId);
+            errorEl.textContent = message;
+            errorEl.classList.remove('hidden');
+            return false;
+        }
+
+        // 隐藏错误信息
+        function hideError(elementId) {
+            const errorEl = document.getElementById(elementId);
+            errorEl.classList.add('hidden');
+            return true;
+        }
+
+        // 验证单个输入字段
+        function validateInput(input) {
+            const id = input.id;
+            const value = input.value.trim();
+            
+            switch(id) {
+                case 'name':
+                    return value ? hideError('name-error') : showError('name-error', '请输入您的姓名');
+                
+                case 'phone':
+                    const phoneRegex = /^1[3-9]\d{9}$/;
+                    return phoneRegex.test(value) ? hideError('phone-error') : 
+                           showError('phone-error', '请输入有效的手机号（11位数字）');
+                
+                case 'password':
+                    return value.length >= 6 ? hideError('password-error') : 
+                           showError('password-error', '密码长度不能少于6位');
+                
+                default:
+                    return true;
+            }
+        }
+
+        // 验证文件输入
+        function validateFileInput(input, prefix) {
+            if (!input.files || input.files.length === 0) {
+                return showError(`${prefix}-error`, '请选择文件');
+            }
+            
+            const file = input.files[0];
+            
+            // 验证文件大小
+            if (file.size === 0) {
+                return showError(`${prefix}-error`, '文件为空，请选择有效的文件');
+            }
+            
+            // 验证文件大小不超过10MB
+            if (file.size > 10 * 1024 * 1024) {
+                return showError(`${prefix}-error`, '文件过大，请选择10MB以内的文件');
+            }
+            
+            // 验证文件类型
+            const allowedTypes = prefix === 'id_file' 
+                ? ['image/jpeg', 'image/png', 'image/gif']
+                : ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
+            
+            if (!allowedTypes.includes(file.type)) {
+                const allowedExt = prefix === 'id_file' ? 'jpg、png、gif' : 'jpg、png、gif、pdf';
+                return showError(`${prefix}-error`, `文件类型不支持，请选择${allowedExt}格式`);
+            }
+            
+            return hideError(`${prefix}-error`);
+        }
+
+        // 验证整个表单
+        function validateForm() {
+            let isValid = true;
+            
+            // 验证文本输入
+            ['name', 'phone', 'password'].forEach(field => {
+                const input = document.getElementById(field);
+                if (!validateInput(input)) {
+                    isValid = false;
+                }
+            });
+            
+            // 验证文件输入
+            if (!validateFileInput(document.getElementById('id_file'), 'id_file')) {
+                isValid = false;
+            }
+            
+            if (!validateFileInput(document.getElementById('cert_file'), 'cert_file')) {
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+
+        // 显示消息提示
+        function showMessage(text, type = 'info') {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = 'mb-4 p-3 rounded';
+            
+            // 设置消息类型样式
+            if (type === 'success') {
+                messageEl.classList.add('bg-green-100', 'text-green-800', 'border', 'border-green-200');
+            } else if (type === 'error') {
+                messageEl.classList.add('bg-red-100', 'text-red-800', 'border', 'border-red-200');
+            } else if (type === 'loading') {
+                messageEl.classList.add('bg-blue-100', 'text-blue-800', 'border', 'border-blue-200');
+            }
+            
+            messageEl.classList.remove('hidden');
+        }
+
+        // 隐藏消息提示
+        function hideMessage() {
+            const messageEl = document.getElementById('message');
+            messageEl.classList.add('hidden');
+            messageEl.className = 'mb-4 p-3 rounded hidden';
+        }
+
+        // 初始化事件监听
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('caregiver-register-form');
+            const submitBtn = document.getElementById('submit-btn');
+            const idInput = document.getElementById('id_file');
+            const certInput = document.getElementById('cert_file');
+            
+            // 输入框失焦验证
+            ['name', 'phone', 'password'].forEach(field => {
+                const input = document.getElementById(field);
+                input.addEventListener('blur', () => validateInput(input));
+            });
+            
+            // 文件选择变化时更新信息和验证
+            idInput.addEventListener('change', (e) => {
+                const infoEl = document.getElementById('id_file-info');
+                if (e.target.files && e.target.files[0]) {
+                    const file = e.target.files[0];
+                    infoEl.textContent = `已选择: ${file.name} (${formatFileSize(file.size)})`;
+                } else {
+                    infoEl.textContent = '未选择文件';
+                }
+                validateFileInput(idInput, 'id_file');
+            });
+            
+            certInput.addEventListener('change', (e) => {
+                const infoEl = document.getElementById('cert_file-info');
+                if (e.target.files && e.target.files[0]) {
+                    const file = e.target.files[0];
+                    infoEl.textContent = `已选择: ${file.name} (${formatFileSize(file.size)})`;
+                } else {
+                    infoEl.textContent = '未选择文件';
+                }
+                validateFileInput(certInput, 'cert_file');
+            });
+            
+            // 表单提交处理
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                hideMessage();
+                
+                // 前端验证
+                if (!validateForm()) {
+                    showMessage('请修正表单中的错误后再提交', 'error');
+                    return;
+                }
+                
+                // 显示加载状态
+                showMessage('正在提交信息，请稍候...', 'loading');
+                submitBtn.disabled = true;
+                submitBtn.textContent = '提交中...';
+                
+                try {
+                    // 第一步：上传文件
+                    const fileFormData = new FormData();
+                    fileFormData.append('id_file', idInput.files[0]);
+                    fileFormData.append('cert_file', certInput.files[0]);
+                    
+                    const uploadResponse = await fetch('/api/caregiver/upload', {
+                        method: 'POST',
+                        body: fileFormData
+                    });
+                    
+                    // 处理HTTP错误
+                    if (!uploadResponse.ok) {
+                        const errorData = await uploadResponse.json().catch(() => null);
+                        throw new Error(errorData?.message || `文件上传失败 (状态码: ${uploadResponse.status})`);
+                    }
+                    
+                    const uploadResult = await uploadResponse.json();
+                    if (!uploadResult.success) {
+                        throw new Error(uploadResult.message || '文件上传失败');
+                    }
+                    
+                    // 第二步：提交注册信息
+                    const registerData = {
+                        name: document.getElementById('name').value.trim(),
+                        phone: document.getElementById('phone').value.trim(),
+                        password: document.getElementById('password').value,
+                        id_file: uploadResult.data.id_file,
+                        cert_file: uploadResult.data.cert_file
+                    };
+                    
+                    const registerResponse = await fetch('/api/caregiver/register', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(registerData)
+                    });
+                    
+                    // 处理HTTP错误
+                    if (!registerResponse.ok) {
+                        const errorData = await registerResponse.json().catch(() => null);
+                        throw new Error(errorData?.message || `注册信息提交失败 (状态码: ${registerResponse.status})`);
+                    }
+                    
+                    const registerResult = await registerResponse.json();
+                    if (!registerResult.success) {
+                        throw new Error(registerResult.message || '注册信息提交失败');
+                    }
+                    
+                    // 注册成功
+                    showMessage('注册申请已提交成功！请等待管理员审核（3秒后跳转到登录页）', 'success');
+                    
+                    // 3秒后跳转到登录页
+                    setTimeout(() => {
+                        window.location.href = 'caregiver-login.html';
+                    }, 3000);
+                    
+                } catch (error) {
+                    console.error('注册失败:', error);
+                    if (error.name === 'TypeError') {
+                        showMessage('网络连接失败，请检查网络后重试', 'error');
+                    } 
+                    else {
+                        showMessage(error.message, 'error');
+                    }
+                } finally {
+                    // 恢复按钮状态
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '提交审核';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

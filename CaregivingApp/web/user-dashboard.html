@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户主页 - 护工预约平台</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>护工列表</h1>
+            <p>选择您心仪的护工</p>
+        </header>
+        <main>
+            <div class="caregiver-list">
+                <!-- Approved caregivers will be populated by JavaScript -->
+            </div>
+            <a href="index.html" class="back-link">退出登录</a>
+        </main>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const caregiverList = document.querySelector('.caregiver-list');
+
+            const response = await fetch('/api/caregivers');
+            const caregivers = await response.json();
+
+            if (caregivers.length === 0) {
+                caregiverList.innerHTML = '<p>目前没有已批准的护工。</p>';
+                return;
+            }
+
+            caregivers.forEach(cg => {
+                const item = document.createElement('div');
+                item.className = 'caregiver-item';
+                item.innerHTML = `
+                    <div class="caregiver-info">
+                        <h3>${cg.name}</h3>
+                        <p>联系电话: ${cg.phone}</p>
+                        <p>评分: 暂无</p>
+                    </div>
+                    <div class="actions">
+                        <button class="btn">查看详情</button>
+                    </div>
+                `;
+                caregiverList.appendChild(item);
+            });
+        });
+    </script>
+</body>
+</html>

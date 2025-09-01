@@ -24,7 +24,19 @@ APP_SECRET = os.getenv("APP_SECRET", "caregiving-system-secret-key-2024")
 FLASK_SECRET_KEY = os.getenv("FLASK_SECRET_KEY", 'your_unique_secret_key')
 
 # ==================== 数据库配置 ====================
-DATABASE_URI = 'sqlite:///{}'.format(os.path.join(ROOT_DIR, "database", "caregiving.db"))
+# MySQL 数据库配置
+MYSQL_HOST = os.getenv("MYSQL_HOST", "localhost")
+MYSQL_PORT = os.getenv("MYSQL_PORT", "3306")
+MYSQL_USERNAME = os.getenv("MYSQL_USERNAME", "root")
+MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "20040924")
+MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", "caregiving_db")
+
+# 构建 MySQL 连接字符串
+DATABASE_URI = f'mysql+pymysql://{MYSQL_USERNAME}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}?charset=utf8mb4'
+
+# 备用 SQLite 配置（已迁移到 MySQL）
+# DATABASE_URI = 'sqlite:///{}'.format(os.path.join(ROOT_DIR, "database", "caregiving.db"))
+
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 # ==================== 管理员配置 ====================

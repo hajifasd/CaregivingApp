@@ -1,0 +1,404 @@
+{
+  "user": {
+    "columns": [
+      "id",
+      "email",
+      "password_hash",
+      "id_file",
+      "is_approved",
+      "created_at",
+      "approved_at",
+      "name",
+      "gender",
+      "birth_date",
+      "address",
+      "emergency_contact",
+      "phone",
+      "emergency_contact_phone",
+      "special_needs",
+      "avatar_url",
+      "is_verified"
+    ],
+    "data": [
+      {
+        "id": 1,
+        "email": "user@example.com",
+        "password_hash": "$2b$12$kkGCzfoQkRzSutQdMvuXeuRElmLu6eGDBrisvNA/y3xWKFMynHyjW",
+        "id_file": null,
+        "is_approved": 1,
+        "created_at": "2025-09-01 13:51:37.019291",
+        "approved_at": "2025-09-01 13:51:36.844019",
+        "name": "张阿姨",
+        "gender": "女",
+        "birth_date": "1965-08-12",
+        "address": "北京市朝阳区建国路88号",
+        "emergency_contact": "李小明（儿子）",
+        "phone": "13800138000",
+        "emergency_contact_phone": "13900139000",
+        "special_needs": "本人需要定期进行康复护理，希望护工有相关经验，每周一、三、五上午需要服务。",
+        "avatar_url": "https://picsum.photos/id/64/120/120",
+        "is_verified": 1
+      },
+      {
+        "id": 2,
+        "email": "user_17661895382_1756739038@temp.com",
+        "password_hash": "$2b$12$n/R8Tug3dEiZXOPt5Ts5yuu0KhNa/3bxu9Cz0FXDHcJbojOHb8cMS",
+        "id_file": null,
+        "is_approved": 1,
+        "created_at": "2025-09-01 15:03:58.934949",
+        "approved_at": "2025-09-01 15:04:17.304805",
+        "name": "哈机密",
+        "gender": null,
+        "birth_date": null,
+        "address": null,
+        "emergency_contact": null,
+        "phone": "17661895382",
+        "emergency_contact_phone": null,
+        "special_needs": null,
+        "avatar_url": null,
+        "is_verified": 0
+      },
+      {
+        "id": 3,
+        "email": "user_17661895381_1756739140@temp.com",
+        "password_hash": "$2b$12$Iv0SpHVRh88OESKxe.AeuOxhwaWWJv0kcCHvuHIGy8Gwoffqh4aIm",
+        "id_file": null,
+        "is_approved": 0,
+        "created_at": "2025-09-01 15:05:40.587563",
+        "approved_at": null,
+        "name": "1234",
+        "gender": null,
+        "birth_date": null,
+        "address": null,
+        "emergency_contact": null,
+        "phone": "17661895381",
+        "emergency_contact_phone": null,
+        "special_needs": null,
+        "avatar_url": null,
+        "is_verified": 0
+      },
+      {
+        "id": 4,
+        "email": "user_17661895380_1756739200@temp.com",
+        "password_hash": "$2b$12$ERJUyD1RtPye5DfSQIiRcer31lIhBbG0D2908MlWwz0AaaoagpoWS",
+        "id_file": null,
+        "is_approved": 0,
+        "created_at": "2025-09-01 15:06:40.500333",
+        "approved_at": null,
+        "name": "56898",
+        "gender": null,
+        "birth_date": null,
+        "address": null,
+        "emergency_contact": null,
+        "phone": "17661895380",
+        "emergency_contact_phone": null,
+        "special_needs": null,
+        "avatar_url": null,
+        "is_verified": 0
+      }
+    ]
+  },
+  "caregiver": {
+    "columns": [
+      "id",
+      "name",
+      "phone",
+      "id_file",
+      "cert_file",
+      "password_hash",
+      "is_approved",
+      "created_at",
+      "approved_at",
+      "gender",
+      "age",
+      "avatar_url",
+      "id_card",
+      "qualification",
+      "introduction",
+      "experience_years",
+      "hourly_rate",
+      "rating",
+      "review_count",
+      "status",
+      "available"
+    ],
+    "data": [
+      {
+        "id": 1,
+        "name": "李敏",
+        "phone": "13700137001",
+        "id_file": "sample_id_001.jpg",
+        "cert_file": "sample_cert_001.jpg",
+        "password_hash": "$2b$12$c2FHIjiXumSx0wJqaeL5JefbP5VKUcW9hHNOY/fk97YfjR/PP9vPK",
+        "is_approved": 1,
+        "created_at": "2025-09-01 13:51:37.553024",
+        "approved_at": "2025-09-01 13:51:37.023800",
+        "gender": "女",
+        "age": 45,
+        "avatar_url": "https://picsum.photos/id/26/120/120",
+        "id_card": "1101011978XXXX1234",
+        "qualification": "高级护理证书",
+        "introduction": "擅长老年日常护理、康复辅助，有耐心，责任心强，持有专业护理证书。",
+        "experience_years": 5,
+        "hourly_rate": 180.0,
+        "rating": 4.8,
+        "review_count": 126,
+        "status": "approved",
+        "available": 1
+      },
+      {
+        "id": 2,
+        "name": "王芳",
+        "phone": "13700137002",
+        "id_file": "sample_id_002.jpg",
+        "cert_file": "sample_cert_002.jpg",
+        "password_hash": "$2b$12$dR3I4D8r5sL4Z/E7/d0v9OMjcwYnHKpq8GlLKjCejpdQfihrtgy32",
+        "is_approved": 1,
+        "created_at": "2025-09-01 13:51:37.553024",
+        "approved_at": "2025-09-01 13:51:37.198452",
+        "gender": "女",
+        "age": 38,
+        "avatar_url": "https://picsum.photos/id/91/120/120",
+        "id_card": "1101021985XXXX5678",
+        "qualification": "高级母婴护理师证书",
+        "introduction": "专业母婴护理师，擅长新生儿照料、产后恢复指导，服务细致周到。",
+        "experience_years": 8,
+        "hourly_rate": 220.0,
+        "rating": 4.9,
+        "review_count": 98,
+        "status": "approved",
+        "available": 1
+      },
+      {
+        "id": 3,
+        "name": "张伟",
+        "phone": "13700137003",
+        "id_file": "sample_id_003.jpg",
+        "cert_file": "sample_cert_003.jpg",
+        "password_hash": "$2b$12$Nw8CX/SbU/XRWaN7PRZxQex2UHlWTvf1xx5ARwejJ3lU2gXrV7l/G",
+        "is_approved": 1,
+        "created_at": "2025-09-01 13:51:37.553024",
+        "approved_at": "2025-09-01 13:51:37.374483",
+        "gender": "男",
+        "age": 50,
+        "avatar_url": "https://picsum.photos/id/177/120/120",
+        "id_card": "1101031973XXXX9012",
+        "qualification": "护师资格证",
+        "introduction": "原医院护士，擅长术后护理、医疗辅助，熟悉各种医疗设备使用。",
+        "experience_years": 10,
+        "hourly_rate": 260.0,
+        "rating": 4.7,
+        "review_count": 76,
+        "status": "approved",
+        "available": 1
+      }
+    ]
+  },
+  "service_type": {
+    "columns": [
+      "id",
+      "name",
+      "description"
+    ],
+    "data": [
+      {
+        "id": 1,
+        "name": "老年护理",
+        "description": "为老年人提供日常照料和护理服务"
+      },
+      {
+        "id": 2,
+        "name": "母婴护理",
+        "description": "为产妇和新生儿提供专业护理服务"
+      },
+      {
+        "id": 3,
+        "name": "医疗护理",
+        "description": "提供专业医疗护理服务，包括术后护理等"
+      },
+      {
+        "id": 4,
+        "name": "康复护理",
+        "description": "为需要康复的人士提供专业康复训练和护理"
+      }
+    ]
+  },
+  "job_data": {
+    "columns": [
+      "id",
+      "job_name",
+      "company",
+      "city",
+      "salary_low",
+      "salary_high",
+      "experience",
+      "education",
+      "skills",
+      "crawl_time"
+    ],
+    "data": []
+  },
+  "analysis_result": {
+    "columns": [
+      "id",
+      "type",
+      "result",
+      "create_time"
+    ],
+    "data": []
+  },
+  "message": {
+    "columns": [
+      "id",
+      "sender_id",
+      "sender_type",
+      "recipient_id",
+      "recipient_type",
+      "content",
+      "is_read",
+      "created_at"
+    ],
+    "data": [
+      {
+        "id": 1,
+        "sender_id": 1,
+        "sender_type": "caregiver",
+        "recipient_id": 1,
+        "recipient_type": "user",
+        "content": "您好，我看到了您的预约请求，10月15日上午9点可以为您提供服务",
+        "is_read": 0,
+        "created_at": "2023-10-10 09:15:00.000000"
+      },
+      {
+        "id": 2,
+        "sender_id": 1,
+        "sender_type": "user",
+        "recipient_id": 1,
+        "recipient_type": "caregiver",
+        "content": "好的，非常感谢！到时候需要准备什么吗？",
+        "is_read": 1,
+        "created_at": "2023-10-10 09:20:00.000000"
+      },
+      {
+        "id": 3,
+        "sender_id": 1,
+        "sender_type": "caregiver",
+        "recipient_id": 1,
+        "recipient_type": "user",
+        "content": "已确认您10月15日的预约，我会准时到达。请准备好您的医保卡和既往病史资料即可。",
+        "is_read": 0,
+        "created_at": "2023-10-10 09:23:00.000000"
+      }
+    ]
+  },
+  "caregiver_service": {
+    "columns": [
+      "caregiver_id",
+      "service_type_id"
+    ],
+    "data": [
+      {
+        "caregiver_id": 3,
+        "service_type_id": 3
+      },
+      {
+        "caregiver_id": 3,
+        "service_type_id": 4
+      },
+      {
+        "caregiver_id": 2,
+        "service_type_id": 2
+      },
+      {
+        "caregiver_id": 1,
+        "service_type_id": 1
+      },
+      {
+        "caregiver_id": 1,
+        "service_type_id": 4
+      }
+    ]
+  },
+  "appointment": {
+    "columns": [
+      "id",
+      "user_id",
+      "caregiver_id",
+      "service_type",
+      "date",
+      "start_time",
+      "end_time",
+      "notes",
+      "status",
+      "created_at"
+    ],
+    "data": [
+      {
+        "id": 1,
+        "user_id": 1,
+        "caregiver_id": 1,
+        "service_type": "老年护理",
+        "date": "2023-10-15",
+        "start_time": "09:00:00.000000",
+        "end_time": "11:00:00.000000",
+        "notes": "请携带血压计",
+        "status": "confirmed",
+        "created_at": "2025-09-01 13:51:37.561171"
+      },
+      {
+        "id": 2,
+        "user_id": 1,
+        "caregiver_id": 2,
+        "service_type": "母婴护理咨询",
+        "date": "2023-10-18",
+        "start_time": "14:00:00.000000",
+        "end_time": "16:00:00.000000",
+        "notes": null,
+        "status": "pending",
+        "created_at": "2025-09-01 13:51:37.561171"
+      },
+      {
+        "id": 3,
+        "user_id": 1,
+        "caregiver_id": 3,
+        "service_type": "术后护理",
+        "date": "2023-10-08",
+        "start_time": "10:00:00.000000",
+        "end_time": "13:00:00.000000",
+        "notes": null,
+        "status": "completed",
+        "created_at": "2025-09-01 13:51:37.561171"
+      }
+    ]
+  },
+  "employment": {
+    "columns": [
+      "id",
+      "user_id",
+      "caregiver_id",
+      "service_type",
+      "start_date",
+      "end_date",
+      "frequency",
+      "duration_per_session",
+      "status",
+      "notes",
+      "created_at"
+    ],
+    "data": [
+      {
+        "id": 1,
+        "user_id": 1,
+        "caregiver_id": 1,
+        "service_type": "老年护理",
+        "start_date": "2023-09-01",
+        "end_date": null,
+        "frequency": "每周3次",
+        "duration_per_session": "2小时",
+        "status": "active",
+        "notes": "主要提供日常照料和简单康复训练",
+        "created_at": "2025-09-01 13:51:37.564269"
+      }
+    ]
+  }
+}

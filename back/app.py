@@ -24,8 +24,8 @@ from config.settings import (
 # 导入扩展
 from extensions import db
 
-# 导入数据库初始化
-from database.database import init_database
+# 数据库初始化（已迁移到 MySQL，无需 SQLite 初始化）
+# from database.database import init_database
 
 # 导入API蓝图
 from api.auth import auth_bp
@@ -293,12 +293,11 @@ if __name__ == '__main__':
             if file.endswith('.html'):
                 print(f"- {file}")
     
-    # 初始化数据库
+    # 初始化数据库（MySQL 已迁移完成）
     try:
         with app.app_context():
             db.create_all()
             print("数据库表创建完成")
-        init_database(app)
         print("数据库初始化完成")
     except Exception as e:
         print(f"数据库初始化失败: {e}")

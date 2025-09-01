@@ -153,6 +153,36 @@
             margin-bottom: 20px; 
         }
 
+        /* 管理员入口样式 - 隐蔽设计 */
+        .admin-entry {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            opacity: 0.3;
+            transition: opacity 0.3s;
+        }
+        .admin-entry:hover {
+            opacity: 0.8;
+        }
+        .admin-link {
+            color: #fff;
+            text-decoration: none;
+            font-size: 18px;
+            padding: 8px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            transition: all 0.3s;
+        }
+        .admin-link:hover {
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.1);
+        }
+
         /* 响应式适配 */
         @media (max-width: 992px) {
             .system-container {
@@ -164,6 +194,13 @@
             .brand-section {
                 align-items: flex-start;
                 text-align: left;
+            }
+            .admin-entry {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin-top: 20px;
+                opacity: 0.5;
             }
         }
     </style>
@@ -180,11 +217,9 @@
                 一站式护工资源管理与就业数据分析平台<br>
                 支持管理员、用户、护工多角色协作
             </p>
-            <div class="mt-6">
-                <a href="/admin-login.html" class="inline-flex items-center gap-2 text-primary hover:text-primary/80 font-medium text-sm">
-                    <i class="fa fa-shield"></i>
-                    <span>管理员专用入口</span>
-                    <i class="fa fa-external-link text-xs"></i>
+            <div class="admin-entry">
+                <a href="admin-login.html" class="admin-link">
+                    <i class="fa fa-cog"></i>
                 </a>
             </div>
         </div>
@@ -192,26 +227,11 @@
         <!-- 右侧多端登录区 -->
         <div class="login-section">
             <div class="login-tabs">
-                <div class="login-tab" data-target="admin-tab">管理员登录</div>
                 <div class="login-tab active" data-target="user-tab">用户登录</div>
                 <div class="login-tab" data-target="caregiver-tab">护工登录</div>
             </div>
 
-            <!-- 管理员登录 -->
-            <div class="tab-content" id="admin-tab">
-                <h2 class="tab-title">管理员端</h2>
-                <div class="text-center py-8">
-                    <div class="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                        <i class="fa fa-shield text-primary text-3xl"></i>
-                    </div>
-                    <h3 class="text-lg font-medium text-gray-800 mb-2">管理员专用登录</h3>
-                    <p class="text-gray-600 mb-6">请使用独立的管理员登录页面</p>
-                    <a href="/admin-login.html" class="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-lg font-medium transition-colors">
-                        <i class="fa fa-external-link"></i>
-                        <span>前往管理员登录</span>
-                    </a>
-                    </div>
-            </div>
+
 
             <!-- 用户登录 -->
             <div class="tab-content active" id="user-tab">

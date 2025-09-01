@@ -6,9 +6,9 @@
 """
 
 from flask import Blueprint, request, jsonify
-from back.services.user_service import UserService
-from back.utils.auth import generate_token
-from back.models import User
+from services.user_service import UserService
+from utils.auth import generate_token
+from models import User
 
 auth_bp = Blueprint('auth', __name__)
 

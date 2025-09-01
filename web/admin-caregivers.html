@@ -270,10 +270,14 @@
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.5);
-            z-index: 100;
+            z-index: 1000;
             align-items: center;
             justify-content: center;
             padding: 20px;
+        }
+        
+        .modal.show {
+            display: flex !important;
         }
         
         .modal-content {
@@ -347,6 +351,12 @@
         .document-download {
             margin-top: 10px;
             display: inline-block;
+        }
+        
+        /* 文本样式 */
+        .text-muted {
+            color: #999;
+            font-style: italic;
         }
         
         /* 响应式调整 */
@@ -509,7 +519,7 @@
                                 {% endfor %}
                             {% else %}
                                 <tr>
-                                    <td colspan="6" class="empty-state">
+                                    <td colspan="7" class="empty-state">
                                         <i class="fas fa-inbox"></i>
                                         <p>暂无待审核的护工申请</p>
                                     </td>
@@ -671,7 +681,7 @@
                     // 处理身份证文件显示
                     if (idContainer) {
                         idContainer.innerHTML = '';
-                        const ext = idFileName.split('.').pop().toLowerCase();
+                        const ext = idFileName ? idFileName.split('.').pop().toLowerCase() : '';
                         
                         if (['png', 'jpg', 'jpeg', 'gif'].includes(ext)) {
                             const img = document.createElement('img');
@@ -704,7 +714,7 @@
                     // 处理资格证书文件显示
                     if (certContainer) {
                         certContainer.innerHTML = '';
-                        const ext = certFileName.split('.').pop().toLowerCase();
+                        const ext = certFileName ? certFileName.split('.').pop().toLowerCase() : '';
                         
                         if (['png', 'jpg', 'jpeg', 'gif'].includes(ext)) {
                             const img = document.createElement('img');
@@ -739,14 +749,20 @@
                     if (certDownloadEl) certDownloadEl.href = certUrl;
                     
                     // 显示弹窗
-                    if (modal) modal.style.display = 'flex';
+                    if (modal) {
+                        modal.style.display = 'flex';
+                        modal.classList.add('show');
+                    }
                 });
             });
 
             // 关闭弹窗
             if (modalClose) {
                 modalClose.addEventListener('click', () => {
-                    if (modal) modal.style.display = 'none';
+                    if (modal) {
+                        modal.style.display = 'none';
+                        modal.classList.remove('show');
+                    }
                 });
             }
 
@@ -755,6 +771,7 @@
                 modal.addEventListener('click', (e) => {
                     if (e.target === modal) {
                         modal.style.display = 'none';
+                        modal.classList.remove('show');
                     }
                 });
             }
@@ -852,6 +869,11 @@
 
             // 执行初始化
             initPage();
+            
+            // 调试信息
+            console.log('页面初始化完成');
+            console.log('待审核护工数量:', document.querySelectorAll('#pending-card tbody tr').length - 1);
+            console.log('已批准护工数量:', document.querySelectorAll('#approved-card tbody tr').length - 1);
         });
 
         // 退出登录功能

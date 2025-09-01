@@ -5,9 +5,9 @@
 用户相关的业务逻辑服务
 """
 
-from back.models import User
-from back.utils.auth import hash_password, verify_password
-from back.extensions import db
+from models.user import User
+from utils.auth import hash_password, verify_password
+from extensions import db
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone
 
@@ -15,9 +15,10 @@ class UserService:
     """用户服务类"""
     
     @staticmethod
-    def create_user(email: str, password: str, name: str = None, phone: str = None) -> User:
+    def create_user(email: str, password: str, name: str = None, phone: str = None):
         """创建新用户"""
-        user = User(
+        UserModel = User.get_model(db)
+        user = UserModel(
             email=email,
             name=name,
             phone=phone,
@@ -29,44 +30,51 @@ class UserService:
         return user
     
     @staticmethod
-    def get_user_by_email(email: str) -> Optional[User]:
+    def get_user_by_email(email: str):
         """通过邮箱获取用户"""
-        return User.query.filter_by(email=email).first()
+        UserModel = User.get_model(db)
+        return UserModel.query.filter_by(email=email).first()
     
     @staticmethod
-    def get_user_by_phone(phone: str) -> Optional[User]:
+    def get_user_by_phone(phone: str):
         """通过手机号获取用户"""
-        return User.query.filter_by(phone=phone).first()
+        UserModel = User.get_model(db)
+        return UserModel.query.filter_by(phone=phone).first()
     
     @staticmethod
-    def verify_user(account: str, password: str) -> Optional[User]:
+    def verify_user(account: str, password: str):
         """验证用户登录"""
+        UserModel = User.get_model(db)
+        
         # 尝试通过邮箱查找
-        user = User.query.filter_by(email=account).first()
+        user = UserModel.query.filter_by(email=account).first()
         if user and user.is_approved and verify_password(user.password_hash, password):
             return user
         
         # 尝试通过手机号查找
-        user = User.query.filter_by(phone=account).first()
+        user = UserModel.query.filter_by(phone=account).first()
         if user and user.is_approved and verify_password(user.password_hash, password):
             return user
         
         return None
     
     @staticmethod
-    def get_pending_users() -> List[User]:
+    def get_pending_users():
         """获取待审核用户"""
-        return User.query.filter_by(is_approved=False).all()
+        UserModel = User.get_model(db)
+        return UserModel.query.filter_by(is_approved=False).all()
     
     @staticmethod
-    def get_approved_users() -> List[User]:
+    def get_approved_users():
         """获取已审核用户"""
-        return User.query.filter_by(is_approved=True).all()
+        UserModel = User.get_model(db)
+        return UserModel.query.filter_by(is_approved=True).all()
     
     @staticmethod
     def approve_user(user_id: int) -> bool:
         """审核通过用户"""
-        user = User.query.get(user_id)
+        UserModel = User.get_model(db)
+        user = UserModel.query.get(user_id)
         if user and not user.is_approved:
             user.is_approved = True
             user.approved_at = datetime.now(timezone.utc)

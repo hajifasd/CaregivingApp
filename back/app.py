@@ -29,6 +29,7 @@ from database.database import init_database
 
 # 导入API蓝图
 from api.auth import auth_bp
+from api.admin import admin_bp
 
 # ==================== 日志配置 ====================
 logging.basicConfig(level=logging.INFO)
@@ -61,8 +62,41 @@ app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URI
 # ==================== 扩展初始化 ====================
 db.init_app(app)
 
+# ==================== 模型初始化 ====================
+def init_models():
+    """初始化数据模型"""
+    from models.user import User
+    from models.caregiver import Caregiver
+    from models.service import ServiceType
+    from models.business import JobData, AnalysisResult, Appointment, Employment, Message
+    
+    # 创建实际的模型类
+    UserModel = User.get_model(db)
+    CaregiverModel = Caregiver.get_model(db)
+    ServiceTypeModel = ServiceType.get_model(db)
+    JobDataModel = JobData.get_model(db)
+    AnalysisResultModel = AnalysisResult.get_model(db)
+    AppointmentModel = Appointment.get_model(db)
+    EmploymentModel = Employment.get_model(db)
+    MessageModel = Message.get_model(db)
+    
+    return (UserModel, CaregiverModel, ServiceTypeModel, 
+            JobDataModel, AnalysisResultModel, AppointmentModel, 
+            EmploymentModel, MessageModel)
+
+# 全局模型变量
+UserModel = None
+CaregiverModel = None
+ServiceTypeModel = None
+JobDataModel = None
+AnalysisResultModel = None
+AppointmentModel = None
+EmploymentModel = None
+MessageModel = None
+
 # ==================== 注册蓝图 ====================
 app.register_blueprint(auth_bp)
+app.register_blueprint(admin_bp)
 
 # ==================== 上传目录权限检查 ====================
 try:
@@ -85,7 +119,10 @@ def check_login_status():
     public_routes = [
         'index', 'static',
         'admin_login_page', 
-        'user_register_page', 'caregiver_register_page'
+        'user_register_page', 'caregiver_register_page',
+        'admin_caregivers_page', 'admin_dashboard_page',
+        'admin_users_page', 'admin_job_analysis_page',
+        'user_dashboard_page'
     ]
     
     if request.endpoint in public_routes:
@@ -128,6 +165,112 @@ def caregiver_register_page():
         return "护工注册模板不存在", 500
     return render_template('caregiver-register.html')
 
+@app.route('/admin-caregivers.html')
+def admin_caregivers_page():
+    """管理员护工管理页面"""
+    template_path = os.path.join(WEB_FOLDER, 'admin-caregivers.html')
+    if not os.path.exists(template_path):
+        logger.error(f"admin-caregivers.html模板文件不存在: {template_path}")
+        return "管理员护工管理模板不存在", 500
+    
+    # 在应用上下文中获取模型
+    from models.caregiver import Caregiver
+    CaregiverModel = Caregiver.get_model(db)
+    
+    # 获取待审核护工
+    unapproved = CaregiverModel.query.filter(
+        CaregiverModel.is_approved == False,
+        CaregiverModel.id_file != '',
+        CaregiverModel.cert_file != ''
+    ).order_by(CaregiverModel.created_at.desc()).all()
+    
+    # 获取已批准护工
+    approved = CaregiverModel.query.filter(
+        CaregiverModel.is_approved == True,
+        CaregiverModel.id_file != '',
+        CaregiverModel.cert_file != ''
+    ).order_by(CaregiverModel.approved_at.desc()).all()
+    
+    return render_template('admin-caregivers.html', unapproved=unapproved, approved=approved)
+
+@app.route('/admin-dashboard.html')
+def admin_dashboard_page():
+    """管理员仪表盘页面"""
+    template_path = os.path.join(WEB_FOLDER, 'admin-dashboard.html')
+    if not os.path.exists(template_path):
+        logger.error(f"admin-dashboard.html模板文件不存在: {template_path}")
+        return "管理员仪表盘模板不存在", 500
+    
+    # 在应用上下文中获取模型
+    from models.user import User
+    from models.caregiver import Caregiver
+    from models.business import JobData
+    
+    UserModel = User.get_model(db)
+    CaregiverModel = Caregiver.get_model(db)
+    JobDataModel = JobData.get_model(db)
+    
+    # 获取统计数据
+    user_count = UserModel.query.count()
+    approved_user_count = UserModel.query.filter_by(is_approved=True).count()
+    pending_user_count = UserModel.query.filter_by(is_approved=False).count()
+    
+    approved_caregiver_count = CaregiverModel.query.filter_by(is_approved=True).count()
+    unapproved_caregiver_count = CaregiverModel.query.filter_by(is_approved=False).count()
+    
+    # 获取职位数据数量
+    job_count = JobDataModel.query.count()
+    
+    return render_template('admin-dashboard.html', 
+                         user_count=user_count,
+                         approved_user_count=approved_user_count,
+                         pending_user_count=pending_user_count,
+                         approved_caregiver_count=approved_caregiver_count,
+                         unapproved_caregiver_count=unapproved_caregiver_count,
+                         job_count=job_count)
+
+@app.route('/admin-users.html')
+def admin_users_page():
+    """管理员用户管理页面"""
+    template_path = os.path.join(WEB_FOLDER, 'admin-users.html')
+    if not os.path.exists(template_path):
+        logger.error(f"admin-users.html模板文件不存在: {template_path}")
+        return "管理员用户管理模板不存在", 500
+    
+    # 在应用上下文中获取模型
+    from models.user import User
+    UserModel = User.get_model(db)
+    
+    # 获取待审核用户
+    pending_users = UserModel.query.filter_by(is_approved=False).order_by(UserModel.created_at.desc()).all()
+    
+    # 获取已审核用户
+    approved_users = UserModel.query.filter_by(is_approved=True).order_by(UserModel.approved_at.desc()).all()
+    
+    return render_template('admin-users.html', pending=pending_users, approved=approved_users)
+
+@app.route('/admin-job-analysis.html')
+def admin_job_analysis_page():
+    """管理员职位分析页面"""
+    template_path = os.path.join(WEB_FOLDER, 'admin-job-analysis.html')
+    if not os.path.exists(template_path):
+        logger.error(f"admin-job-analysis.html模板文件不存在: {template_path}")
+        return "管理员职位分析模板不存在", 500
+    
+    # 这里可以添加职位分析的数据
+    # 暂时返回空数据
+    return render_template('admin-job-analysis.html')
+
+@app.route('/user-dashboard.html')
+def user_dashboard_page():
+    """用户仪表盘页面"""
+    template_path = os.path.join(WEB_FOLDER, 'user-dashboard.html')
+    if not os.path.exists(template_path):
+        logger.error(f"user-dashboard.html模板文件不存在: {template_path}")
+        return "用户仪表盘模板不存在", 500
+    
+    return render_template('user-dashboard.html')
+
 # ==================== 文件访问 ====================
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
@@ -152,6 +295,9 @@ if __name__ == '__main__':
     
     # 初始化数据库
     try:
+        with app.app_context():
+            db.create_all()
+            print("数据库表创建完成")
         init_database(app)
         print("数据库初始化完成")
     except Exception as e:

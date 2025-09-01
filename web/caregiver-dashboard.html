@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>护理助手 - 护工端</title>
+    <!-- 引入Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- 配置Tailwind自定义主题（与用户端保持一致） -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36CFC9',
+                        accent: '#722ED1',
+                        neutral: '#F5F7FA',
+                        'neutral-dark': '#4E5969',
+                        success: '#52C41A',
+                        warning: '#FAAD14',
+                        danger: '#FF4D4F',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .sidebar-item {
+                @apply flex items-center gap-3 px-4 py-3 text-neutral-dark hover:bg-primary/10 hover:text-primary rounded-lg transition-all duration-200;
+            }
+            .sidebar-item.active {
+                @apply bg-primary/10 text-primary font-medium;
+            }
+            .card-shadow {
+                @apply shadow-sm hover:shadow-md transition-shadow duration-300;
+            }
+        }
+    </style>
+</head>
+<body class="font-inter bg-gray-50 text-gray-800 flex h-screen overflow-hidden">
+    <!-- 侧边栏 -->
+    <aside class="w-64 bg-white border-r border-gray-200 flex-shrink-0 hidden md:block">
+        <div class="p-5 border-b border-gray-200">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                    <i class="fa fa-hands-helping text-white text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-primary">护工助手</h1>
+            </div>
+        </div>
+        
+        <div class="p-4">
+            <nav class="space-y-1">
+                <a href="#dashboard" class="sidebar-item active" data-target="dashboard-content">
+                    <i class="fa fa-tachometer w-5 text-center"></i>
+                    <span>工作台</span>
+                </a>
+                <a href="#profile" class="sidebar-item" data-target="profile-content">
+                    <i class="fa fa-user w-5 text-center"></i>
+                    <span>个人信息</span>
+                </a>
+                <a href="#jobs" class="sidebar-item" data-target="jobs-content">
+                    <i class="fa fa-briefcase w-5 text-center"></i>
+                    <span>工作机会</span>
+                </a>
+                <a href="#appointments" class="sidebar-item" data-target="appointments-content">
+                    <i class="fa fa-calendar-check-o w-5 text-center"></i>
+                    <span>我的预约</span>
+                </a>
+                <a href="#schedule" class="sidebar-item" data-target="schedule-content">
+                    <i class="fa fa-calendar w-5 text-center"></i>
+                    <span>工作安排</span>
+                </a>
+                <a href="#earnings" class="sidebar-item" data-target="earnings-content">
+                    <i class="fa fa-chart-line w-5 text-center"></i>
+                    <span>收入统计</span>
+                </a>
+                <a href="#messages" class="sidebar-item" data-target="messages-content">
+                    <i class="fa fa-comments w-5 text-center"></i>
+                    <span>消息中心</span>
+                    <span class="ml-auto bg-danger text-white text-xs px-2 py-1 rounded-full">2</span>
+                </a>
+                <a href="#reviews" class="sidebar-item" data-target="reviews-content">
+                    <i class="fa fa-star w-5 text-center"></i>
+                    <span>评价管理</span>
+                </a>
+                <a href="#settings" class="sidebar-item" data-target="settings-content">
+                    <i class="fa fa-cog w-5 text-center"></i>
+                    <span>设置</span>
+                </a>
+            </nav>
+        </div>
+    </aside>
+    
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- 顶部导航栏 -->
+        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+            <div class="flex items-center md:hidden">
+                <button id="sidebar-toggle" class="p-2 rounded-md hover:bg-gray-100">
+                    <i class="fa fa-bars text-gray-600"></i>
+                </button>
+            </div>
+            
+            <div class="flex items-center gap-6">
+                <div class="relative">
+                    <input type="text" placeholder="搜索工作机会..." 
+                        class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 w-64">
+                    <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <button class="p-2 rounded-full hover:bg-gray-100 relative">
+                    <i class="fa fa-bell text-gray-600"></i>
+                    <span class="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full"></span>
+                </button>
+                
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-bold" id="user-avatar">护</div>
+                    <div class="hidden md:block">
+                        <p class="text-sm font-medium" id="user-name">护工</p>
+                        <p class="text-xs text-gray-500">专业护工</p>
+                    </div>
+                    <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-primary">登出</button>
+                </div>
+            </div>
+        </header>
+        
+        <!-- 页面内容 -->
+        <main class="flex-1 overflow-y-auto p-6 bg-gray-50">
+            <!-- 工作台内容 -->
+            <div id="dashboard-content" class="content-block">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                    <div>
+                        <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold">欢迎回来，<span id="dashboard-name">护工</span></h2>
+                        <p class="text-gray-500">今天是 <span id="current-date"></span>，祝您工作顺利</p>
+                    </div>
+                    <button class="mt-4 md:mt-0 bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors">
+                        <i class="fa fa-plus"></i>
+                        <span>查看工作机会</span>
+                    </button>
+                </div>
+                
+                <!-- 快捷统计卡片 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                    <div class="bg-white rounded-xl p-6 card-shadow">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">总工作机会</p>
+                                <h3 class="text-3xl font-bold mt-2" id="total-jobs">0</h3>
+                                <p class="text-success text-sm mt-2 flex items-center">
+                                    <i class="fa fa-arrow-up mr-1"></i> 本周新增3个
+                                </p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                                <i class="fa fa-briefcase text-primary text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl p-6 card-shadow">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">进行中预约</p>
+                                <h3 class="text-3xl font-bold mt-2" id="active-appointments">0</h3>
+                                <p class="text-gray-500 text-sm mt-2">进行中</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center">
+                                <i class="fa fa-calendar-check-o text-secondary text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl p-6 card-shadow">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">本月收入</p>
+                                <h3 class="text-3xl font-bold mt-2" id="monthly-earnings">¥0</h3>
+                                <p class="text-success text-sm mt-2 flex items-center">
+                                    <i class="fa fa-arrow-up mr-1"></i> 较上月增长15%
+                                </p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
+                                <i class="fa fa-chart-line text-accent text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl p-6 card-shadow">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">平均评分</p>
+                                <h3 class="text-3xl font-bold mt-2" id="rating">0.0</h3>
+                                <div class="flex text-warning mt-1">
+                                    <i class="fa fa-star"></i>
+                                    <i class="fa fa-star"></i>
+                                    <i class="fa fa-star"></i>
+                                    <i class="fa fa-star"></i>
+                                    <i class="fa fa-star-half-o"></i>
+                                </div>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-warning/10 flex items-center justify-center">
+                                <i class="fa fa-star text-warning text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 最近工作机会 -->
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold">最近工作机会</h3>
+                        <a href="#jobs" class="text-primary hover:text-primary/80 text-sm">查看全部</a>
+                    </div>
+                    <div id="recent-jobs">
+                        <p class="text-gray-500 text-center py-8">暂无工作机会</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 个人信息内容 -->
+            <div id="profile-content" class="content-block hidden">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                    <div>
+                        <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold">个人信息</h2>
+                        <p class="text-gray-500">管理您的个人资料和资质信息</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <form id="profile-form">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">姓名</label>
+                                <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="profile-name" readonly>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">手机号码</label>
+                                <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="profile-phone" readonly>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">性别</label>
+                                <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="profile-gender" placeholder="请输入性别">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">年龄</label>
+                                <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="profile-age" placeholder="请输入年龄">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">工作经验（年）</label>
+                                <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="profile-experience" placeholder="请输入工作经验">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">期望时薪（元/小时）</label>
+                                <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="profile-hourly-rate" placeholder="请输入期望时薪">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">资质证书</label>
+                                <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="profile-qualification" placeholder="请输入资质证书">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">个人介绍</label>
+                                <textarea class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="profile-introduction" rows="4" placeholder="请输入个人介绍"></textarea>
+                            </div>
+                        </div>
+                        <div class="mt-6">
+                            <button type="submit" class="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg transition-colors">保存修改</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 工作机会内容 -->
+            <div id="jobs-content" class="content-block hidden">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                    <div>
+                        <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold">工作机会</h2>
+                        <p class="text-gray-500">浏览可用的护理工作机会</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <div id="jobs-list">
+                        <p class="text-gray-500 text-center py-8">暂无工作机会</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 我的预约内容 -->
+            <div id="appointments-content" class="content-block hidden">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                    <div>
+                        <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold">我的预约</h2>
+                        <p class="text-gray-500">管理您的预约安排</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <div id="appointments-list">
+                        <p class="text-gray-500 text-center py-8">暂无预约记录</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 工作安排内容 -->
+            <div id="schedule-content" class="content-block hidden">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                    <div>
+                        <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold">工作安排</h2>
+                        <p class="text-gray-500">查看您的工作日程安排</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <div id="schedule-calendar">
+                        <p class="text-gray-500 text-center py-8">暂无工作安排</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 收入统计内容 -->
+            <div id="earnings-content" class="content-block hidden">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                    <div>
+                        <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold">收入统计</h2>
+                        <p class="text-gray-500">查看您的收入数据和分析</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <div id="earnings-chart">
+                        <p class="text-gray-500 text-center py-8">暂无收入数据</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 消息中心内容 -->
+            <div id="messages-content" class="content-block hidden">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                    <div>
+                        <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold">消息中心</h2>
+                        <p class="text-gray-500">查看系统消息和通知</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <div id="messages-list">
+                        <p class="text-gray-500 text-center py-8">暂无消息</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 评价管理内容 -->
+            <div id="reviews-content" class="content-block hidden">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                    <div>
+                        <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold">评价管理</h2>
+                        <p class="text-gray-500">查看客户对您的评价</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <div id="reviews-list">
+                        <p class="text-gray-500 text-center py-8">暂无评价</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 设置内容 -->
+            <div id="settings-content" class="content-block hidden">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                    <div>
+                        <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold">账户设置</h2>
+                        <p class="text-gray-500">管理您的账户安全设置</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <h3 class="text-lg font-semibold mb-4">修改密码</h3>
+                    <form id="password-form">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">当前密码</label>
+                                <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="current-password" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">新密码</label>
+                                <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="new-password" required>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">确认新密码</label>
+                                <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="confirm-password" required>
+                            </div>
+                        </div>
+                        <div class="mt-6">
+                            <button type="submit" class="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg transition-colors">修改密码</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 页面加载时检查登录状态
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            loadDashboardData();
+            updateCurrentDate();
+        });
+
+        // 更新当前日期
+        function updateCurrentDate() {
+            const now = new Date();
+            const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+            document.getElementById('current-date').textContent = now.toLocaleDateString('zh-CN', options);
+        }
+
+        // 检查认证状态
+        function checkAuth() {
+            const token = localStorage.getItem('caregiver_token') || getCookie('caregiver_token');
+            if (!token) {
+                window.location.href = '/index.html';
+                return;
+            }
+
+            // 验证token有效性
+            fetch('/api/caregiver/verify', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    localStorage.removeItem('caregiver_token');
+                    document.cookie = 'caregiver_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                    window.location.href = '/index.html';
+                } else {
+                    // 更新用户信息显示
+                    updateUserInfo(data.data);
+                }
+            })
+            .catch(error => {
+                console.error('Token验证失败:', error);
+                window.location.href = '/index.html';
+            });
+        }
+
+        // 获取cookie
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        // 更新用户信息显示
+        function updateUserInfo(caregiver) {
+            document.getElementById('user-name').textContent = caregiver.name;
+            document.getElementById('user-avatar').textContent = caregiver.name.charAt(0);
+            document.getElementById('dashboard-name').textContent = caregiver.name;
+            
+            // 填充个人信息表单
+            document.getElementById('profile-name').value = caregiver.name;
+            document.getElementById('profile-phone').value = caregiver.phone;
+            document.getElementById('profile-gender').value = caregiver.gender || '';
+            document.getElementById('profile-age').value = caregiver.age || '';
+            document.getElementById('profile-experience').value = caregiver.experience_years || '';
+            document.getElementById('profile-hourly-rate').value = caregiver.hourly_rate || '';
+            document.getElementById('profile-qualification').value = caregiver.qualification || '';
+            document.getElementById('profile-introduction').value = caregiver.introduction || '';
+        }
+
+        // 导航切换
+        document.querySelectorAll('.sidebar-item').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // 移除所有active状态
+                document.querySelectorAll('.sidebar-item').forEach(l => l.classList.remove('active'));
+                document.querySelectorAll('.content-block').forEach(c => c.classList.add('hidden'));
+                
+                // 添加active状态
+                this.classList.add('active');
+                
+                // 显示对应内容
+                const target = this.getAttribute('data-target');
+                document.getElementById(target).classList.remove('hidden');
+            });
+        });
+
+        // 移动端侧边栏切换
+        document.getElementById('sidebar-toggle').addEventListener('click', function() {
+            document.querySelector('aside').classList.toggle('hidden');
+        });
+
+        // 加载仪表盘数据
+        function loadDashboardData() {
+            const token = localStorage.getItem('caregiver_token') || getCookie('caregiver_token');
+            
+            fetch('/api/caregiver/dashboard', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateDashboardStats(data.data);
+                }
+            })
+            .catch(error => {
+                console.error('加载仪表盘数据失败:', error);
+            });
+        }
+
+        // 更新仪表盘统计
+        function updateDashboardStats(data) {
+            document.getElementById('total-jobs').textContent = data.total_jobs || 0;
+            document.getElementById('active-appointments').textContent = data.active_appointments || 0;
+            document.getElementById('monthly-earnings').textContent = `¥${data.monthly_earnings || 0}`;
+            document.getElementById('rating').textContent = (data.rating || 0).toFixed(1);
+        }
+
+        // 个人信息表单提交
+        document.getElementById('profile-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const token = localStorage.getItem('caregiver_token') || getCookie('caregiver_token');
+            const formData = {
+                gender: document.getElementById('profile-gender').value,
+                age: parseInt(document.getElementById('profile-age').value) || null,
+                experience_years: parseInt(document.getElementById('profile-experience').value) || 0,
+                hourly_rate: parseFloat(document.getElementById('profile-hourly-rate').value) || null,
+                qualification: document.getElementById('profile-qualification').value,
+                introduction: document.getElementById('profile-introduction').value
+            };
+
+            fetch('/api/caregiver/profile', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('个人信息更新成功');
+                } else {
+                    alert(data.message || '更新失败');
+                }
+            })
+            .catch(error => {
+                alert('网络错误，请稍后重试');
+            });
+        });
+
+        // 密码修改表单提交
+        document.getElementById('password-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+
+            if (newPassword !== confirmPassword) {
+                alert('新密码与确认密码不一致');
+                return;
+            }
+
+            const token = localStorage.getItem('caregiver_token') || getCookie('caregiver_token');
+            
+            fetch('/api/caregiver/password', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    current_password: currentPassword,
+                    new_password: newPassword
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('密码修改成功');
+                    document.getElementById('password-form').reset();
+                } else {
+                    alert(data.message || '密码修改失败');
+                }
+            })
+            .catch(error => {
+                alert('网络错误，请稍后重试');
+            });
+        });
+
+        // 退出登录
+        document.getElementById('logout-btn').addEventListener('click', function() {
+            localStorage.removeItem('caregiver_token');
+            document.cookie = 'caregiver_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            window.location.href = '/index.html';
+        });
+    </script>
+</body>
+</html>

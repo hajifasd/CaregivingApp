@@ -257,9 +257,9 @@
                 <h2 class="tab-title">护工端</h2>
                 <form id="caregiver-login-form">
                     <div class="form-group">
-                        <label class="form-label">身份证号</label>
-                        <input type="text" class="form-input" placeholder="请输入身份证号" required>
-                        <div class="error-message" id="caregiver-id-error">请输入身份证号</div>
+                        <label class="form-label">手机号码</label>
+                        <input type="text" class="form-input" placeholder="请输入手机号码" required>
+                        <div class="error-message" id="caregiver-phone-error">请输入手机号码</div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">密码</label>
@@ -348,21 +348,22 @@
         document.getElementById('caregiver-login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const idInput = document.querySelector('#caregiver-tab input[type="text"]');
+            const phoneInput = document.querySelector('#caregiver-tab input[type="text"]');
             const passwordInput = document.querySelector('#caregiver-tab input[type="password"]');
+            const phoneError = document.getElementById('caregiver-phone-error');
             const passwordError = document.getElementById('caregiver-password-error');
             
             // 验证输入
-            const isIdValid = validateInput(idInput, document.getElementById('caregiver-id-error'));
+            const isPhoneValid = validateInput(phoneInput, phoneError);
             const isPasswordValid = validateInput(passwordInput, passwordError);
             
-            if (isIdValid && isPasswordValid) {
+            if (isPhoneValid && isPasswordValid) {
                 try {
                     const response = await fetch('/api/caregiver/login', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            phone: idInput.value.trim(),
+                            phone: phoneInput.value.trim(),
                             password: passwordInput.value
                         })
                     });

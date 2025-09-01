@@ -473,9 +473,11 @@
                                 <th>ID</th>
                                 <th>姓名</th>
                                 <th>电话</th>
-                                <th>提交时间</th>
-                                <th>身份证</th>
-                                <th>资格证书</th>
+                                <th>性别</th>
+                                <th>年龄</th>
+                                <th>工作经验</th>
+                                <th>期望时薪</th>
+                                <th>申请时间</th>
                                 <th>操作</th>
                             </tr>
                         </thead>
@@ -486,25 +488,11 @@
                                     <td>{{ c.id }}</td>
                                     <td>{{ c.name }}</td>
                                     <td>{{ c.phone }}</td>
+                                    <td>{{ c.gender|default('未填写', true) }}</td>
+                                    <td>{{ c.age|default('未填写', true) }}</td>
+                                    <td>{{ c.experience_years|default(0, true) }}年</td>
+                                    <td>{{ c.hourly_rate|default('未填写', true) }}元/小时</td>
                                     <td>{{ c.created_at }}</td>
-                                    <td>
-                                        {% if c.id_file_url %}
-                                        <a href="{{ c.id_file_url }}" target="_blank" class="file-link">
-                                            <i class="fas fa-id-card"></i> 查看
-                                        </a>
-                                        {% else %}
-                                        <span class="text-muted">未提供</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if c.cert_file_url %}
-                                        <a href="{{ c.cert_file_url }}" target="_blank" class="file-link">
-                                            <i class="fas fa-certificate"></i> 查看
-                                        </a>
-                                        {% else %}
-                                        <span class="text-muted">未提供</span>
-                                        {% endif %}
-                                    </td>
                                     <td>
                                         <div class="btn-group">
                                             <button class="btn btn-primary approve-btn" data-id="{{ c.id }}">
@@ -519,7 +507,7 @@
                                 {% endfor %}
                             {% else %}
                                 <tr>
-                                    <td colspan="7" class="empty-state">
+                                    <td colspan="9" class="empty-state">
                                         <i class="fas fa-inbox"></i>
                                         <p>暂无待审核的护工申请</p>
                                     </td>
@@ -539,8 +527,12 @@
                                 <th>ID</th>
                                 <th>姓名</th>
                                 <th>电话</th>
+                                <th>性别</th>
+                                <th>年龄</th>
+                                <th>工作经验</th>
+                                <th>期望时薪</th>
                                 <th>批准时间</th>
-                                <th>资质材料</th>
+                                <th>操作</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -550,23 +542,23 @@
                                     <td>{{ c.id }}</td>
                                     <td>{{ c.name }}</td>
                                     <td>{{ c.phone }}</td>
+                                    <td>{{ c.gender|default('未填写', true) }}</td>
+                                    <td>{{ c.age|default('未填写', true) }}</td>
+                                    <td>{{ c.experience_years|default(0, true) }}年</td>
+                                    <td>{{ c.hourly_rate|default('未填写', true) }}元/小时</td>
                                     <td>{{ c.approved_at|default(c.created_at, true) }}</td>
                                     <td>
-                                        <button class="btn btn-primary view-docs-btn" 
+                                        <button class="btn btn-primary view-profile-btn" 
                                                 data-id="{{ c.id }}"
-                                                data-name="{{ c.name }}"
-                                                data-id-url="{{ c.id_file_url }}"
-                                                data-cert-url="{{ c.cert_file_url }}"
-                                                data-id-name="{{ c.id_file }}"
-                                                data-cert-name="{{ c.cert_file }}">
-                                            <i class="fas fa-file-alt"></i> 查看材料
+                                                data-name="{{ c.name }}">
+                                            <i class="fas fa-user"></i> 查看详情
                                         </button>
                                     </td>
                                 </tr>
                                 {% endfor %}
                             {% else %}
                                 <tr>
-                                    <td colspan="5" class="empty-state">
+                                    <td colspan="9" class="empty-state">
                                         <i class="fas fa-check-circle"></i>
                                         <p>暂无已批准的护工</p>
                                     </td>

@@ -30,6 +30,7 @@ from extensions import db
 # 导入API蓝图
 from api.auth import auth_bp
 from api.admin import admin_bp
+from api.caregiver import caregiver_bp
 
 # ==================== 日志配置 ====================
 logging.basicConfig(level=logging.INFO)
@@ -97,6 +98,7 @@ MessageModel = None
 # ==================== 注册蓝图 ====================
 app.register_blueprint(auth_bp)
 app.register_blueprint(admin_bp)
+app.register_blueprint(caregiver_bp)
 
 # ==================== 上传目录权限检查 ====================
 try:
@@ -179,16 +181,12 @@ def admin_caregivers_page():
     
     # 获取待审核护工
     unapproved = CaregiverModel.query.filter(
-        CaregiverModel.is_approved == False,
-        CaregiverModel.id_file != '',
-        CaregiverModel.cert_file != ''
+        CaregiverModel.is_approved == False
     ).order_by(CaregiverModel.created_at.desc()).all()
     
     # 获取已批准护工
     approved = CaregiverModel.query.filter(
-        CaregiverModel.is_approved == True,
-        CaregiverModel.id_file != '',
-        CaregiverModel.cert_file != ''
+        CaregiverModel.is_approved == True
     ).order_by(CaregiverModel.approved_at.desc()).all()
     
     return render_template('admin-caregivers.html', unapproved=unapproved, approved=approved)

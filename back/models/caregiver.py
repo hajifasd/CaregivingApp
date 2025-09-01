@@ -29,8 +29,6 @@ class Caregiver:
             id = db.Column(db.Integer, primary_key=True)
             name = db.Column(db.String(100), nullable=False)
             phone = db.Column(db.String(20), unique=True, nullable=False)
-            id_file = db.Column(db.String(200), nullable=False)
-            cert_file = db.Column(db.String(200), nullable=False)
             password_hash = db.Column(db.String(256), nullable=False)
             
             # 审核状态字段
@@ -42,7 +40,6 @@ class Caregiver:
             gender = db.Column(db.String(10))
             age = db.Column(db.Integer)
             avatar_url = db.Column(db.String(200))
-            id_card = db.Column(db.String(18))
             qualification = db.Column(db.String(100))
             introduction = db.Column(db.Text)
             experience_years = db.Column(db.Integer)
@@ -54,17 +51,10 @@ class Caregiver:
 
             def to_dict(self) -> Dict[str, Any]:
                 """转换为字典格式"""
-                valid_id_file = self.id_file and self.id_file.strip()
-                valid_cert_file = self.cert_file and self.cert_file.strip()
-                
                 return {
                     "id": self.id,
                     "name": self.name,
                     "phone": self.phone,
-                    "id_file": self.id_file,
-                    "cert_file": self.cert_file,
-                    "id_file_url": f"/uploads/{self.id_file}" if valid_id_file else None,
-                    "cert_file_url": f"/uploads/{self.cert_file}" if valid_cert_file else None,
                     "is_approved": self.is_approved,
                     "created_at": self.created_at.strftime("%Y-%m-%d %H:%M"),
                     "approved_at": self.approved_at.strftime("%Y-%m-%d %H:%M") if self.approved_at else None,
@@ -72,7 +62,6 @@ class Caregiver:
                     "gender": self.gender,
                     "age": self.age,
                     "avatar_url": self.avatar_url,
-                    "id_card": self.id_card,
                     "qualification": self.qualification,
                     "introduction": self.introduction,
                     "experience_years": self.experience_years,

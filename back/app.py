@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 护工资源管理系统 - 重构后的主应用
 ====================================
@@ -100,96 +101,16 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(caregiver_bp)
 
-# ==================== 上传目录权限检查 ====================
-try:
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-    test_file = os.path.join(UPLOAD_FOLDER, "test_write_permission.tmp")
-    with open(test_file, "w") as f:
-        f.write("test")
-    os.remove(test_file)
-    logger.info(f"上传文件夹准备就绪: {UPLOAD_FOLDER}")
-except Exception as e:
-    logger.error(f"上传文件夹创建或权限检查失败: {str(e)}")
-
-# ==================== 请求钩子 ====================
-@app.before_request
-def check_login_status():
-    """请求前钩子：验证用户登录状态"""
-    g.user = None
-    
-    # 定义公开路由（无需登录验证）
-    public_routes = [
-        'index', 'static',
-        'admin_login_page', 
-        'user_register_page', 'caregiver_register_page',
-        'admin_caregivers_page', 'admin_dashboard_page',
-        'admin_users_page', 'admin_job_analysis_page',
-        'user_dashboard_page'
-    ]
-    
-    if request.endpoint in public_routes:
-        return
-
-# ==================== 页面路由 ====================
+# ==================== 路由定义 ====================
 @app.route('/')
 def index():
-    """网站首页"""
-    template_path = os.path.join(WEB_FOLDER, 'index.html')
-    if not os.path.exists(template_path):
-        logger.error(f"index.html模板文件不存在: {template_path}")
-        return "网站首页模板不存在", 500
+    """主页"""
     return render_template('index.html')
 
 @app.route('/admin-login.html')
 def admin_login_page():
     """管理员登录页面"""
-    template_path = os.path.join(WEB_FOLDER, 'admin-login.html')
-    if not os.path.exists(template_path):
-        logger.error(f"admin-login.html模板文件不存在: {template_path}")
-        return "管理员登录模板不存在", 500
     return render_template('admin-login.html')
-
-@app.route('/user-register.html')
-def user_register_page():
-    """用户注册页面"""
-    template_path = os.path.join(WEB_FOLDER, 'user-register.html')
-    if not os.path.exists(template_path):
-        logger.error(f"user-register.html模板文件不存在: {template_path}")
-        return "用户注册模板不存在", 500
-    return render_template('user-register.html')
-
-@app.route('/caregiver-register.html')
-def caregiver_register_page():
-    """护工注册页面"""
-    template_path = os.path.join(WEB_FOLDER, 'caregiver-register.html')
-    if not os.path.exists(template_path):
-        logger.error(f"caregiver-register.html模板文件不存在: {template_path}")
-        return "护工注册模板不存在", 500
-    return render_template('caregiver-register.html')
-
-@app.route('/admin-caregivers.html')
-def admin_caregivers_page():
-    """管理员护工管理页面"""
-    template_path = os.path.join(WEB_FOLDER, 'admin-caregivers.html')
-    if not os.path.exists(template_path):
-        logger.error(f"admin-caregivers.html模板文件不存在: {template_path}")
-        return "管理员护工管理模板不存在", 500
-    
-    # 在应用上下文中获取模型
-    from models.caregiver import Caregiver
-    CaregiverModel = Caregiver.get_model(db)
-    
-    # 获取待审核护工
-    unapproved = CaregiverModel.query.filter(
-        CaregiverModel.is_approved == False
-    ).order_by(CaregiverModel.created_at.desc()).all()
-    
-    # 获取已批准护工
-    approved = CaregiverModel.query.filter(
-        CaregiverModel.is_approved == True
-    ).order_by(CaregiverModel.approved_at.desc()).all()
-    
-    return render_template('admin-caregivers.html', unapproved=unapproved, approved=approved)
 
 @app.route('/admin-dashboard.html')
 def admin_dashboard_page():
@@ -203,7 +124,6 @@ def admin_dashboard_page():
     from models.user import User
     from models.caregiver import Caregiver
     from models.business import JobData
-    
     UserModel = User.get_model(db)
     CaregiverModel = Caregiver.get_model(db)
     JobDataModel = JobData.get_model(db)

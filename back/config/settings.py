@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 护工资源管理系统 - 配置文件
 ====================================
@@ -6,6 +7,18 @@
 """
 
 import os
+
+# ==================== 环境变量加载 ====================
+# 尝试加载 .env 文件（如果存在）
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    print("python-dotenv not available, skipping .env file loading")
+
+# ==================== 环境检测 ====================
+ENV = os.getenv("FLASK_ENV", "development")  # development, production, testing
+DEBUG = ENV == "development"
 
 # ==================== 基础目录配置 ====================
 # 修复路径计算，确保从backend目录正确计算
@@ -31,8 +44,24 @@ MYSQL_USERNAME = os.getenv("MYSQL_USERNAME", "root")
 MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "20040924")
 MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", "caregiving_db")
 
-# 构建 MySQL 连接字符串
-DATABASE_URI = f'mysql+pymysql://{MYSQL_USERNAME}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}?charset=utf8mb4'
+# ==================== 本地配置覆盖 ====================
+# 尝试导入本地配置文件（如果存在且不是生产环境）
+if ENV != "production":
+    try:
+        from .config_local import *
+        print("已加载本地配置文件 config_local.py")
+    except ImportError:
+        print("未找到本地配置文件，使用默认配置")
+        pass
+
+# 构建 MySQL 连接字符串（在本地配置加载之后）
+DATABASE_URI = 'mysql+pymysql://{username}:{password}@{host}:{port}/{database}?charset=utf8mb4'.format(
+    username=MYSQL_USERNAME,
+    password=MYSQL_PASSWORD,
+    host=MYSQL_HOST,
+    port=MYSQL_PORT,
+    database=MYSQL_DATABASE
+)
 
 # 备用 SQLite 配置（已迁移到 MySQL）
 # DATABASE_URI = 'sqlite:///{}'.format(os.path.join(ROOT_DIR, "database", "caregiving.db"))
@@ -44,4 +73,19 @@ ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
 
 # ==================== JWT配置 ====================
-JWT_EXPIRATION_HOURS = 2 
+JWT_EXPIRATION_HOURS = 2
+
+# ==================== 生产环境配置 ====================
+if ENV == "production":
+    # 生产环境安全配置
+    DEBUG = False
+    # 强制使用HTTPS
+    PREFERRED_URL_SCHEME = 'https'
+    # 更长的JWT过期时间
+    JWT_EXPIRATION_HOURS = 24
+    # 生产环境日志级别
+    LOG_LEVEL = "WARNING"
+else:
+    # 开发环境配置
+    DEBUG = True
+    LOG_LEVEL = "DEBUG" 

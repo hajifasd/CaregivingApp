@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>护理助手 - 个人信息</title>
+    <!-- 引入Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- 配置Tailwind自定义主题 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36CFC9',
+                        accent: '#722ED1',
+                        neutral: '#F5F7FA',
+                        'neutral-dark': '#4E5969',
+                        success: '#52C41A',
+                        warning: '#FAAD14',
+                        danger: '#FF4D4F',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .card-shadow {
+                @apply shadow-sm hover:shadow-md transition-shadow duration-300;
+            }
+        }
+    </style>
+</head>
+<body class="font-inter bg-gray-50 text-gray-800">
+    <!-- 顶部导航栏 -->
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                    <i class="fa fa-heartbeat text-white text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-primary">护理助手</h1>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-6">
+            <div class="relative">
+                <input type="text" placeholder="搜索护工、服务..." 
+                    class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 w-64">
+                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <button class="p-2 rounded-full hover:bg-gray-100 relative">
+                <i class="fa fa-bell text-gray-600"></i>
+                <span class="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full"></span>
+            </button>
+            
+            <div class="flex items-center gap-3">
+                <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-9 h-9 rounded-full object-cover border-2 border-primary/20">
+                <div class="hidden md:block">
+                    <p class="text-sm font-medium">张阿姨</p>
+                    <p class="text-xs text-gray-500">普通用户</p>
+                </div>
+                <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-primary">登出</button>
+            </div>
+        </div>
+    </header>
+    
+    <!-- 主导航菜单 -->
+    <nav class="bg-white border-b border-gray-200 px-6">
+        <div class="flex items-center space-x-8">
+            <a href="user-home.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                首页
+            </a>
+            <a href="user-profile.html" class="py-4 px-2 border-b-2 border-primary text-primary font-medium">
+                个人信息
+            </a>
+            <a href="user-caregivers.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                寻找护工
+            </a>
+            <a href="user-appointments.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                我的预约
+            </a>
+            <a href="user-employments.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                我的聘用
+            </a>
+            <a href="user-messages.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                消息中心
+            </a>
+            <a href="#" class="py-4 px-2 text-danger hover:text-danger/80 hover:border-b-2 hover:border-danger/50">
+                紧急呼叫
+            </a>
+        </div>
+    </nav>
+    
+    <!-- 页面内容 -->
+    <main class="p-6 bg-gray-50">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold">个人信息</h2>
+            <button id="edit-profile-btn" class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-1 transition-colors">
+                <i class="fa fa-pencil"></i>
+                <span>编辑信息</span>
+            </button>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- 个人资料卡片 -->
+            <div class="lg:col-span-2 bg-white rounded-xl p-6 card-shadow">
+                <form id="profile-form">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">姓名</label>
+                            <input type="text" value="张阿姨" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">性别</label>
+                            <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
+                                <option>女</option>
+                                <option>男</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">手机号码</label>
+                            <input type="tel" value="138****5678" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">出生日期</label>
+                            <input type="date" value="1965-08-12" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">家庭地址</label>
+                            <input type="text" value="北京市朝阳区建国路88号" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">紧急联系人</label>
+                            <input type="text" value="李小明（儿子）" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">紧急联系电话</label>
+                            <input type="tel" value="139****8765" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">特殊需求说明</label>
+                            <textarea rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>本人需要定期进行康复护理，希望护工有相关经验，每周一、三、五上午需要服务。</textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 flex justify-end gap-3 hidden" id="profile-form-actions">
+                        <button type="button" id="cancel-edit-btn" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                            取消
+                        </button>
+                        <button type="submit" class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg transition-colors">
+                            保存修改
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- 个人头像和账户状态 -->
+            <div class="space-y-6">
+                <div class="bg-white rounded-xl p-6 card-shadow text-center">
+                    <div class="relative inline-block mb-4">
+                        <img src="https://picsum.photos/id/64/120/120" alt="张阿姨头像" class="w-32 h-32 rounded-full object-cover border-4 border-primary/20">
+                        <button class="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center shadow-md hidden" id="change-avatar-btn">
+                            <i class="fa fa-camera"></i>
+                        </button>
+                    </div>
+                    <h3 class="font-bold text-lg mb-1">张阿姨</h3>
+                    <p class="text-gray-500 text-sm mb-4">注册时间: 2023-03-15</p>
+                    <button class="w-full py-2 border border-primary text-primary hover:bg-primary/5 rounded-lg text-sm transition-colors hidden" id="upload-avatar-btn">
+                        上传新头像
+                    </button>
+                </div>
+                
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <h4 class="font-bold mb-4">账户安全</h4>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <i class="fa fa-lock text-primary"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium">密码管理</p>
+                                    <p class="text-xs text-gray-500">上次修改: 3个月前</p>
+                                </div>
+                            </div>
+                            <button class="text-primary hover:text-primary/80 text-sm">修改</button>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <i class="fa fa-mobile text-primary text-xl"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium">手机验证</p>
+                                    <p class="text-xs text-gray-500">已验证</p>
+                                </div>
+                            </div>
+                            <button class="text-primary hover:text-primary/80 text-sm">更换</button>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <i class="fa fa-shield text-primary"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium">实名认证</p>
+                                    <p class="text-xs text-success">已完成认证</p>
+                                </div>
+                            </div>
+                            <button class="text-primary hover:text-primary/80 text-sm">查看</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 账户统计 -->
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <h4 class="font-bold mb-4">账户统计</h4>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-sm text-gray-600">总预约次数</span>
+                            <span class="font-medium">24次</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm text-gray-600">已完成服务</span>
+                            <span class="font-medium text-success">22次</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm text-gray-600">平均评分</span>
+                            <span class="font-medium text-warning">4.9分</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm text-gray-600">账户等级</span>
+                            <span class="font-medium text-primary">VIP用户</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查用户登录状态
+            checkUserLogin();
+            
+            // 个人信息编辑功能
+            const editProfileBtn = document.getElementById('edit-profile-btn');
+            const cancelEditBtn = document.getElementById('cancel-edit-btn');
+            const profileFormActions = document.getElementById('profile-form-actions');
+            const changeAvatarBtn = document.getElementById('change-avatar-btn');
+            const uploadAvatarBtn = document.getElementById('upload-avatar-btn');
+            const profileInputs = document.querySelectorAll('#profile-form input, #profile-form select, #profile-form textarea');
+            
+            if (editProfileBtn && cancelEditBtn) {
+                editProfileBtn.addEventListener('click', function() {
+                    profileInputs.forEach(input => {
+                        input.disabled = false;
+                        input.classList.add('border-primary');
+                    });
+                    
+                    profileFormActions.classList.remove('hidden');
+                    editProfileBtn.classList.add('hidden');
+                    changeAvatarBtn.classList.remove('hidden');
+                    uploadAvatarBtn.classList.remove('hidden');
+                });
+                
+                cancelEditBtn.addEventListener('click', function() {
+                    profileInputs.forEach(input => {
+                        input.disabled = true;
+                        input.classList.remove('border-primary');
+                    });
+                    
+                    profileFormActions.classList.add('hidden');
+                    editProfileBtn.classList.remove('hidden');
+                    changeAvatarBtn.classList.add('hidden');
+                    uploadAvatarBtn.classList.add('hidden');
+                });
+            }
+            
+            // 表单提交处理
+            const profileForm = document.getElementById('profile-form');
+            if (profileForm) {
+                profileForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    // 这里添加表单提交逻辑
+                    alert('个人信息已保存');
+                    
+                    profileInputs.forEach(input => {
+                        input.disabled = true;
+                        input.classList.remove('border-primary');
+                    });
+                    
+                    profileFormActions.classList.add('hidden');
+                    editProfileBtn.classList.remove('hidden');
+                    changeAvatarBtn.classList.add('hidden');
+                    uploadAvatarBtn.classList.add('hidden');
+                });
+            }
+        });
+        
+        // 检查用户登录状态
+        function checkUserLogin() {
+            const token = localStorage.getItem('user_token');
+            if (!token) {
+                alert('请先登录');
+                window.location.href = '/';
+                return;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>护理助手 - 寻找护工</title>
+    <!-- 引入Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- 配置Tailwind自定义主题 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36CFC9',
+                        accent: '#722ED1',
+                        neutral: '#F5F7FA',
+                        'neutral-dark': '#4E5969',
+                        success: '#52C41A',
+                        warning: '#FAAD14',
+                        danger: '#FF4D4F',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .card-shadow {
+                @apply shadow-sm hover:shadow-md transition-shadow duration-300;
+            }
+        }
+    </style>
+</head>
+<body class="font-inter bg-gray-50 text-gray-800">
+    <!-- 顶部导航栏 -->
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                    <i class="fa fa-heartbeat text-white text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-primary">护理助手</h1>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-6">
+            <div class="relative">
+                <input type="text" placeholder="搜索护工、服务..." 
+                    class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 w-64">
+                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <button class="p-2 rounded-full hover:bg-gray-100 relative">
+                <i class="fa fa-bell text-gray-600"></i>
+                <span class="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full"></span>
+            </button>
+            
+            <div class="flex items-center gap-3">
+                <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-9 h-9 rounded-full object-cover border-2 border-primary/20">
+                <div class="hidden md:block">
+                    <p class="text-sm font-medium">张阿姨</p>
+                    <p class="text-xs text-gray-500">普通用户</p>
+                </div>
+                <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-primary">登出</button>
+            </div>
+        </div>
+    </header>
+    
+    <!-- 主导航菜单 -->
+    <nav class="bg-white border-b border-gray-200 px-6">
+        <div class="flex items-center space-x-8">
+            <a href="user-home.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                首页
+            </a>
+            <a href="user-profile.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                个人信息
+            </a>
+            <a href="user-caregivers.html" class="py-4 px-2 border-b-2 border-primary text-primary font-medium">
+                寻找护工
+            </a>
+            <a href="user-appointments.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                我的预约
+            </a>
+            <a href="user-employments.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                我的聘用
+            </a>
+            <a href="user-messages.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                消息中心
+            </a>
+            <a href="#" class="py-4 px-2 text-danger hover:text-danger/80 hover:border-b-2 hover:border-danger/50">
+                紧急呼叫
+            </a>
+        </div>
+    </nav>
+    
+    <!-- 页面内容 -->
+    <main class="p-6 bg-gray-50">
+        <div class="mb-6">
+            <h2 class="text-xl font-bold mb-2">寻找护工</h2>
+            <p class="text-gray-500">根据您的需求筛选合适的护工</p>
+        </div>
+        
+        <!-- 筛选条件 -->
+        <div class="bg-white rounded-xl p-6 mb-6 card-shadow">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">服务类型</label>
+                    <select id="service-type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
+                        <option value="">全部类型</option>
+                        <option value="elderly">老年护理</option>
+                        <option value="maternity">母婴护理</option>
+                        <option value="medical">医疗护理</option>
+                        <option value="rehabilitation">康复护理</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">经验要求</label>
+                    <select id="experience" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
+                        <option value="">不限</option>
+                        <option value="1">1年以上</option>
+                        <option value="3">3年以上</option>
+                        <option value="5">5年以上</option>
+                        <option value="10">10年以上</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">最低评分</label>
+                    <select id="rating" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
+                        <option value="">不限</option>
+                        <option value="4">4.0分以上</option>
+                        <option value="4.5">4.5分以上</option>
+                        <option value="4.8">4.8分以上</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">价格范围</label>
+                    <select id="price-range" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
+                        <option value="">不限</option>
+                        <option value="0-150">150元/小时以下</option>
+                        <option value="150-200">150-200元/小时</option>
+                        <option value="200-300">200-300元/小时</option>
+                        <option value="300+">300元/小时以上</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mt-4 flex justify-end gap-3">
+                <button id="reset-filters" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                    重置筛选
+                </button>
+                <button id="search-caregivers" class="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg transition-colors">
+                    查找护工
+                </button>
+            </div>
+        </div>
+        
+        <!-- 护工列表 -->
+        <div id="caregivers-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- 护工卡片1 -->
+            <div class="bg-white rounded-xl overflow-hidden card-shadow">
+                <div class="relative">
+                    <img src="https://picsum.photos/id/26/400/200" alt="李敏护工工作照" class="w-full h-48 object-cover">
+                    <div class="absolute top-3 right-3 bg-success text-white text-xs px-2 py-1 rounded-full">
+                        可立即预约
+                    </div>
+                </div>
+                <div class="p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-lg">李敏 护工</h4>
+                        <div class="flex items-center">
+                            <i class="fa fa-star text-warning text-sm"></i>
+                            <span class="ml-1 text-sm font-medium">4.8</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">老年护理</span>
+                        <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">康复护理</span>
+                        <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">5年经验</span>
+                    </div>
+                    
+                    <p class="text-gray-600 text-sm mb-4 line-clamp-2">
+                        擅长老年日常护理、康复辅助，有耐心，责任心强，持有专业护理证书。
+                    </p>
+                    
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-primary font-bold">¥180</span>
+                            <span class="text-gray-500 text-sm">/小时</span>
+                        </div>
+                        <button class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                            立即预约
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 护工卡片2 -->
+            <div class="bg-white rounded-xl overflow-hidden card-shadow">
+                <div class="relative">
+                    <img src="https://picsum.photos/id/91/400/200" alt="王芳护工工作照" class="w-full h-48 object-cover">
+                    <div class="absolute top-3 right-3 bg-success text-white text-xs px-2 py-1 rounded-full">
+                        可立即预约
+                    </div>
+                </div>
+                <div class="p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-lg">王芳 护工</h4>
+                        <div class="flex items-center">
+                            <i class="fa fa-star text-warning text-sm"></i>
+                            <span class="ml-1 text-sm font-medium">4.9</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">母婴护理</span>
+                        <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">育儿嫂</span>
+                        <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">8年经验</span>
+                    </div>
+                    
+                    <p class="text-gray-600 text-sm mb-4 line-clamp-2">
+                        专业母婴护理师，擅长新生儿照料、产后恢复指导，服务细致周到。
+                    </p>
+                    
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-primary font-bold">¥220</span>
+                            <span class="text-gray-500 text-sm">/小时</span>
+                        </div>
+                        <button class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                            立即预约
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 护工卡片3 -->
+            <div class="bg-white rounded-xl overflow-hidden card-shadow">
+                <div class="relative">
+                    <img src="https://picsum.photos/id/177/400/200" alt="张伟护工工作照" class="w-full h-48 object-cover">
+                    <div class="absolute top-3 right-3 bg-warning text-white text-xs px-2 py-1 rounded-full">
+                        需提前预约
+                    </div>
+                </div>
+                <div class="p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-lg">张伟 护工</h4>
+                        <div class="flex items-center">
+                            <i class="fa fa-star text-warning text-sm"></i>
+                            <span class="ml-1 text-sm font-medium">4.7</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">医疗护理</span>
+                        <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">术后护理</span>
+                        <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">10年经验</span>
+                    </div>
+                    
+                    <p class="text-gray-600 text-sm mb-4 line-clamp-2">
+                        原医院护士，擅长术后护理、医疗辅助，熟悉各种医疗设备使用。
+                    </p>
+                    
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-primary font-bold">¥260</span>
+                            <span class="text-gray-500 text-sm">/小时</span>
+                        </div>
+                        <button class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                            立即预约
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 护工卡片4 -->
+            <div class="bg-white rounded-xl overflow-hidden card-shadow">
+                <div class="relative">
+                    <img src="https://picsum.photos/id/65/400/200" alt="刘英护工工作照" class="w-full h-48 object-cover">
+                    <div class="absolute top-3 right-3 bg-success text-white text-xs px-2 py-1 rounded-full">
+                        可立即预约
+                    </div>
+                </div>
+                <div class="p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-lg">刘英 护工</h4>
+                        <div class="flex items-center">
+                            <i class="fa fa-star text-warning text-sm"></i>
+                            <span class="ml-1 text-sm font-medium">4.6</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">老年护理</span>
+                        <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">痴呆护理</span>
+                        <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">7年经验</span>
+                    </div>
+                    
+                    <p class="text-gray-600 text-sm mb-4 line-clamp-2">
+                        专注于老年痴呆患者护理，有丰富经验，耐心细致，获得家属一致好评。
+                    </p>
+                    
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-primary font-bold">¥200</span>
+                            <span class="text-gray-500 text-sm">/小时</span>
+                        </div>
+                        <button class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                            立即预约
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 护工卡片5 -->
+            <div class="bg-white rounded-xl overflow-hidden card-shadow">
+                <div class="relative">
+                    <img src="https://picsum.photos/id/100/400/200" alt="陈丽护工工作照" class="w-full h-48 object-cover">
+                    <div class="absolute top-3 right-3 bg-success text-white text-xs px-2 py-1 rounded-full">
+                        可立即预约
+                    </div>
+                </div>
+                <div class="p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-lg">陈丽 护工</h4>
+                        <div class="flex items-center">
+                            <i class="fa fa-star text-warning text-sm"></i>
+                            <span class="ml-1 text-sm font-medium">4.5</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">母婴护理</span>
+                        <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">产后护理</span>
+                        <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">3年经验</span>
+                    </div>
+                    
+                    <p class="text-gray-600 text-sm mb-4 line-clamp-2">
+                        专业母婴护理师，擅长产后恢复、新生儿护理，服务态度好，深受客户信赖。
+                    </p>
+                    
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-primary font-bold">¥190</span>
+                            <span class="text-gray-500 text-sm">/小时</span>
+                        </div>
+                        <button class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                            立即预约
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 护工卡片6 -->
+            <div class="bg-white rounded-xl overflow-hidden card-shadow">
+                <div class="relative">
+                    <img src="https://picsum.photos/id/200/400/200" alt="赵强护工工作照" class="w-full h-48 object-cover">
+                    <div class="absolute top-3 right-3 bg-warning text-white text-xs px-2 py-1 rounded-full">
+                        需提前预约
+                    </div>
+                </div>
+                <div class="p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-lg">赵强 护工</h4>
+                        <div class="flex items-center">
+                            <i class="fa fa-star text-warning text-sm"></i>
+                            <span class="ml-1 text-sm font-medium">4.4</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">康复护理</span>
+                        <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">运动康复</span>
+                        <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">6年经验</span>
+                    </div>
+                    
+                    <p class="text-gray-600 text-sm mb-4 line-clamp-2">
+                        专业康复师，擅长运动康复、物理治疗，帮助患者恢复身体功能。
+                    </p>
+                    
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-primary font-bold">¥240</span>
+                            <span class="text-gray-500 text-sm">/小时</span>
+                        </div>
+                        <button class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                            立即预约
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 分页 -->
+        <div class="mt-8 flex justify-center">
+            <nav class="flex items-center gap-1">
+                <button class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-300 text-gray-500 hover:border-primary hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <i class="fa fa-angle-left"></i>
+                </button>
+                <button class="w-10 h-10 flex items-center justify-center rounded-lg bg-primary text-white">1</button>
+                <button class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-300 hover:border-primary hover:text-primary">2</button>
+                <button class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-300 hover:border-primary hover:text-primary">3</button>
+                <span class="text-gray-500">...</span>
+                <button class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-300 hover:border-primary hover:text-primary">8</button>
+                <button class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-300 text-gray-700 hover:border-primary hover:text-primary">
+                    <i class="fa fa-angle-right"></i>
+                </button>
+            </nav>
+        </div>
+    </main>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查用户登录状态
+            checkUserLogin();
+            
+            // 绑定筛选功能
+            bindFilterEvents();
+            
+            // 绑定预约按钮事件
+            bindAppointmentEvents();
+        });
+        
+        // 检查用户登录状态
+        function checkUserLogin() {
+            const token = localStorage.getItem('user_token');
+            if (!token) {
+                alert('请先登录');
+                window.location.href = '/';
+                return;
+            }
+        }
+        
+        // 绑定筛选功能
+        function bindFilterEvents() {
+            const searchBtn = document.getElementById('search-caregivers');
+            const resetBtn = document.getElementById('reset-filters');
+            
+            if (searchBtn) {
+                searchBtn.addEventListener('click', function() {
+                    searchCaregivers();
+                });
+            }
+            
+            if (resetBtn) {
+                resetBtn.addEventListener('click', function() {
+                    resetFilters();
+                });
+            }
+        }
+        
+        // 搜索护工
+        function searchCaregivers() {
+            const serviceType = document.getElementById('service-type').value;
+            const experience = document.getElementById('experience').value;
+            const rating = document.getElementById('rating').value;
+            const priceRange = document.getElementById('price-range').value;
+            
+            // 构建筛选条件
+            const filters = {
+                service_type: serviceType,
+                experience: experience,
+                rating: rating,
+                price_range: priceRange
+            };
+            
+            console.log('筛选条件:', filters);
+            
+            // 这里可以调用API进行筛选
+            // 实际项目中应该发送请求到后端API
+            alert('正在根据筛选条件查找护工...');
+        }
+        
+        // 重置筛选
+        function resetFilters() {
+            document.getElementById('service-type').value = '';
+            document.getElementById('experience').value = '';
+            document.getElementById('rating').value = '';
+            document.getElementById('price-range').value = '';
+            
+            // 重新加载所有护工
+            console.log('筛选条件已重置');
+        }
+        
+        // 绑定预约按钮事件
+        function bindAppointmentEvents() {
+            const appointmentBtns = document.querySelectorAll('.bg-primary.hover\\:bg-primary\\/90');
+            
+            appointmentBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const caregiverCard = this.closest('.bg-white.rounded-xl');
+                    const caregiverName = caregiverCard.querySelector('h4').textContent;
+                    
+                    // 跳转到预约页面或显示预约弹窗
+                    alert(`正在为 ${caregiverName} 创建预约...`);
+                    
+                    // 这里可以跳转到预约页面
+                    // window.location.href = `user-appointments.html?caregiver=${encodeURIComponent(caregiverName)}`;
+                });
+            });
+        }
+    </script>
+</body>
+</html>

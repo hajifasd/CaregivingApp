@@ -451,8 +451,8 @@
         <!-- 内容主体 -->
         <div class="main-content">
             <div class="page-header">
-                <h1 class="page-title">护工管理</h1>
-                <p class="page-description">审核护工资质并管理护工信息</p>
+                <h1 class="page-title">护工账号管理</h1>
+                <p class="page-description">管理护工账号信息并审核护工资质</p>
             </div>
             
             <div class="tabs">
@@ -461,6 +461,9 @@
                 </button>
                 <button class="tab-btn" data-tab="approved">
                     <i class="fas fa-check-circle"></i> 已批准护工
+                </button>
+                <button class="tab-btn" data-tab="accounts">
+                    <i class="fas fa-user-cog"></i> 护工账号管理
                 </button>
             </div>
 
@@ -568,6 +571,28 @@
                     </table>
                 </div>
             </div>
+
+            <!-- 护工账号管理列表 (默认隐藏) -->
+            <div class="card" style="display: none;" id="accounts-card">
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>账号</th>
+                                <th>姓名</th>
+                                <th>注册时间</th>
+                                <th>最后登录</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="caregiver-accounts-tbody">
+                            <!-- 动态加载护工账号数据 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -617,6 +642,7 @@
             const certDownloadEl = document.getElementById('cert-document-download');
             const pendingCard = document.getElementById('pending-card');
             const approvedCard = document.getElementById('approved-card');
+            const accountsCard = document.getElementById('accounts-card');
 
             // 检查登录状态
             function checkLoginStatus() {
@@ -642,9 +668,17 @@
                     if (tab === 'pending') {
                         if (pendingCard) pendingCard.style.display = 'block';
                         if (approvedCard) approvedCard.style.display = 'none';
-                    } else {
+                        if (accountsCard) accountsCard.style.display = 'none';
+                    } else if (tab === 'approved') {
                         if (pendingCard) pendingCard.style.display = 'none';
                         if (approvedCard) approvedCard.style.display = 'block';
+                        if (accountsCard) accountsCard.style.display = 'none';
+                    } else if (tab === 'accounts') {
+                        if (pendingCard) pendingCard.style.display = 'none';
+                        if (approvedCard) approvedCard.style.display = 'none';
+                        if (accountsCard) accountsCard.style.display = 'block';
+                        // 加载护工账号管理数据
+                        loadCaregiverAccountsData();
                     }
                 });
             });
@@ -844,6 +878,246 @@
                 });
             });
 
+            // 加载护工账号管理数据
+            async function loadCaregiverAccountsData() {
+                try {
+                    const token = localStorage.getItem('admin_token');
+                    if (!token) {
+                        console.error('未找到管理员token');
+                        return;
+                    }
+
+                    const response = await fetch('/api/admin/get-all-caregivers', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        renderCaregiverAccountsTable(data.data);
+                    } else {
+                        console.error('获取护工数据失败:', data.message);
+                    }
+                } catch (error) {
+                    console.error('加载护工账号数据失败:', error);
+                }
+            }
+
+            // 渲染护工账号管理表格
+            function renderCaregiverAccountsTable(caregivers) {
+                const tbody = document.getElementById('caregiver-accounts-tbody');
+                tbody.innerHTML = '';
+
+                if (caregivers.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="empty-state">
+                                <i class="fas fa-users"></i>
+                                <p>暂无护工数据</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                caregivers.forEach(caregiver => {
+                    const row = document.createElement('tr');
+                    
+                    // 确定账号显示（优先显示手机号，如果没有则显示邮箱）
+                    const account = caregiver.phone || caregiver.email || 'N/A';
+                    
+                    // 确定状态徽章
+                    let statusBadge = '';
+                    if (caregiver.is_approved) {
+                        statusBadge = '<span class="status-badge status-active">正常</span>';
+                    } else {
+                        statusBadge = '<span class="status-badge status-suspended">待审核</span>';
+                    }
+
+                    // 确定操作按钮
+                    let actionButtons = '';
+                    if (caregiver.is_approved) {
+                        actionButtons = `
+                            <div class="btn-group">
+                                <button class="btn btn-primary edit-caregiver-btn" data-id="${caregiver.id}">
+                                    <i class="fas fa-edit"></i> 编辑
+                                </button>
+                                <button class="btn btn-warning reset-password-btn" data-id="${caregiver.id}">
+                                    <i class="fas fa-key"></i> 重置密码
+                                </button>
+                                <button class="btn btn-danger delete-caregiver-btn" data-id="${caregiver.id}">
+                                    <i class="fas fa-trash"></i> 删除
+                                </button>
+                            </div>
+                        `;
+                    } else {
+                        actionButtons = `
+                            <div class="btn-group">
+                                <button class="btn btn-primary edit-caregiver-btn" data-id="${caregiver.id}">
+                                    <i class="fas fa-edit"></i> 编辑
+                                </button>
+                                <button class="btn btn-success activate-caregiver-btn" data-id="${caregiver.id}">
+                                    <i class="fas fa-play"></i> 激活
+                                </button>
+                                <button class="btn btn-danger delete-caregiver-btn" data-id="${caregiver.id}">
+                                    <i class="fas fa-trash"></i> 删除
+                                </button>
+                            </div>
+                        `;
+                    }
+
+                    row.innerHTML = `
+                        <td>${caregiver.id}</td>
+                        <td>${account}</td>
+                        <td>${caregiver.name || '未设置'}</td>
+                        <td>${caregiver.created_at || 'N/A'}</td>
+                        <td>${caregiver.last_login || 'N/A'}</td>
+                        <td>${statusBadge}</td>
+                        <td>${actionButtons}</td>
+                    `;
+
+                    tbody.appendChild(row);
+                });
+
+                // 重新绑定事件监听器
+                bindCaregiverAccountEventListeners();
+            }
+
+            // 绑定护工账号管理相关的事件监听器
+            function bindCaregiverAccountEventListeners() {
+                // 编辑护工信息
+                document.querySelectorAll('.edit-caregiver-btn').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        if (!checkLoginStatus()) return;
+                        
+                        const id = btn.getAttribute('data-id');
+                        if (!id) {
+                            alert('无法获取护工ID');
+                            return;
+                        }
+                        
+                        // 这里可以打开编辑弹窗或跳转到编辑页面
+                        alert(`编辑护工ID: ${id} 的账号信息`);
+                    });
+                });
+
+                // 重置密码
+                document.querySelectorAll('.reset-password-btn').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        if (!checkLoginStatus()) return;
+                        
+                        const id = btn.getAttribute('data-id');
+                        if (!id) {
+                            alert('无法获取护工ID');
+                            return;
+                        }
+                        
+                        if (confirm(`确定要重置护工ID为${id}的密码吗？`)) {
+                            try {
+                                const token = localStorage.getItem('admin_token');
+                                const res = await fetch('/api/admin/reset-caregiver-password', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${token}`
+                                    },
+                                    body: JSON.stringify({id: parseInt(id)})
+                                });
+                                
+                                const data = await res.json();
+                                if (data.success) {
+                                    alert(`密码重置成功，新密码：${data.new_password}`);
+                                } else {
+                                    alert(`操作失败: ${data.message || '未知错误'}`);
+                                }
+                            } catch (err) {
+                                console.error('密码重置失败:', err);
+                                alert('网络错误，请重试');
+                            }
+                        }
+                    });
+                });
+
+                // 删除护工账号
+                document.querySelectorAll('.delete-caregiver-btn').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        if (!checkLoginStatus()) return;
+                        
+                        const id = btn.getAttribute('data-id');
+                        if (!id) {
+                            alert('无法获取护工ID');
+                            return;
+                        }
+                        
+                        if (confirm(`确定要删除护工ID为${id}的账号吗？此操作不可恢复`)) {
+                            try {
+                                const token = localStorage.getItem('admin_token');
+                                const res = await fetch('/api/admin/delete-caregiver-account', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${token}`
+                                    },
+                                    body: JSON.stringify({id: parseInt(id)})
+                                });
+                                
+                                const data = await res.json();
+                                if (data.success) {
+                                    alert('护工账号删除成功');
+                                    // 重新加载数据
+                                    loadCaregiverAccountsData();
+                                } else {
+                                    alert(`操作失败: ${data.message || '未知错误'}`);
+                                }
+                            } catch (err) {
+                                console.error('护工账号删除失败:', err);
+                                alert('网络错误，请重试');
+                            }
+                        }
+                    });
+                });
+
+                // 激活护工账号
+                document.querySelectorAll('.activate-caregiver-btn').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        if (!checkLoginStatus()) return;
+                        
+                        const id = btn.getAttribute('data-id');
+                        if (!id) {
+                            alert('无法获取护工ID');
+                            return;
+                        }
+                        
+                        if (confirm(`确定要激活护工ID为${id}的账号吗？`)) {
+                            try {
+                                const token = localStorage.getItem('admin_token');
+                                const res = await fetch('/api/admin/activate-caregiver-account', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${token}`
+                                    },
+                                    body: JSON.stringify({id: parseInt(id)})
+                                });
+                                
+                                const data = await res.json();
+                                if (data.success) {
+                                    alert('护工账号激活成功');
+                                    // 重新加载数据
+                                    loadCaregiverAccountsData();
+                                } else {
+                                    alert(`操作失败: ${data.message || '未知错误'}`);
+                                }
+                            } catch (err) {
+                                console.error('护工账号激活失败:', err);
+                                alert('网络错误，请重试');
+                            }
+                        }
+                    });
+                });
+            }
+
             // 初始化页面状态
             function initPage() {
                 const activeTab = document.querySelector('.tab-btn.active');
@@ -852,9 +1126,15 @@
                     if (tab === 'pending') {
                         if (pendingCard) pendingCard.style.display = 'block';
                         if (approvedCard) approvedCard.style.display = 'none';
-                    } else {
+                        if (accountsCard) accountsCard.style.display = 'none';
+                    } else if (tab === 'approved') {
                         if (pendingCard) pendingCard.style.display = 'none';
                         if (approvedCard) approvedCard.style.display = 'block';
+                        if (accountsCard) accountsCard.style.display = 'none';
+                    } else if (tab === 'accounts') {
+                        if (pendingCard) pendingCard.style.display = 'none';
+                        if (approvedCard) approvedCard.style.display = 'none';
+                        if (accountsCard) accountsCard.style.display = 'block';
                     }
                 }
             }

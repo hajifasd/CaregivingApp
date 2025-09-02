@@ -241,9 +241,55 @@
             background-color: #c0392b;
         }
         
+        .btn-warning {
+            background-color: #f39c12;
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background-color: #e67e22;
+        }
+        
+        .btn-success {
+            background-color: #27ae60;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #229954;
+        }
+        
         .btn-group {
             display: flex;
             gap: 8px;
+        }
+        
+        /* 状态徽章样式 */
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            text-align: center;
+            display: inline-block;
+        }
+        
+        .status-active {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-suspended {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .status-inactive {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
         }
         
         /* 材料查看弹窗 */
@@ -425,6 +471,9 @@
                 <button class="tab-btn" data-tab="approved">
                     <i class="fas fa-check-circle"></i> 已批准用户
                 </button>
+                <button class="tab-btn" data-tab="accounts">
+                    <i class="fas fa-user-cog"></i> 用户账号管理
+                </button>
             </div>
 
             <!-- 待审核用户列表 -->
@@ -520,6 +569,30 @@
                     </table>
                 </div>
             </div>
+
+            <!-- 账号管理列表 (默认隐藏) -->
+            <div class="card" style="display: none;" id="accounts-card">
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>账号</th>
+                                <th>用户名</th>
+                                <th>注册时间</th>
+                                <th>最后登录</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="accounts-tbody">
+                            <!-- 动态加载用户数据 -->
+
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -555,6 +628,7 @@
             const idDownloadEl = document.getElementById('id-download');
             const pendingCard = document.getElementById('pending-card');
             const approvedCard = document.getElementById('approved-card');
+            const accountsCard = document.getElementById('accounts-card');
 
             // 检查登录状态
             function checkLoginStatus() {
@@ -580,12 +654,260 @@
                     if (tab === 'pending') {
                         pendingCard.style.display = 'block';
                         approvedCard.style.display = 'none';
-                    } else {
+                        accountsCard.style.display = 'none';
+                    } else if (tab === 'approved') {
                         pendingCard.style.display = 'none';
                         approvedCard.style.display = 'block';
+                        accountsCard.style.display = 'none';
+                    } else if (tab === 'accounts') {
+                        pendingCard.style.display = 'none';
+                        approvedCard.style.display = 'none';
+                        accountsCard.style.display = 'block';
+                        // 加载账号管理数据
+                        loadAccountsData();
                     }
                 });
             });
+
+            // 加载账号管理数据
+            async function loadAccountsData() {
+                try {
+                    const token = localStorage.getItem('admin_token');
+                    if (!token) {
+                        console.error('未找到管理员token');
+                        return;
+                    }
+
+                    const response = await fetch('/api/admin/get-all-users', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        renderAccountsTable(data.data);
+                    } else {
+                        console.error('获取用户数据失败:', data.message);
+                    }
+                } catch (error) {
+                    console.error('加载账号数据失败:', error);
+                }
+            }
+
+            // 渲染账号管理表格
+            function renderAccountsTable(users) {
+                const tbody = document.getElementById('accounts-tbody');
+                tbody.innerHTML = '';
+
+                if (users.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="empty-state">
+                                <i class="fas fa-users"></i>
+                                <p>暂无用户数据</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                users.forEach(user => {
+                    const row = document.createElement('tr');
+                    
+                    // 确定账号显示（优先显示手机号，如果没有则显示邮箱）
+                    const account = user.phone || user.email || 'N/A';
+                    
+                    // 确定状态徽章
+                    let statusBadge = '';
+                    if (user.is_approved) {
+                        statusBadge = '<span class="status-badge status-active">正常</span>';
+                    } else {
+                        statusBadge = '<span class="status-badge status-suspended">待审核</span>';
+                    }
+
+                    // 确定操作按钮
+                    let actionButtons = '';
+                    if (user.is_approved) {
+                        actionButtons = `
+                            <div class="btn-group">
+                                <button class="btn btn-primary edit-account-btn" data-id="${user.id}">
+                                    <i class="fas fa-edit"></i> 编辑
+                                </button>
+                                <button class="btn btn-warning reset-password-btn" data-id="${user.id}">
+                                    <i class="fas fa-key"></i> 重置密码
+                                </button>
+                                <button class="btn btn-danger delete-account-btn" data-id="${user.id}">
+                                    <i class="fas fa-trash"></i> 删除
+                                </button>
+                            </div>
+                        `;
+                    } else {
+                        actionButtons = `
+                            <div class="btn-group">
+                                <button class="btn btn-primary edit-account-btn" data-id="${user.id}">
+                                    <i class="fas fa-edit"></i> 编辑
+                                </button>
+                                <button class="btn btn-success activate-account-btn" data-id="${user.id}">
+                                    <i class="fas fa-play"></i> 激活
+                                </button>
+                                <button class="btn btn-danger delete-account-btn" data-id="${user.id}">
+                                    <i class="fas fa-trash"></i> 删除
+                                </button>
+                            </div>
+                        `;
+                    }
+
+                    row.innerHTML = `
+                        <td>${user.id}</td>
+                        <td>${account}</td>
+                        <td>${user.name}</td>
+                        <td>${user.created_at}</td>
+                        <td>${user.last_login}</td>
+                        <td>${statusBadge}</td>
+                        <td>${actionButtons}</td>
+                    `;
+
+                    tbody.appendChild(row);
+                });
+
+                // 重新绑定事件监听器
+                bindAccountEventListeners();
+            }
+
+            // 绑定账号管理相关的事件监听器
+            function bindAccountEventListeners() {
+                // 编辑账号信息
+                document.querySelectorAll('.edit-account-btn').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        if (!checkLoginStatus()) return;
+                        
+                        const id = btn.getAttribute('data-id');
+                        if (!id) {
+                            alert('无法获取用户ID');
+                            return;
+                        }
+                        
+                        // 这里可以打开编辑弹窗或跳转到编辑页面
+                        alert(`编辑用户ID: ${id} 的账号信息`);
+                    });
+                });
+
+                // 重置密码
+                document.querySelectorAll('.reset-password-btn').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        if (!checkLoginStatus()) return;
+                        
+                        const id = btn.getAttribute('data-id');
+                        if (!id) {
+                            alert('无法获取用户ID');
+                            return;
+                        }
+                        
+                        if (confirm(`确定要重置用户ID为${id}的密码吗？`)) {
+                            try {
+                                const token = localStorage.getItem('admin_token');
+                                const res = await fetch('/api/admin/reset-password', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${token}`
+                                    },
+                                    body: JSON.stringify({id: parseInt(id)})
+                                });
+                                
+                                const data = await res.json();
+                                if (data.success) {
+                                    alert(`密码重置成功，新密码：${data.new_password}`);
+                                } else {
+                                    alert(`操作失败: ${data.message || '未知错误'}`);
+                                }
+                            } catch (err) {
+                                console.error('密码重置失败:', err);
+                                alert('网络错误，请重试');
+                            }
+                        }
+                    });
+                });
+
+                // 删除账号
+                document.querySelectorAll('.delete-account-btn').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        if (!checkLoginStatus()) return;
+                        
+                        const id = btn.getAttribute('data-id');
+                        if (!id) {
+                            alert('无法获取用户ID');
+                            return;
+                        }
+                        
+                        if (confirm(`确定要删除用户ID为${id}的账号吗？此操作不可恢复`)) {
+                            try {
+                                const token = localStorage.getItem('admin_token');
+                                const res = await fetch('/api/admin/delete-account', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${token}`
+                                    },
+                                    body: JSON.stringify({id: parseInt(id)})
+                                });
+                                
+                                const data = await res.json();
+                                if (data.success) {
+                                    alert('账号删除成功');
+                                    // 重新加载数据
+                                    loadAccountsData();
+                                } else {
+                                    alert(`操作失败: ${data.message || '未知错误'}`);
+                                }
+                            } catch (err) {
+                                console.error('账号删除失败:', err);
+                                alert('网络错误，请重试');
+                            }
+                        }
+                    });
+                });
+
+                // 激活账号
+                document.querySelectorAll('.activate-account-btn').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        if (!checkLoginStatus()) return;
+                        
+                        const id = btn.getAttribute('data-id');
+                        if (!id) {
+                            alert('无法获取用户ID');
+                            return;
+                        }
+                        
+                        if (confirm(`确定要激活用户ID为${id}的账号吗？`)) {
+                            try {
+                                const token = localStorage.getItem('admin_token');
+                                const res = await fetch('/api/admin/activate-account', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${token}`
+                                    },
+                                    body: JSON.stringify({id: parseInt(id)})
+                                });
+                                
+                                const data = await res.json();
+                                if (data.success) {
+                                    alert('账号激活成功');
+                                    // 重新加载数据
+                                    loadAccountsData();
+                                } else {
+                                    alert(`操作失败: ${data.message || '未知错误'}`);
+                                }
+                            } catch (err) {
+                                console.error('账号激活失败:', err);
+                                alert('网络错误，请重试');
+                            }
+                        }
+                    });
+                });
+            }
 
             // 查看身份证按钮点击事件
             document.querySelectorAll('.view-id-btn').forEach(btn => {
@@ -743,6 +1065,8 @@
                     }
                 });
             });
+
+
         });
 
         // 退出登录功能

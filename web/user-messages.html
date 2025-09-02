@@ -8,6 +8,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入Font Awesome -->
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- 引入自定义样式 -->
+    <link href="css/components.css" rel="stylesheet">
+    <!-- 引入JavaScript模块 -->
+    <script src="js/pageBuilder.js"></script>
+    <script src="js/common.js"></script>
+    <script src="js/modules/auth.js"></script>
+    <script src="js/modules/navigation.js"></script>
+    <script src="js/modules/ui.js"></script>
     
     <!-- 配置Tailwind自定义主题 -->
     <script>
@@ -41,233 +49,207 @@
     </style>
 </head>
 <body class="font-inter bg-gray-50 text-gray-800">
-    <!-- 顶部导航栏 -->
-    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
-        <div class="flex items-center gap-6">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-                    <i class="fa fa-heartbeat text-white text-xl"></i>
-                </div>
-                <h1 class="text-xl font-bold text-primary">护理助手</h1>
-            </div>
-        </div>
-        
-        <div class="flex items-center gap-6">
-            <div class="relative">
-                <input type="text" placeholder="搜索护工、服务..." 
-                    class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 w-64">
-                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-            </div>
-        </div>
-        
-        <div class="flex items-center gap-4">
-            <button class="p-2 rounded-full hover:bg-gray-100 relative">
-                <i class="fa fa-bell text-gray-600"></i>
-                <span class="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full"></span>
-            </button>
-            
-            <div class="flex items-center gap-3">
-                <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-9 h-9 rounded-full object-cover border-2 border-primary/20">
-                <div class="hidden md:block">
-                    <p class="text-sm font-medium">张阿姨</p>
-                    <p class="text-xs text-gray-500">普通用户</p>
-                </div>
-                <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-primary">登出</button>
-            </div>
-        </div>
-    </header>
-    
-    <!-- 主导航菜单 -->
-    <nav class="bg-white border-b border-gray-200 px-6">
-        <div class="flex items-center space-x-8">
-            <a href="user-home.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
-                首页
-            </a>
-            <a href="user-profile.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
-                个人信息
-            </a>
-            <a href="user-caregivers.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
-                寻找护工
-            </a>
-            <a href="user-appointments.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
-                我的预约
-            </a>
-            <a href="user-employments.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
-                我的聘用
-            </a>
-            <a href="user-messages.html" class="py-4 px-2 border-b-2 border-primary text-primary font-medium">
-                消息中心
-            </a>
-            <a href="#" class="py-4 px-2 text-danger hover:text-danger/80 hover:border-b-2 hover:border-danger/50">
-                紧急呼叫
-            </a>
-        </div>
-    </nav>
-    
     <!-- 页面内容 -->
     <main class="p-6 bg-gray-50">
-        <h2 class="text-xl font-bold mb-6">消息中心</h2>
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold">消息中心</h2>
+            <button id="mark-all-read-btn" class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-1 transition-colors">
+                <i class="fa fa-check-double"></i>
+                <span>全部已读</span>
+            </button>
+        </div>
         
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <!-- 消息列表 -->
-            <div class="lg:col-span-1 bg-white rounded-xl overflow-hidden card-shadow">
-                <div class="p-4 border-b border-gray-200">
-                    <div class="relative">
-                        <input type="text" placeholder="搜索消息..." 
-                            class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 w-full text-sm">
-                        <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
-                    </div>
-                </div>
-                
-                <div class="divide-y divide-gray-100">
-                    <div class="p-4 hover:bg-gray-50 bg-primary/5 border-l-4 border-primary cursor-pointer message-item" data-contact="limin">
-                        <div class="flex items-start justify-between">
-                            <div class="flex items-start gap-3">
-                                <img src="https://picsum.photos/id/26/50/50" alt="李敏护工" class="w-10 h-10 rounded-full object-cover">
-                                <div>
-                                    <p class="font-medium text-sm">李敏</p>
-                                    <p class="text-xs text-gray-600 truncate w-40">已确认您10月15日的预约，我会准时到达</p>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-xs text-gray-500">09:23</p>
-                                <span class="w-2 h-2 bg-primary rounded-full inline-block mt-1"></span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="p-4 hover:bg-gray-50 cursor-pointer message-item" data-contact="wangfang">
-                        <div class="flex items-start justify-between">
-                            <div class="flex items-start gap-3">
-                                <img src="https://picsum.photos/id/91/50/50" alt="王芳护工" class="w-10 h-10 rounded-full object-cover">
-                                <div>
-                                    <p class="font-medium text-sm">王芳</p>
-                                    <p class="text-xs text-gray-600 truncate w-40">我已收到您的预约请求，将尽快确认</p>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-xs text-gray-500">昨天</p>
-                                <span class="w-2 h-2 bg-primary rounded-full inline-block mt-1"></span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="p-4 hover:bg-gray-50 cursor-pointer message-item" data-contact="system">
-                        <div class="flex items-start justify-between">
-                            <div class="flex items-start gap-3">
-                                <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                    <i class="fa fa-bell text-primary"></i>
-                                </div>
-                                <div>
-                                    <p class="font-medium text-sm">系统通知</p>
-                                    <p class="text-xs text-gray-600 truncate w-40">您的账户已完成实名认证</p>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-xs text-gray-500">10-10</p>
-                                <span class="w-2 h-2 bg-primary rounded-full inline-block mt-1"></span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="p-4 hover:bg-gray-50 cursor-pointer message-item" data-contact="zhangwei">
-                        <div class="flex items-start justify-between">
-                            <div class="flex items-start gap-3">
-                                <img src="https://picsum.photos/id/177/50/50" alt="张伟护工" class="w-10 h-10 rounded-full object-cover">
-                                <div>
-                                    <p class="font-medium text-sm">张伟</p>
-                                    <p class="text-xs text-gray-500 truncate w-40">您对上次服务的评价已收到，感谢您的反馈</p>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-xs text-gray-500">10-09</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <!-- 消息统计 -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-xl p-4 card-shadow text-center">
+                <div class="text-2xl font-bold text-primary mb-1">24</div>
+                <div class="text-sm text-gray-600">总消息数</div>
+            </div>
+            <div class="bg-white rounded-xl p-4 card-shadow text-center">
+                <div class="text-2xl font-bold text-blue-600 mb-1">8</div>
+                <div class="text-sm text-gray-600">未读消息</div>
+            </div>
+            <div class="bg-white rounded-xl p-4 card-shadow text-center">
+                <div class="text-2xl font-bold text-warning mb-1">5</div>
+                <div class="text-sm text-gray-600">系统通知</div>
+            </div>
+            <div class="bg-white rounded-xl p-4 card-shadow text-center">
+                <div class="text-2xl font-bold text-success mb-1">11</div>
+                <div class="text-sm text-gray-600">护工消息</div>
+            </div>
+        </div>
+        
+        <!-- 消息列表 -->
+        <div class="bg-white rounded-xl card-shadow overflow-hidden">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold">消息列表</h3>
             </div>
             
-            <!-- 消息详情 -->
-            <div class="lg:col-span-3 bg-white rounded-xl overflow-hidden card-shadow flex flex-col">
-                <!-- 消息头部 -->
-                <div class="p-4 border-b border-gray-200 flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <img src="https://picsum.photos/id/26/50/50" alt="李敏护工" class="w-10 h-10 rounded-full object-cover">
-                        <div>
-                            <p class="font-medium">李敏</p>
-                            <p class="text-xs text-gray-500">在线</p>
+            <div class="divide-y divide-gray-200">
+                <!-- 消息项目1 -->
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <i class="fa fa-user text-primary text-lg"></i>
                         </div>
-                    </div>
-                    <div class="flex gap-2">
-                        <button class="p-2 rounded-full hover:bg-gray-100">
-                            <i class="fa fa-phone text-gray-600"></i>
-                        </button>
-                        <button class="p-2 rounded-full hover:bg-gray-100">
-                            <i class="fa fa-video-camera text-gray-600"></i>
-                        </button>
-                        <button class="p-2 rounded-full hover:bg-gray-100">
-                            <i class="fa fa-ellipsis-v text-gray-600"></i>
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- 消息内容 -->
-                <div class="flex-1 p-6 overflow-y-auto" id="message-content">
-                    <div class="flex flex-col gap-6">
-                        <div class="flex items-end gap-3 self-start">
-                            <img src="https://picsum.photos/id/26/40/40" alt="李敏护工" class="w-8 h-8 rounded-full object-cover">
-                            <div>
-                                <div class="bg-gray-100 rounded-lg rounded-tl-none px-4 py-2 max-w-md">
-                                    <p class="text-sm">您好，我看到了您的预约请求，10月15日上午9点可以为您提供服务</p>
+                        <div class="flex-1">
+                            <div class="flex items-start justify-between mb-2">
+                                <h4 class="font-semibold text-lg">李阿姨</h4>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-gray-500">2小时前</span>
+                                    <span class="w-3 h-3 bg-blue-500 rounded-full"></span>
                                 </div>
-                                <p class="text-xs text-gray-500 mt-1">09:15</p>
+                            </div>
+                            <p class="text-gray-600 mb-2">张阿姨您好，我已经到达您家附近，预计5分钟后到达。请问您今天需要我协助哪些护理工作？</p>
+                            <div class="flex items-center gap-4 text-sm text-gray-500">
+                                <span>护工消息</span>
+                                <span>预约相关</span>
                             </div>
                         </div>
-                        
-                        <div class="flex items-end gap-3 self-end">
-                            <div class="text-right">
-                                <div class="bg-primary text-white rounded-lg rounded-tr-none px-4 py-2 max-w-md">
-                                    <p class="text-sm">好的，非常感谢！到时候需要准备什么吗？</p>
-                                </div>
-                                <p class="text-xs text-gray-500 mt-1">09:20</p>
-                            </div>
-                            <img src="https://picsum.photos/id/64/40/40" alt="张阿姨" class="w-8 h-8 rounded-full object-cover">
-                        </div>
-                        
-                        <div class="flex items-end gap-3 self-start">
-                            <img src="https://picsum.photos/id/26/40/40" alt="李敏护工" class="w-8 h-8 rounded-full object-cover">
-                            <div>
-                                <div class="bg-gray-100 rounded-lg rounded-tl-none px-4 py-2 max-w-md">
-                                    <p class="text-sm">已确认您10月15日的预约，我会准时到达。请准备好您的医保卡和既往病史资料即可。</p>
-                                </div>
-                                <p class="text-xs text-gray-500 mt-1">09:23</p>
-                            </div>
+                        <div class="flex gap-2">
+                            <button class="px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary/90 transition-colors">
+                                回复
+                            </button>
+                            <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors">
+                                查看详情
+                            </button>
                         </div>
                     </div>
                 </div>
                 
-                <!-- 消息输入框 -->
-                <div class="p-4 border-t border-gray-200">
-                    <div class="flex items-center gap-3 mb-3">
-                        <button class="p-2 text-gray-500 hover:text-primary">
-                            <i class="fa fa-smile-o"></i>
-                        </button>
-                        <button class="p-2 text-gray-500 hover:text-primary">
-                            <i class="fa fa-paperclip"></i>
-                        </button>
-                        <button class="p-2 text-gray-500 hover:text-primary">
-                            <i class="fa fa-picture-o"></i>
-                        </button>
+                <!-- 消息项目2 -->
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-full bg-warning/10 flex items-center justify-center flex-shrink-0">
+                            <i class="fa fa-bell text-warning text-lg"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-start justify-between mb-2">
+                                <h4 class="font-semibold text-lg">系统通知</h4>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-gray-500">1天前</span>
+                                    <span class="w-3 h-3 bg-blue-500 rounded-full"></span>
+                                </div>
+                            </div>
+                            <p class="text-gray-600 mb-2">您的预约"李阿姨 - 居家护理"将于明天上午8:00开始，请提前做好准备。如有疑问，请联系客服。</p>
+                            <div class="flex items-center gap-4 text-sm text-gray-500">
+                                <span>系统通知</span>
+                                <span>预约提醒</span>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary/90 transition-colors">
+                                查看详情
+                            </button>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <input type="text" placeholder="输入消息..." 
-                            class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="message-input">
-                        <button class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary/90 transition-colors" id="send-btn">
-                            <i class="fa fa-paper-plane"></i>
-                        </button>
+                </div>
+                
+                <!-- 消息项目3 -->
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center flex-shrink-0">
+                            <i class="fa fa-user text-success text-lg"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-start justify-between mb-2">
+                                <h4 class="font-semibold text-lg">王叔叔</h4>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-gray-500">2天前</span>
+                                </div>
+                            </div>
+                            <p class="text-gray-600 mb-2">张阿姨，今天的康复训练已经完成。我注意到您的恢复情况很好，建议继续保持当前的训练强度。明天我会继续为您服务。</p>
+                            <div class="flex items-center gap-4 text-sm text-gray-500">
+                                <span>护工消息</span>
+                                <span>服务报告</span>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary/90 transition-colors">
+                                回复
+                            </button>
+                            <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors">
+                                查看详情
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 消息项目4 -->
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-full bg-info/10 flex items-center justify-center flex-shrink-0">
+                            <i class="fa fa-info-circle text-info text-lg"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-start justify-between mb-2">
+                                <h4 class="font-semibold text-lg">客服中心</h4>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-gray-500">3天前</span>
+                                </div>
+                            </div>
+                            <p class="text-gray-600 mb-2">感谢您使用护理助手服务！我们很高兴地通知您，您的账户已升级为VIP用户，享受更多专属服务和优惠。如有任何问题，请随时联系我们。</p>
+                            <div class="flex items-center gap-4 text-sm text-gray-500">
+                                <span>客服消息</span>
+                                <span>账户升级</span>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary/90 transition-colors">
+                                联系客服
+                            </button>
+                            <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors">
+                                查看详情
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 消息项目5 -->
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <i class="fa fa-user text-primary text-lg"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-start justify-between mb-2">
+                                <h4 class="font-semibold text-lg">张护士</h4>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-gray-500">1周前</span>
+                                </div>
+                            </div>
+                            <p class="text-gray-600 mb-2">张阿姨，我已经完成了本周的护理服务总结报告。您的健康状况保持稳定，建议继续保持良好的生活习惯。下周我会继续为您提供专业护理服务。</p>
+                            <div class="flex items-center gap-4 text-sm text-gray-500">
+                                <span>护工消息</span>
+                                <span>服务总结</span>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary/90 transition-colors">
+                                回复
+                            </button>
+                            <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors">
+                                查看详情
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
+        
+        <!-- 分页 -->
+        <div class="flex justify-center mt-8">
+            <nav class="flex items-center space-x-2">
+                <button class="px-3 py-2 text-gray-500 hover:text-primary disabled:opacity-50" disabled>
+                    <i class="fa fa-chevron-left"></i>
+                </button>
+                <button class="px-3 py-2 bg-primary text-white rounded-lg">1</button>
+                <button class="px-3 py-2 text-gray-500 hover:text-primary hover:bg-gray-100 rounded-lg">2</button>
+                <button class="px-3 py-2 text-gray-500 hover:text-primary hover:bg-gray-100 rounded-lg">3</button>
+                <button class="px-3 py-2 text-gray-500 hover:text-primary hover:bg-gray-100 rounded-lg">
+                    <i class="fa fa-chevron-right"></i>
+                </button>
+            </nav>
         </div>
     </main>
     
@@ -276,15 +258,72 @@
             // 检查用户登录状态
             checkUserLogin();
             
-            // 绑定消息列表事件
-            bindMessageListEvents();
+            // 全部已读按钮
+            const markAllReadBtn = document.getElementById('mark-all-read-btn');
+            if (markAllReadBtn) {
+                markAllReadBtn.addEventListener('click', function() {
+                    if (confirm('确定要将所有消息标记为已读吗？')) {
+                        markAllAsRead();
+                    }
+                });
+            }
             
-            // 绑定发送消息事件
-            bindSendMessageEvents();
-            
-            // 加载URL参数
-            loadUrlParams();
+            // 消息操作按钮
+            document.querySelectorAll('button').forEach(button => {
+                if (button.textContent.includes('回复')) {
+                    button.addEventListener('click', function() {
+                        const messageCard = this.closest('.p-6');
+                        const senderName = messageCard.querySelector('h4').textContent;
+                        showReplyDialog(senderName);
+                    });
+                }
+                
+                if (button.textContent.includes('查看详情')) {
+                    button.addEventListener('click', function() {
+                        const messageCard = this.closest('.p-6');
+                        const senderName = messageCard.querySelector('h4').textContent;
+                        const messageContent = messageCard.querySelector('p').textContent;
+                        showMessageDetail(senderName, messageContent);
+                    });
+                }
+                
+                if (button.textContent.includes('联系客服')) {
+                    button.addEventListener('click', function() {
+                        alert('正在为您连接客服...');
+                    });
+                }
+            });
         });
+        
+        // 标记所有消息为已读
+        function markAllAsRead() {
+            const unreadIndicators = document.querySelectorAll('.w-3.h-3.bg-blue-500.rounded-full');
+            unreadIndicators.forEach(indicator => {
+                indicator.style.display = 'none';
+            });
+            
+            // 更新未读消息数量
+            const unreadCountElement = document.querySelector('.text-2xl.font-bold.text-blue-600');
+            if (unreadCountElement) {
+                unreadCountElement.textContent = '0';
+            }
+            
+            alert('所有消息已标记为已读');
+        }
+        
+        // 显示回复对话框
+        function showReplyDialog(senderName) {
+            const reply = prompt(`回复 ${senderName}：`);
+            if (reply && reply.trim()) {
+                alert('回复已发送');
+                // 这里可以添加实际的回复逻辑
+            }
+        }
+        
+        // 显示消息详情
+        function showMessageDetail(senderName, messageContent) {
+            alert(`消息详情：\n发送者：${senderName}\n内容：${messageContent}`);
+        }
         
         // 检查用户登录状态
         function checkUserLogin() {
@@ -293,195 +332,6 @@
                 alert('请先登录');
                 window.location.href = '/';
                 return;
-            }
-        }
-        
-        // 绑定消息列表事件
-        function bindMessageListEvents() {
-            const messageItems = document.querySelectorAll('.message-item');
-            
-            messageItems.forEach(item => {
-                item.addEventListener('click', function() {
-                    const contact = this.getAttribute('data-contact');
-                    loadContactMessages(contact);
-                    
-                    // 更新选中状态
-                    messageItems.forEach(i => {
-                        i.classList.remove('bg-primary/5', 'border-l-4', 'border-primary');
-                    });
-                    this.classList.add('bg-primary/5', 'border-l-4', 'border-primary');
-                });
-            });
-        }
-        
-        // 加载联系人消息
-        function loadContactMessages(contact) {
-            const messageContent = document.getElementById('message-content');
-            const messageHeader = document.querySelector('.p-4.border-b.border-gray-200');
-            
-            // 根据联系人加载不同的消息内容
-            const contactData = {
-                'limin': {
-                    name: '李敏',
-                    avatar: 'https://picsum.photos/id/26/50/50',
-                    status: '在线',
-                    messages: [
-                        { sender: 'them', text: '您好，我看到了您的预约请求，10月15日上午9点可以为您提供服务', time: '09:15' },
-                        { sender: 'me', text: '好的，非常感谢！到时候需要准备什么吗？', time: '09:20' },
-                        { sender: 'them', text: '已确认您10月15日的预约，我会准时到达。请准备好您的医保卡和既往病史资料即可。', time: '09:23' }
-                    ]
-                },
-                'wangfang': {
-                    name: '王芳',
-                    avatar: 'https://picsum.photos/id/91/50/50',
-                    status: '离线',
-                    messages: [
-                        { sender: 'them', text: '我已收到您的预约请求，将尽快确认', time: '昨天' }
-                    ]
-                },
-                'system': {
-                    name: '系统通知',
-                    avatar: null,
-                    status: '系统',
-                    messages: [
-                        { sender: 'them', text: '您的账户已完成实名认证', time: '10-10' }
-                    ]
-                },
-                'zhangwei': {
-                    name: '张伟',
-                    avatar: 'https://picsum.photos/id/177/50/50',
-                    status: '离线',
-                    messages: [
-                        { sender: 'them', text: '您对上次服务的评价已收到，感谢您的反馈', time: '10-09' }
-                    ]
-                }
-            };
-            
-            const data = contactData[contact];
-            if (!data) return;
-            
-            // 更新头部信息
-            if (data.avatar) {
-                messageHeader.querySelector('img').src = data.avatar;
-            } else {
-                messageHeader.querySelector('img').style.display = 'none';
-            }
-            messageHeader.querySelector('.font-medium').textContent = data.name;
-            messageHeader.querySelector('.text-xs.text-gray-500').textContent = data.status;
-            
-            // 更新消息内容
-            messageContent.innerHTML = '';
-            data.messages.forEach(message => {
-                const messageElement = createMessageElement(message);
-                messageContent.appendChild(messageElement);
-            });
-            
-            // 滚动到底部
-            messageContent.scrollTop = messageContent.scrollHeight;
-        }
-        
-        // 创建消息元素
-        function createMessageElement(message) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'flex items-end gap-3 ' + (message.sender === 'me' ? 'self-end' : 'self-start');
-            
-            if (message.sender === 'me') {
-                messageDiv.innerHTML = `
-                    <div class="text-right">
-                        <div class="bg-primary text-white rounded-lg rounded-tr-none px-4 py-2 max-w-md">
-                            <p class="text-sm">${message.text}</p>
-                        </div>
-                        <p class="text-xs text-gray-500 mt-1">${message.time}</p>
-                    </div>
-                    <img src="https://picsum.photos/id/64/40/40" alt="张阿姨" class="w-8 h-8 rounded-full object-cover">
-                `;
-            } else {
-                messageDiv.innerHTML = `
-                    <img src="https://picsum.photos/id/26/40/40" alt="联系人" class="w-8 h-8 rounded-full object-cover">
-                    <div>
-                        <div class="bg-gray-100 rounded-lg rounded-tl-none px-4 py-2 max-w-md">
-                            <p class="text-sm">${message.text}</p>
-                        </div>
-                        <p class="text-xs text-gray-500 mt-1">${message.time}</p>
-                    </div>
-                `;
-            }
-            
-            return messageDiv;
-        }
-        
-        // 绑定发送消息事件
-        function bindSendMessageEvents() {
-            const sendBtn = document.getElementById('send-btn');
-            const messageInput = document.getElementById('message-input');
-            
-            if (sendBtn && messageInput) {
-                sendBtn.addEventListener('click', function() {
-                    sendMessage();
-                });
-                
-                messageInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        sendMessage();
-                    }
-                });
-            }
-        }
-        
-        // 发送消息
-        function sendMessage() {
-            const messageInput = document.getElementById('message-input');
-            const messageContent = document.getElementById('message-content');
-            const text = messageInput.value.trim();
-            
-            if (!text) return;
-            
-            // 创建新消息
-            const message = {
-                sender: 'me',
-                text: text,
-                time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-            };
-            
-            const messageElement = createMessageElement(message);
-            messageContent.appendChild(messageElement);
-            
-            // 清空输入框
-            messageInput.value = '';
-            
-            // 滚动到底部
-            messageContent.scrollTop = messageContent.scrollHeight;
-            
-            // 这里应该调用API发送消息
-            console.log('发送消息:', text);
-        }
-        
-        // 加载URL参数
-        function loadUrlParams() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const caregiver = urlParams.get('caregiver');
-            
-            if (caregiver) {
-                // 根据护工名称找到对应的联系人
-                const contactMap = {
-                    '李敏': 'limin',
-                    '王芳': 'wangfang',
-                    '张伟': 'zhangwei'
-                };
-                
-                const contact = contactMap[caregiver];
-                if (contact) {
-                    loadContactMessages(contact);
-                    
-                    // 更新选中状态
-                    const messageItems = document.querySelectorAll('.message-item');
-                    messageItems.forEach(item => {
-                        item.classList.remove('bg-primary/5', 'border-l-4', 'border-primary');
-                        if (item.getAttribute('data-contact') === contact) {
-                            item.classList.add('bg-primary/5', 'border-l-4', 'border-primary');
-                        }
-                    });
-                }
             }
         }
     </script>

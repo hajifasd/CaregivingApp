@@ -50,33 +50,33 @@
                 </div>
                 <h1 class="text-xl font-bold text-primary">护理助手</h1>
             </div>
-        </div>
-        
-        <div class="flex items-center gap-6">
-            <div class="relative">
-                <input type="text" placeholder="搜索护工、服务..." 
-                    class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 w-64">
-                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
             </div>
-        </div>
-        
-        <div class="flex items-center gap-4">
-            <button class="p-2 rounded-full hover:bg-gray-100 relative">
-                <i class="fa fa-bell text-gray-600"></i>
-                <span class="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full"></span>
-            </button>
             
-            <div class="flex items-center gap-3">
-                <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-9 h-9 rounded-full object-cover border-2 border-primary/20">
-                <div class="hidden md:block">
-                    <p class="text-sm font-medium">张阿姨</p>
-                    <p class="text-xs text-gray-500">普通用户</p>
+            <div class="flex items-center gap-6">
+                <div class="relative">
+                    <input type="text" placeholder="搜索护工、服务..." 
+                        class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 w-64">
+                    <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                 </div>
-                <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-primary">登出</button>
             </div>
-        </div>
-    </header>
-    
+            
+            <div class="flex items-center gap-4">
+                <button class="p-2 rounded-full hover:bg-gray-100 relative">
+                    <i class="fa fa-bell text-gray-600"></i>
+                    <span class="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full"></span>
+                </button>
+                
+                <div class="flex items-center gap-3">
+                    <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-9 h-9 rounded-full object-cover border-2 border-primary/20">
+                    <div class="hidden md:block">
+                        <p class="text-sm font-medium">张阿姨</p>
+                        <p class="text-xs text-gray-500">普通用户</p>
+                    </div>
+                        <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-primary">登出</button>
+                </div>
+            </div>
+        </header>
+        
     <!-- 主导航菜单 -->
     <nav class="bg-white border-b border-gray-200 px-6">
         <div class="flex items-center space-x-8">
@@ -100,17 +100,17 @@
             </a>
             <a href="#" class="py-4 px-2 text-danger hover:text-danger/80 hover:border-b-2 hover:border-danger/50">
                 紧急呼叫
-            </a>
-        </div>
-    </nav>
+                        </a>
+                    </div>
+                    </nav>
     
     <!-- 页面内容 -->
     <main class="p-6 bg-gray-50">
         <div class="text-center mb-8">
             <h2 class="text-3xl font-bold text-gray-800 mb-4">欢迎使用护理助手系统</h2>
             <p class="text-gray-600 text-lg">请选择您要使用的功能模块</p>
-        </div>
-        
+                </div>
+                
         <!-- 功能模块导航 -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             <!-- 首页 -->
@@ -118,86 +118,86 @@
                 <div class="text-center">
                     <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                         <i class="fa fa-home text-primary text-2xl"></i>
-                    </div>
+                </div>
                     <h3 class="text-xl font-bold mb-2">用户首页</h3>
                     <p class="text-gray-600 mb-4">查看统计信息、推荐护工和近期预约</p>
                     <a href="user-home.html" class="inline-block bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg transition-colors">
                         进入首页
                     </a>
+                                        </div>
                 </div>
-            </div>
-            
+                
             <!-- 个人信息 -->
             <div class="bg-white rounded-xl p-6 card-shadow hover:shadow-lg transition-shadow">
                 <div class="text-center">
                     <div class="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center mx-auto mb-4">
                         <i class="fa fa-user text-secondary text-2xl"></i>
-                    </div>
+                </div>
                     <h3 class="text-xl font-bold mb-2">个人信息</h3>
                     <p class="text-gray-600 mb-4">管理个人资料、头像和账户安全</p>
                     <a href="user-profile.html" class="inline-block bg-secondary hover:bg-secondary/90 text-white px-6 py-2 rounded-lg transition-colors">
                         管理信息
                     </a>
-                </div>
             </div>
-            
+                </div>
+                
             <!-- 寻找护工 -->
             <div class="bg-white rounded-xl p-6 card-shadow hover:shadow-lg transition-shadow">
                 <div class="text-center">
                     <div class="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-4">
                         <i class="fa fa-users text-accent text-2xl"></i>
-                    </div>
+                </div>
                     <h3 class="text-xl font-bold mb-2">寻找护工</h3>
                     <p class="text-gray-600 mb-4">根据需求筛选和预约合适的护工</p>
                     <a href="user-caregivers.html" class="inline-block bg-accent hover:bg-accent/90 text-white px-6 py-2 rounded-lg transition-colors">
                         开始寻找
                     </a>
-                </div>
-            </div>
-            
+                                    </div>
+                                </div>
+                                
             <!-- 我的预约 -->
             <div class="bg-white rounded-xl p-6 card-shadow hover:shadow-lg transition-shadow">
                 <div class="text-center">
                     <div class="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
                         <i class="fa fa-calendar text-success text-2xl"></i>
-                    </div>
+                                    </div>
                     <h3 class="text-xl font-bold mb-2">我的预约</h3>
                     <p class="text-gray-600 mb-4">管理所有预约记录和状态</p>
                     <a href="user-appointments.html" class="inline-block bg-success hover:bg-success/90 text-white px-6 py-2 rounded-lg transition-colors">
                         查看预约
                     </a>
-                </div>
-            </div>
-            
+                                    </div>
+                                </div>
+                                
             <!-- 我的聘用 -->
             <div class="bg-white rounded-xl p-6 card-shadow hover:shadow-lg transition-shadow">
                 <div class="text-center">
                     <div class="w-16 h-16 rounded-full bg-warning/10 flex items-center justify-center mx-auto mb-4">
                         <i class="fa fa-handshake-o text-warning text-2xl"></i>
-                    </div>
+                                </div>
                     <h3 class="text-xl font-bold mb-2">我的聘用</h3>
                     <p class="text-gray-600 mb-4">管理长期聘用关系和服务安排</p>
                     <a href="user-employments.html" class="inline-block bg-warning hover:bg-warning/90 text-white px-6 py-2 rounded-lg transition-colors">
                         管理聘用
                     </a>
-                </div>
-            </div>
-            
+                            </div>
+                        </div>
+                        
             <!-- 消息中心 -->
             <div class="bg-white rounded-xl p-6 card-shadow hover:shadow-lg transition-shadow">
                 <div class="text-center">
                     <div class="w-16 h-16 rounded-full bg-danger/10 flex items-center justify-center mx-auto mb-4">
                         <i class="fa fa-comments text-danger text-2xl"></i>
-                    </div>
+                                    </div>
                     <h3 class="text-xl font-bold mb-2">消息中心</h3>
                     <p class="text-gray-600 mb-4">与护工沟通和查看系统通知</p>
                     <a href="user-messages.html" class="inline-block bg-danger hover:bg-danger/90 text-white px-6 py-2 rounded-lg transition-colors">
                         查看消息
                     </a>
-                </div>
-            </div>
-        </div>
-        
+                                    </div>
+                                </div>
+                            </div>
+                            
         <!-- 快速操作提示 -->
         <div class="mt-12 text-center">
             <p class="text-gray-500 mb-4">💡 提示：您也可以使用顶部导航栏快速切换功能模块</p>
@@ -205,9 +205,9 @@
                 <span><i class="fa fa-arrow-up text-primary"></i> 顶部导航</span>
                 <span><i class="fa fa-home text-primary"></i> 直接访问</span>
                 <span><i class="fa fa-bookmark text-primary"></i> 收藏页面</span>
+                </div>
             </div>
-        </div>
-    </main>
+        </main>
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {

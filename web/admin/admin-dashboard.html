@@ -1,319 +1,306 @@
 <!DOCTYPE html>
+<!-- 这是修改了的代码 -->
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理员仪表盘</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        /* 基础样式重置 */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
-        }
-        
-        body {
-            background-color: #f5f7fa;
-            color: #333;
-            display: flex;
-            min-height: 100vh;
-        }
-        
-        /* 侧边栏导航 */
-        .sidebar {
-            width: 220px;
-            background-color: #2f3b4b;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-            z-index: 10;
-        }
-        
-        .sidebar-header {
-            padding: 20px;
-            font-size: 18px;
-            font-weight: 600;
-            border-bottom: 1px solid #425063;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .sidebar-nav {
-            list-style: none;
-            margin-top: 20px;
-            flex: 1;
-        }
-        
-        .sidebar-nav li {
-            padding: 12px 20px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-        
-        .sidebar-nav li:hover {
-            background-color: #425063;
-        }
-        
-        .sidebar-nav li a {
-            color: white;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .sidebar-nav li.active {
-            background-color: #1a222c;
-            border-left: 3px solid #3498db;
-        }
-        
-        /* 主内容区容器 */
-        .main-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        
-        /* 顶部导航栏 */
-        .topbar {
-            height: 60px;
-            background-color: white;
-            border-bottom: 1px solid #e1e4e8;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 30px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-        
-        .topbar-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #2f3b4b;
-        }
-        
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: #666;
-        }
-        
-        /* 主内容区 */
-        .main-content {
-            flex: 1;
-            padding: 30px;
-            overflow-y: auto;
-        }
-        
-        .page-header {
-            margin-bottom: 25px;
-        }
-        
-        .page-title {
-            font-size: 24px;
-            font-weight: 600;
-            color: #2f3b4b;
-            margin-bottom: 8px;
-        }
-        
-        .page-description {
-            color: #666;
-            font-size: 14px;
-        }
-        
-        /* 统计卡片网格 */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .stat-card {
-            background-color: white;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-        }
-        
-        .stat-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background-color: #f0f2f5;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            color: #2f3b4b;
-        }
-        
-        .stat-content {
-            flex: 1;
-        }
-        
-        .stat-label {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 5px;
-        }
-        
-        .stat-value {
-            font-size: 24px;
-            font-weight: 600;
-            color: #2f3b4b;
-        }
-        
-        /* 响应式调整 */
-        @media (max-width: 768px) {
-            body {
-                flex-direction: column;
+    <title>护理助手 - 管理员仪表板</title>
+    <!-- 引入Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- 配置Tailwind自定义主题 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36CFC9',
+                        accent: '#722ED1',
+                        neutral: '#F5F7FA',
+                        'neutral-dark': '#4E5969',
+                        success: '#52C41A',
+                        warning: '#FAAD14',
+                        danger: '#FF4D4F',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
             }
-            
-            .sidebar {
-                width: 100%;
-                height: auto;
-            }
-            
-            .sidebar-nav {
-                display: flex;
-                overflow-x: auto;
-                margin-top: 0;
-            }
-            
-            .sidebar-nav li {
-                flex: 0 0 auto;
-            }
-            
-            .main-content {
-                padding: 15px;
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .card-shadow {
+                @apply shadow-sm hover:shadow-md transition-shadow duration-300;
             }
         }
     </style>
 </head>
-<body>
-    <!-- 侧边导航 -->
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <i class="fas fa-hands-helping"></i>
-            <span>护工管理系统</span>
-        </div>
-        <ul class="sidebar-nav">
-            <li class="active">
-                <a href="/admin-dashboard.html">
-                    <i class="fas fa-tachometer-alt"></i>
-                    <span>仪表盘</span>
-                </a>
-            </li>
-            <li>
-                <a href="/admin-caregivers.html">
-                    <i class="fas fa-hands-helping"></i>
-                    <span>护工管理</span>
-                </a>
-            </li>
-            <li>
-                <a href="/admin-users.html">
-                    <i class="fas fa-users"></i>
-                    <span>用户管理</span>
-                </a>
-            </li>
-            <li>
-                <a href="/admin-job-analysis.html">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>就业数据分析</span>
-                </a>
-            </li>
-            <li>
-                <a href="javascript:logout()">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>退出登录</span>
-                </a>
-            </li>
-        </ul>
-    </aside>
-
-    <!-- 主内容区容器 -->
-    <div class="main-container">
-        <!-- 顶部导航栏 -->
-        <header class="topbar">
-            <div class="topbar-title">管理员中心</div>
-            <div class="user-info">
-                <i class="fas fa-user-circle"></i>
-                <span>管理员</span>
+<body class="font-inter bg-gray-50 text-gray-800">
+    <!-- 顶部导航栏 -->
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                    <i class="fa fa-shield text-white text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-primary">护理助手 - 管理后台</h1>
             </div>
-        </header>
-
-        <!-- 内容主体 -->
-        <div class="main-content">
-            <div class="page-header">
-                <h1 class="page-title">系统概览</h1>
-                <p class="page-description">实时监控系统核心数据指标</p>
+        </div>
+        
+        <div class="flex items-center gap-6">
+            <div class="relative">
+                <input type="text" placeholder="搜索用户、护工..." 
+                    class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 w-64">
+                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <button class="p-2 rounded-full hover:bg-gray-100 relative">
+                <i class="fa fa-bell text-gray-600"></i>
+                <span class="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full"></span>
+            </button>
+            
+            <div class="flex items-center gap-3">
+                <img src="https://picsum.photos/id/64/40/40" alt="管理员头像" class="w-9 h-9 rounded-full object-cover border-2 border-primary/20">
+                <div class="hidden md:block">
+                    <p class="text-sm font-medium">系统管理员</p>
+                    <p class="text-xs text-gray-500">超级管理员</p>
+                </div>
+                <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-primary">登出</button>
+            </div>
+        </div>
+    </header>
+    
+    <!-- 主导航菜单 -->
+    <nav class="bg-white border-b border-gray-200 px-6">
+        <div class="flex items-center space-x-8">
+            <a href="/admin/admin-dashboard.html" class="py-4 px-2 text-primary border-b-2 border-primary">
+                仪表盘
+            </a>
+            <a href="/admin/admin-caregivers.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                护工管理
+            </a>
+            <a href="/admin/admin-users.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                用户管理
+            </a>
+            <a href="/admin/admin-job-analysis.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                就业数据分析
+            </a>
+            <a href="/admin/admin-settings.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                系统设置
+            </a>
+            <a href="/admin/admin-backup.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                数据备份
+            </a>
+        </div>
+    </nav>
+    
+    <!-- 页面内容 -->
+    <main class="p-6 bg-gray-50">
+        <div class="text-center mb-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-4">系统管理概览</h2>
+            <p class="text-gray-600 text-lg">实时监控系统核心数据指标和运行状态</p>
+        </div>
+        
+        <!-- 统计卡片网格 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- 注册用户总数 -->
+            <div class="bg-white rounded-xl p-6 card-shadow hover:shadow-lg transition-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 mb-1">注册用户总数</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ user_count }}</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        <i class="fa fa-users text-primary text-xl"></i>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-sm">
+                    <span class="text-success">+12%</span>
+                    <span class="text-gray-500 ml-2">较上月</span>
+                </div>
             </div>
             
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-users"></i>
+            <!-- 已批准护工 -->
+            <div class="bg-white rounded-xl p-6 card-shadow hover:shadow-lg transition-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 mb-1">已批准护工</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ approved_caregiver_count }}</p>
                     </div>
-                    <div class="stat-content">
-                        <div class="stat-label">注册用户总数</div>
-                        <div class="stat-value">{{ user_count }}</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-label">已批准护工</div>
-                        <div class="stat-value">{{ approved_caregiver_count }}</div>
+                    <div class="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center">
+                        <i class="fa fa-check-circle text-success text-xl"></i>
                     </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-clock"></i>
+                <div class="mt-4 flex items-center text-sm">
+                    <span class="text-success">+8%</span>
+                    <span class="text-gray-500 ml-2">较上月</span>
+                </div>
+            </div>
+            
+            <!-- 待审核护工 -->
+            <div class="bg-white rounded-xl p-6 card-shadow hover:shadow-lg transition-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 mb-1">待审核护工</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ unapproved_caregiver_count }}</p>
                     </div>
-                    <div class="stat-content">
-                        <div class="stat-label">待审核护工</div>
-                        <div class="stat-value">{{ unapproved_caregiver_count }}</div>
+                    <div class="w-12 h-12 rounded-full bg-warning/10 flex items-center justify-center">
+                        <i class="fa fa-clock-o text-warning text-xl"></i>
                     </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-briefcase"></i>
+                <div class="mt-4 flex items-center text-sm">
+                    <span class="text-warning">需要审核</span>
+                    <span class="text-gray-500 ml-2">待处理</span>
+                </div>
+            </div>
+            
+            <!-- 爬取岗位数据 -->
+            <div class="bg-white rounded-xl p-6 card-shadow hover:shadow-lg transition-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 mb-1">爬取岗位数据</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ job_count }}</p>
                     </div>
-                    <div class="stat-content">
-                        <div class="stat-label">爬取岗位数据</div>
-                        <div class="stat-value">{{ job_count }}</div>
+                    <div class="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
+                        <i class="fa fa-briefcase text-accent text-xl"></i>
                     </div>
+                </div>
+                <div class="mt-4 flex items-center text-sm">
+                    <span class="text-success">+25%</span>
+                    <span class="text-gray-500 ml-2">较上月</span>
                 </div>
             </div>
         </div>
-    </div>
-
+        
+        <!-- 功能模块导航 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            <!-- 护工管理 -->
+            <div class="bg-white rounded-xl p-6 card-shadow hover:shadow-lg transition-shadow">
+                <div class="text-center">
+                    <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                        <i class="fa fa-hands-helping text-primary text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">护工管理</h3>
+                    <p class="text-gray-600 mb-4">审核护工申请、管理护工信息和状态</p>
+                    <a href="/admin/admin-caregivers.html" class="inline-block bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg transition-colors">
+                        管理护工
+                    </a>
+                </div>
+            </div>
+            
+            <!-- 用户管理 -->
+            <div class="bg-white rounded-xl p-6 card-shadow hover:shadow-lg transition-shadow">
+                <div class="text-center">
+                    <div class="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center mx-auto mb-4">
+                        <i class="fa fa-users text-secondary text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">用户管理</h3>
+                    <p class="text-gray-600 mb-4">管理用户账户、审核用户申请和权限</p>
+                    <a href="/admin/admin-users.html" class="inline-block bg-secondary hover:bg-secondary/90 text-white px-6 py-2 rounded-lg transition-colors">
+                        管理用户
+                    </a>
+                </div>
+            </div>
+            
+            <!-- 就业数据分析 -->
+            <div class="bg-white rounded-xl p-6 card-shadow hover:shadow-lg transition-shadow">
+                <div class="text-center">
+                    <div class="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-4">
+                        <i class="fa fa-chart-bar text-accent text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">就业数据分析</h3>
+                    <p class="text-gray-600 mb-4">分析就业趋势、岗位需求和市场动态</p>
+                    <a href="/admin/admin-job-analysis.html" class="inline-block bg-accent hover:bg-accent/90 text-white px-6 py-2 rounded-lg transition-colors">
+                        查看分析
+                    </a>
+                </div>
+            </div>
+            
+            <!-- 系统设置 -->
+            <div class="bg-white rounded-xl p-6 card-shadow hover:shadow-lg transition-shadow">
+                <div class="text-center">
+                    <div class="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
+                        <i class="fa fa-cogs text-success text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">系统设置</h3>
+                    <p class="text-gray-600 mb-4">配置系统参数、权限管理和安全设置</p>
+                    <a href="/admin/admin-settings.html" class="inline-block bg-success hover:bg-success/90 text-white px-6 py-2 rounded-lg transition-colors">
+                        系统配置
+                    </a>
+                </div>
+            </div>
+            
+            <!-- 数据备份 -->
+            <div class="bg-white rounded-xl p-6 card-shadow hover:shadow-lg transition-shadow">
+                <div class="text-center">
+                    <div class="w-16 h-16 rounded-full bg-warning/10 flex items-center justify-center mx-auto mb-4">
+                        <i class="fa fa-database text-warning text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">数据备份</h3>
+                    <p class="text-gray-600 mb-4">备份重要数据、恢复和迁移功能</p>
+                    <button class="inline-block bg-warning hover:bg-warning/90 text-white px-6 py-2 rounded-lg transition-colors">
+                        备份数据
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 系统监控 -->
+            <div class="bg-white rounded-xl p-6 card-shadow hover:shadow-lg transition-shadow">
+                <div class="text-center">
+                    <div class="w-16 h-16 rounded-full bg-danger/10 flex items-center justify-center mx-auto mb-4">
+                        <i class="fa fa-line-chart text-danger text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">系统监控</h3>
+                    <p class="text-gray-600 mb-4">监控系统性能、日志和异常情况</p>
+                    <button class="inline-block bg-danger hover:bg-danger/90 text-white px-6 py-2 rounded-lg transition-colors">
+                        查看监控
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 快速操作提示 -->
+        <div class="mt-12 text-center">
+            <p class="text-gray-500 mb-4">💡 提示：您也可以使用顶部导航栏快速切换功能模块</p>
+            <div class="flex justify-center gap-4 text-sm text-gray-600">
+                <span><i class="fa fa-arrow-up text-primary"></i> 顶部导航</span>
+                <span><i class="fa fa-shield text-primary"></i> 管理权限</span>
+                <span><i class="fa fa-cog text-primary"></i> 系统设置</span>
+            </div>
+        </div>
+    </main>
+    
     <script>
-        // 退出登录功能
-        function logout() {
-            if (confirm('确定要退出登录吗？')) {
-                localStorage.removeItem('admin_token');
-                window.location.href = '/admin-login.html';
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查管理员登录状态
+            checkAdminLogin();
+        });
+        
+        // 检查管理员登录状态
+        function checkAdminLogin() {
+            const token = localStorage.getItem('admin_token');
+            if (!token) {
+                alert('请先登录管理员账户');
+                window.location.href = '/admin/admin-login.html';
+                return;
             }
         }
+        
+        // 登出功能
+        document.getElementById('logout-btn').addEventListener('click', function() {
+            if (confirm('确定要退出登录吗？')) {
+                localStorage.removeItem('admin_token');
+                window.location.href = '/admin/admin-login.html';
+            }
+        });
     </script>
 </body>
 </html>

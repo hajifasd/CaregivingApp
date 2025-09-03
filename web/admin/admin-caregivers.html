@@ -1,8 +1,10 @@
 <!DOCTYPE html>
+<!-- 这是修改了的代码 -->
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<<<<<<< HEAD
     <title>护工管理</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -764,6 +766,41 @@
             .data-table th:nth-child(4),
             .data-table td:nth-child(4) {
                 display: none;
+=======
+    <title>护理助手 - 护工管理</title>
+    <!-- 引入Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- 配置Tailwind自定义主题 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36CFC9',
+                        accent: '#722ED1',
+                        neutral: '#F5F7FA',
+                        'neutral-dark': '#4E5969',
+                        success: '#52C41A',
+                        warning: '#FAAD14',
+                        danger: '#FF4D4F',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .card-shadow {
+                @apply shadow-sm hover:shadow-md transition-shadow duration-300;
+>>>>>>> 960e1055303974378dde77824b04ca7e7f1f191a
             }
         }
         
@@ -782,65 +819,89 @@
         }
     </style>
 </head>
-<body>
-    <!-- 侧边导航 -->
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <i class="fas fa-hands-helping"></i>
-            <span>护工管理系统</span>
-        </div>
-        <ul class="sidebar-nav">
-            <li>
-                <a href="/admin-dashboard.html">
-                    <i class="fas fa-tachometer-alt"></i>
-                    <span>仪表盘</span>
-                </a>
-            </li>
-            <li class="active">
-                <a href="/admin-caregivers.html">
-                    <i class="fas fa-hands-helping"></i>
-                    <span>护工管理</span>
-                </a>
-            </li>
-            <li>
-                <a href="/admin-users.html">
-                    <i class="fas fa-users"></i>
-                    <span>用户管理</span>
-                </a>
-            </li>
-            <li>
-                <a href="/admin-job-analysis.html">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>就业数据分析</span>
-                </a>
-            </li>
-            <li>
-                <a href="javascript:logout()">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>退出登录</span>
-                </a>
-            </li>
-        </ul>
-    </aside>
-
-    <!-- 主内容区容器 -->
-    <div class="main-container">
-        <!-- 顶部导航栏 -->
-        <header class="topbar">
-            <div class="topbar-title">护工管理</div>
-            <div class="user-info">
-                <i class="fas fa-user-circle"></i>
-                <span>管理员</span>
+<body class="font-inter bg-gray-50 text-gray-800">
+    <!-- 顶部导航栏 -->
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                    <i class="fa fa-shield text-white text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-primary">护理助手 - 管理后台</h1>
             </div>
-        </header>
-
-        <!-- 内容主体 -->
-        <div class="main-content">
-            <div class="page-header">
-                <h1 class="page-title">护工账号管理</h1>
-                <p class="page-description">管理护工账号信息并审核护工资质</p>
+        </div>
+        
+        <div class="flex items-center gap-6">
+            <div class="relative">
+                <input type="text" placeholder="搜索护工..." 
+                    class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 w-64">
+                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <button class="p-2 rounded-full hover:bg-gray-100 relative">
+                <i class="fa fa-bell text-gray-600"></i>
+                <span class="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full"></span>
+            </button>
+            
+            <div class="flex items-center gap-3">
+                <img src="https://picsum.photos/id/64/40/40" alt="管理员头像" class="w-9 h-9 rounded-full object-cover border-2 border-primary/20">
+                <div class="hidden md:block">
+                    <p class="text-sm font-medium">系统管理员</p>
+                    <p class="text-xs text-gray-500">超级管理员</p>
+                </div>
+                <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-primary">登出</button>
+            </div>
+        </div>
+    </header>
+    
+    <!-- 主导航菜单 -->
+    <nav class="bg-white border-b border-gray-200 px-6">
+        <div class="flex items-center space-x-8">
+            <a href="/admin/admin-dashboard.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                仪表盘
+            </a>
+            <a href="/admin/admin-caregivers.html" class="py-4 px-2 text-primary border-b-2 border-primary">
+                护工管理
+            </a>
+            <a href="/admin/admin-users.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                用户管理
+            </a>
+            <a href="/admin/admin-job-analysis.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                就业数据分析
+            </a>
+            <a href="/admin/admin-settings.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                系统设置
+            </a>
+            <a href="/admin/admin-backup.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                数据备份
+            </a>
+        </div>
+    </nav>
+    
+    <!-- 页面内容 -->
+    <main class="p-6 bg-gray-50">
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-4">护工账号管理</h2>
+            <p class="text-gray-600 text-lg">管理护工账号信息并审核护工资质</p>
+        </div>
+        
+        <!-- 统计卡片 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-xl p-6 card-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 mb-1">待审核护工</p>
+                        <p class="text-2xl font-bold text-warning">{{ unapproved|length if unapproved else 0 }}</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-warning/10 flex items-center justify-center">
+                        <i class="fa fa-clock-o text-warning text-xl"></i>
+                    </div>
+                </div>
             </div>
             
+<<<<<<< HEAD
             <!-- 统计信息卡片 -->
             <div class="stats-grid">
                 <div class="stat-card">
@@ -945,13 +1006,57 @@
                     </button>
                 </div>
             </div>
+=======
+            <div class="bg-white rounded-xl p-6 card-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 mb-1">已批准护工</p>
+                        <p class="text-2xl font-bold text-success">{{ approved|length if approved else 0 }}</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center">
+                        <i class="fa fa-check-circle text-success text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl p-6 card-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 mb-1">总护工数量</p>
+                        <p class="text-2xl font-bold text-primary">{{ (unapproved|length if unapproved else 0) + (approved|length if approved else 0) }}</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        <i class="fa fa-hands-helping text-primary text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 标签页 -->
+        <div class="bg-white rounded-xl overflow-hidden card-shadow mb-6">
+            <div class="border-b border-gray-200">
+                <nav class="flex space-x-8 px-6">
+                    <button class="tab-btn py-4 px-2 text-primary border-b-2 border-primary font-medium" data-tab="pending">
+                        <i class="fa fa-clock-o mr-2"></i>待审核护工
+                    </button>
+                    <button class="tab-btn py-4 px-2 text-gray-500 hover:text-gray-700 font-medium" data-tab="approved">
+                        <i class="fa fa-check-circle mr-2"></i>已批准护工
+                    </button>
+                    <button class="tab-btn py-4 px-2 text-gray-500 hover:text-gray-700 font-medium" data-tab="accounts">
+                        <i class="fa fa-user-cog mr-2"></i>护工账号管理
+                    </button>
+                </nav>
+            </div>
+>>>>>>> 960e1055303974378dde77824b04ca7e7f1f191a
             
             <!-- 待审核护工列表 -->
-            <div class="card" id="pending-card">
-                <div class="table-responsive">
-                    <table class="data-table">
-                        <thead>
+            <div class="tab-content p-6" id="pending-content">
+                {% if unapproved and unapproved|length > 0 %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
                             <tr>
+<<<<<<< HEAD
                                 <th>
                                     <input type="checkbox" id="select-all-pending" class="select-all-checkbox">
                                 </th>
@@ -1127,122 +1232,166 @@
                                     </td>
                                 </tr>
                             {% endif %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- 护工账号管理列表 (默认隐藏) -->
-            <div class="card" style="display: none;" id="accounts-card">
-                <div class="table-responsive">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>账号</th>
-                                <th>姓名</th>
-                                <th>注册时间</th>
-                                <th>最后登录</th>
-                                <th>状态</th>
-                                <th>操作</th>
+=======
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">姓名</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">电话</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">性别</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">年龄</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">工作经验</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">期望时薪</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">申请时间</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
                             </tr>
                         </thead>
-                        <tbody id="caregiver-accounts-tbody">
-                            <!-- 动态加载护工账号数据 -->
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for c in unapproved %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ c.id }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ c.name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.phone }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.gender|default('未填写', true) }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.age|default('未填写', true) }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.experience_years|default(0, true) }}年</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.hourly_rate|default('未填写', true) }}元/小时</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.created_at }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <div class="flex space-x-2">
+                                        <button class="view-materials-btn bg-primary hover:bg-primary/90 text-white px-3 py-1 rounded text-xs" data-caregiver-id="{{ c.id }}">
+                                            查看材料
+                                        </button>
+                                        <button class="approve-btn bg-success hover:bg-success/90 text-white px-3 py-1 rounded text-xs" data-caregiver-id="{{ c.id }}">
+                                            批准
+                                        </button>
+                                        <button class="reject-btn bg-danger hover:bg-danger/90 text-white px-3 py-1 rounded text-xs" data-caregiver-id="{{ c.id }}">
+                                            拒绝
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+>>>>>>> 960e1055303974378dde77824b04ca7e7f1f191a
                         </tbody>
                     </table>
                 </div>
+                {% else %}
+                <div class="text-center py-12">
+                    <i class="fa fa-inbox text-4xl text-gray-300 mb-4"></i>
+                    <p class="text-gray-500 text-lg">暂无待审核的护工申请</p>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- 已批准护工列表 -->
+            <div class="tab-content p-6 hidden" id="approved-content">
+                {% if approved and approved|length > 0 %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">姓名</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">电话</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">性别</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">年龄</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">工作经验</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">期望时薪</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">批准时间</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for c in approved %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ c.id }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ c.name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.phone }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.gender|default('未填写', true) }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.age|default('未填写', true) }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.experience_years|default(0, true) }}年</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.hourly_rate|default('未填写', true) }}元/小时</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.approved_at|default('未知', true) }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <div class="flex space-x-2">
+                                        <button class="view-materials-btn bg-primary hover:bg-primary/90 text-white px-3 py-1 rounded text-xs" data-caregiver-id="{{ c.id }}">
+                                            查看材料
+                                        </button>
+                                        <button class="suspend-btn bg-warning hover:bg-warning/90 text-white px-3 py-1 rounded text-xs" data-caregiver-id="{{ c.id }}">
+                                            暂停
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-12">
+                    <i class="fa fa-check-circle text-4xl text-gray-300 mb-4"></i>
+                    <p class="text-gray-500 text-lg">暂无已批准的护工</p>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- 护工账号管理 -->
+            <div class="tab-content p-6 hidden" id="accounts-content">
+                <div class="text-center py-12">
+                    <i class="fa fa-user-cog text-4xl text-gray-300 mb-4"></i>
+                    <p class="text-gray-500 text-lg">护工账号管理功能开发中...</p>
+                    <p class="text-gray-400 text-sm mt-2">包括账号状态管理、权限设置等功能</p>
+                </div>
             </div>
         </div>
-    </div>
-
+    </main>
+    
     <!-- 材料查看弹窗 -->
-    <div class="modal" id="documents-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">护工资质材料 - <span id="modal-caregiver-name"></span></h3>
-                <button class="modal-close" id="modal-close">&times;</button>
-            </div>
-            <div class="modal-body">
-                <!-- 身份证材料 -->
-                <div class="document-container">
-                    <h4 class="document-title">身份证</h4>
-                    <div class="document-preview">
-                        <div id="id-document-container"></div>
-                        <a id="id-document-download" class="btn btn-primary document-download" href="" target="_blank">
-                            <i class="fas fa-download"></i> 下载
-                        </a>
-                    </div>
+    <div id="materials-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">护工申请材料</h3>
+                    <button id="close-modal" class="text-gray-400 hover:text-gray-600">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
                 </div>
-                
-                <!-- 资格证书材料 -->
-                <div class="document-container">
-                    <h4 class="document-title">护工资格证书</h4>
-                    <div class="document-preview">
-                        <div id="cert-document-container"></div>
-                        <a id="cert-document-download" class="btn btn-primary document-download" href="" target="_blank">
-                            <i class="fas fa-download"></i> 下载
-                        </a>
-                    </div>
+                <div id="modal-content" class="space-y-4">
+                    <!-- 材料内容将在这里动态加载 -->
                 </div>
             </div>
         </div>
     </div>
-
+    
     <script>
-        // 页面加载完成后执行
         document.addEventListener('DOMContentLoaded', function() {
-            // 获取DOM元素
-            const modal = document.getElementById('documents-modal');
-            const modalClose = document.getElementById('modal-close');
-            const caregiverNameEl = document.getElementById('modal-caregiver-name');
-            const idContainer = document.getElementById('id-document-container');
-            const certContainer = document.getElementById('cert-document-container');
-            const idDownloadEl = document.getElementById('id-document-download');
-            const certDownloadEl = document.getElementById('cert-document-download');
-            const pendingCard = document.getElementById('pending-card');
-            const approvedCard = document.getElementById('approved-card');
-            const accountsCard = document.getElementById('accounts-card');
-
-            // 检查登录状态
-            function checkLoginStatus() {
-                const token = localStorage.getItem('admin_token');
-                if (!token) {
-                    if (confirm('您的登录已过期，请重新登录')) {
-                        window.location.href = '/admin-login.html';
-                    }
-                    return false;
-                }
-                return true;
-            }
-
+            // 检查管理员登录状态
+            checkAdminLogin();
+            
             // 标签页切换
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    // 切换按钮状态
-                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const targetTab = this.getAttribute('data-tab');
                     
-                    // 切换内容显示
-                    const tab = btn.getAttribute('data-tab');
-                    if (tab === 'pending') {
-                        if (pendingCard) pendingCard.style.display = 'block';
-                        if (approvedCard) approvedCard.style.display = 'none';
-                        if (accountsCard) accountsCard.style.display = 'none';
-                    } else if (tab === 'approved') {
-                        if (pendingCard) pendingCard.style.display = 'none';
-                        if (approvedCard) approvedCard.style.display = 'block';
-                        if (accountsCard) accountsCard.style.display = 'none';
-                    } else if (tab === 'accounts') {
-                        if (pendingCard) pendingCard.style.display = 'none';
-                        if (approvedCard) approvedCard.style.display = 'none';
-                        if (accountsCard) accountsCard.style.display = 'block';
-                        // 加载护工账号管理数据
-                        loadCaregiverAccountsData();
-                    }
+                    // 更新按钮状态
+                    tabBtns.forEach(b => {
+                        b.classList.remove('text-primary', 'border-primary');
+                        b.classList.add('text-gray-500', 'hover:text-gray-700');
+                    });
+                    this.classList.remove('text-gray-500', 'hover:text-gray-700');
+                    this.classList.add('text-primary', 'border-primary');
+                    
+                    // 更新内容显示
+                    tabContents.forEach(content => {
+                        content.classList.add('hidden');
+                    });
+                    document.getElementById(targetTab + '-content').classList.remove('hidden');
                 });
             });
             
+<<<<<<< HEAD
             // 搜索和筛选功能
             const searchInput = document.getElementById('search-input');
             const searchBtn = document.getElementById('search-btn');
@@ -1635,381 +1784,93 @@
                         modal.style.display = 'flex';
                         modal.classList.add('show');
                     }
+=======
+            // 材料查看功能
+            document.querySelectorAll('.view-materials-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const caregiverId = this.getAttribute('data-caregiver-id');
+                    showMaterials(caregiverId);
+>>>>>>> 960e1055303974378dde77824b04ca7e7f1f191a
                 });
             });
-
-            // 关闭弹窗
-            if (modalClose) {
-                modalClose.addEventListener('click', () => {
-                    if (modal) {
-                        modal.style.display = 'none';
-                        modal.classList.remove('show');
-                    }
-                });
-            }
-
-            // 点击弹窗外部关闭
-            if (modal) {
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        modal.style.display = 'none';
-                        modal.classList.remove('show');
-                    }
-                });
-            }
-
+            
             // 批准护工
             document.querySelectorAll('.approve-btn').forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    if (!checkLoginStatus()) return;
-                    
-                    const id = btn.getAttribute('data-id');
-                    if (!id) {
-                        alert('无法获取护工ID');
-                        return;
-                    }
-                    
-                    if (confirm(`确定要批准ID为${id}的护工吗？`)) {
-                        try {
-                            const token = localStorage.getItem('admin_token');
-                            const res = await fetch('/api/admin/approve', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${token}`
-                                },
-                                body: JSON.stringify({id: parseInt(id)})
-                            });
-                            
-                            const data = await res.json();
-                            if (data.success) {
-                                alert('批准成功');
-                                location.reload();
-                            } else {
-                                alert(`操作失败: ${data.message || '未知错误'}`);
-                            }
-                        } catch (err) {
-                            console.error('批准操作失败:', err);
-                            alert('网络错误，请重试');
-                        }
+                btn.addEventListener('click', function() {
+                    const caregiverId = this.getAttribute('data-caregiver-id');
+                    if (confirm('确定要批准这个护工申请吗？')) {
+                        approveCaregiver(caregiverId);
                     }
                 });
             });
-
+            
             // 拒绝护工
             document.querySelectorAll('.reject-btn').forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    if (!checkLoginStatus()) return;
-                    
-                    const id = btn.getAttribute('data-id');
-                    if (!id) {
-                        alert('无法获取护工ID');
-                        return;
-                    }
-                    
-                    if (confirm(`确定要拒绝ID为${id}的护工吗？此操作不可恢复`)) {
-                        try {
-                            const token = localStorage.getItem('admin_token');
-                            const res = await fetch('/api/admin/reject', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${token}`
-                                },
-                                body: JSON.stringify({id: parseInt(id)})
-                            });
-                            
-                            const data = await res.json();
-                            if (data.success) {
-                                alert('拒绝成功');
-                                location.reload();
-                            } else {
-                                alert(`操作失败: ${data.message || '未知错误'}`);
-                            }
-                        } catch (err) {
-                            console.error('拒绝操作失败:', err);
-                            alert('网络错误，请重试');
-                        }
+                btn.addEventListener('click', function() {
+                    const caregiverId = this.getAttribute('data-caregiver-id');
+                    if (confirm('确定要拒绝这个护工申请吗？')) {
+                        rejectCaregiver(caregiverId);
                     }
                 });
             });
-
-            // 加载护工账号管理数据
-            async function loadCaregiverAccountsData() {
-                try {
-                    const token = localStorage.getItem('admin_token');
-                    if (!token) {
-                        console.error('未找到管理员token');
-                        return;
-                    }
-
-                    const response = await fetch('/api/admin/get-all-caregivers', {
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    });
-
-                    const data = await response.json();
-                    if (data.success) {
-                        renderCaregiverAccountsTable(data.data);
-                    } else {
-                        console.error('获取护工数据失败:', data.message);
-                    }
-                } catch (error) {
-                    console.error('加载护工账号数据失败:', error);
-                }
-            }
-
-            // 渲染护工账号管理表格
-            function renderCaregiverAccountsTable(caregivers) {
-                const tbody = document.getElementById('caregiver-accounts-tbody');
-                tbody.innerHTML = '';
-
-                if (caregivers.length === 0) {
-                    tbody.innerHTML = `
-                        <tr>
-                            <td colspan="7" class="empty-state">
-                                <i class="fas fa-users"></i>
-                                <p>暂无护工数据</p>
-                            </td>
-                        </tr>
-                    `;
-                    return;
-                }
-
-                caregivers.forEach(caregiver => {
-                    const row = document.createElement('tr');
-                    
-                    // 确定账号显示（优先显示手机号，如果没有则显示邮箱）
-                    const account = caregiver.phone || caregiver.email || 'N/A';
-                    
-                    // 确定状态徽章
-                    let statusBadge = '';
-                    if (caregiver.is_approved) {
-                        statusBadge = '<span class="status-badge status-active">正常</span>';
-                    } else {
-                        statusBadge = '<span class="status-badge status-suspended">待审核</span>';
-                    }
-
-                    // 确定操作按钮
-                    let actionButtons = '';
-                    if (caregiver.is_approved) {
-                        actionButtons = `
-                            <div class="btn-group">
-                                <button class="btn btn-primary edit-caregiver-btn" data-id="${caregiver.id}">
-                                    <i class="fas fa-edit"></i> 编辑
-                                </button>
-                                <button class="btn btn-warning reset-password-btn" data-id="${caregiver.id}">
-                                    <i class="fas fa-key"></i> 重置密码
-                                </button>
-                                <button class="btn btn-danger delete-caregiver-btn" data-id="${caregiver.id}">
-                                    <i class="fas fa-trash"></i> 删除
-                                </button>
-                            </div>
-                        `;
-                    } else {
-                        actionButtons = `
-                            <div class="btn-group">
-                                <button class="btn btn-primary edit-caregiver-btn" data-id="${caregiver.id}">
-                                    <i class="fas fa-edit"></i> 编辑
-                                </button>
-                                <button class="btn btn-success activate-caregiver-btn" data-id="${caregiver.id}">
-                                    <i class="fas fa-play"></i> 激活
-                                </button>
-                                <button class="btn btn-danger delete-caregiver-btn" data-id="${caregiver.id}">
-                                    <i class="fas fa-trash"></i> 删除
-                                </button>
-                            </div>
-                        `;
-                    }
-
-                    row.innerHTML = `
-                        <td>${caregiver.id}</td>
-                        <td>${account}</td>
-                        <td>${caregiver.name || '未设置'}</td>
-                        <td>${caregiver.created_at || 'N/A'}</td>
-                        <td>${caregiver.last_login || 'N/A'}</td>
-                        <td>${statusBadge}</td>
-                        <td>${actionButtons}</td>
-                    `;
-
-                    tbody.appendChild(row);
-                });
-
-                // 重新绑定事件监听器
-                bindCaregiverAccountEventListeners();
-            }
-
-            // 绑定护工账号管理相关的事件监听器
-            function bindCaregiverAccountEventListeners() {
-                // 编辑护工信息
-                document.querySelectorAll('.edit-caregiver-btn').forEach(btn => {
-                    btn.addEventListener('click', async () => {
-                        if (!checkLoginStatus()) return;
-                        
-                        const id = btn.getAttribute('data-id');
-                        if (!id) {
-                            alert('无法获取护工ID');
-                            return;
-                        }
-                        
-                        // 这里可以打开编辑弹窗或跳转到编辑页面
-                        alert(`编辑护工ID: ${id} 的账号信息`);
-                    });
-                });
-
-                // 重置密码
-                document.querySelectorAll('.reset-password-btn').forEach(btn => {
-                    btn.addEventListener('click', async () => {
-                        if (!checkLoginStatus()) return;
-                        
-                        const id = btn.getAttribute('data-id');
-                        if (!id) {
-                            alert('无法获取护工ID');
-                            return;
-                        }
-                        
-                        if (confirm(`确定要重置护工ID为${id}的密码吗？`)) {
-                            try {
-                                const token = localStorage.getItem('admin_token');
-                                const res = await fetch('/api/admin/reset-caregiver-password', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'Authorization': `Bearer ${token}`
-                                    },
-                                    body: JSON.stringify({id: parseInt(id)})
-                                });
-                                
-                                const data = await res.json();
-                                if (data.success) {
-                                    alert(`密码重置成功，新密码：${data.new_password}`);
-                                } else {
-                                    alert(`操作失败: ${data.message || '未知错误'}`);
-                                }
-                            } catch (err) {
-                                console.error('密码重置失败:', err);
-                                alert('网络错误，请重试');
-                            }
-                        }
-                    });
-                });
-
-                // 删除护工账号
-                document.querySelectorAll('.delete-caregiver-btn').forEach(btn => {
-                    btn.addEventListener('click', async () => {
-                        if (!checkLoginStatus()) return;
-                        
-                        const id = btn.getAttribute('data-id');
-                        if (!id) {
-                            alert('无法获取护工ID');
-                            return;
-                        }
-                        
-                        if (confirm(`确定要删除护工ID为${id}的账号吗？此操作不可恢复`)) {
-                            try {
-                                const token = localStorage.getItem('admin_token');
-                                const res = await fetch('/api/admin/delete-caregiver-account', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'Authorization': `Bearer ${token}`
-                                    },
-                                    body: JSON.stringify({id: parseInt(id)})
-                                });
-                                
-                                const data = await res.json();
-                                if (data.success) {
-                                    alert('护工账号删除成功');
-                                    // 重新加载数据
-                                    loadCaregiverAccountsData();
-                                } else {
-                                    alert(`操作失败: ${data.message || '未知错误'}`);
-                                }
-                            } catch (err) {
-                                console.error('护工账号删除失败:', err);
-                                alert('网络错误，请重试');
-                            }
-                        }
-                    });
-                });
-
-                // 激活护工账号
-                document.querySelectorAll('.activate-caregiver-btn').forEach(btn => {
-                    btn.addEventListener('click', async () => {
-                        if (!checkLoginStatus()) return;
-                        
-                        const id = btn.getAttribute('data-id');
-                        if (!id) {
-                            alert('无法获取护工ID');
-                            return;
-                        }
-                        
-                        if (confirm(`确定要激活护工ID为${id}的账号吗？`)) {
-                            try {
-                                const token = localStorage.getItem('admin_token');
-                                const res = await fetch('/api/admin/activate-caregiver-account', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'Authorization': `Bearer ${token}`
-                                    },
-                                    body: JSON.stringify({id: parseInt(id)})
-                                });
-                                
-                                const data = await res.json();
-                                if (data.success) {
-                                    alert('护工账号激活成功');
-                                    // 重新加载数据
-                                    loadCaregiverAccountsData();
-                                } else {
-                                    alert(`操作失败: ${data.message || '未知错误'}`);
-                                }
-                            } catch (err) {
-                                console.error('护工账号激活失败:', err);
-                                alert('网络错误，请重试');
-                            }
-                        }
-                    });
-                });
-            }
-
-            // 初始化页面状态
-            function initPage() {
-                const activeTab = document.querySelector('.tab-btn.active');
-                if (activeTab) {
-                    const tab = activeTab.getAttribute('data-tab');
-                    if (tab === 'pending') {
-                        if (pendingCard) pendingCard.style.display = 'block';
-                        if (approvedCard) approvedCard.style.display = 'none';
-                        if (accountsCard) accountsCard.style.display = 'none';
-                    } else if (tab === 'approved') {
-                        if (pendingCard) pendingCard.style.display = 'none';
-                        if (approvedCard) approvedCard.style.display = 'block';
-                        if (accountsCard) accountsCard.style.display = 'none';
-                    } else if (tab === 'accounts') {
-                        if (pendingCard) pendingCard.style.display = 'none';
-                        if (approvedCard) approvedCard.style.display = 'none';
-                        if (accountsCard) accountsCard.style.display = 'block';
-                    }
-                }
-            }
-
-            // 执行初始化
-            initPage();
             
-            // 调试信息
-            console.log('页面初始化完成');
-            console.log('待审核护工数量:', document.querySelectorAll('#pending-card tbody tr').length - 1);
-            console.log('已批准护工数量:', document.querySelectorAll('#approved-card tbody tr').length - 1);
+            // 关闭弹窗
+            document.getElementById('close-modal').addEventListener('click', function() {
+                document.getElementById('materials-modal').classList.add('hidden');
+            });
+            
+            // 点击弹窗外部关闭
+            document.getElementById('materials-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.add('hidden');
+                }
+            });
         });
-
-        // 退出登录功能
-        function logout() {
+        
+        // 检查管理员登录状态
+        function checkAdminLogin() {
+            const token = localStorage.getItem('admin_token');
+            if (!token) {
+                alert('请先登录管理员账户');
+                window.location.href = '/admin/admin-login.html';
+                return;
+            }
+        }
+        
+        // 登出功能
+        document.getElementById('logout-btn').addEventListener('click', function() {
             if (confirm('确定要退出登录吗？')) {
                 localStorage.removeItem('admin_token');
-                window.location.href = '/admin-login.html';
+                window.location.href = '/admin/admin-login.html';
             }
+        });
+        
+        // 显示材料
+        function showMaterials(caregiverId) {
+            // 这里应该从后端获取护工材料
+            const modalContent = document.getElementById('modal-content');
+            modalContent.innerHTML = `
+                <div class="text-center py-8">
+                    <i class="fa fa-file-text text-4xl text-gray-300 mb-4"></i>
+                    <p class="text-gray-500">护工ID: ${caregiverId} 的申请材料</p>
+                    <p class="text-gray-400 text-sm mt-2">材料查看功能开发中...</p>
+                </div>
+            `;
+            document.getElementById('materials-modal').classList.remove('hidden');
+        }
+        
+        // 批准护工
+        function approveCaregiver(caregiverId) {
+            // 这里应该调用后端API
+            alert(`护工ID: ${caregiverId} 已批准`);
+            // 可以刷新页面或更新UI
+        }
+        
+        // 拒绝护工
+        function rejectCaregiver(caregiverId) {
+            // 这里应该调用后端API
+            alert(`护工ID: ${caregiverId} 已拒绝`);
+            // 可以刷新页面或更新UI
         }
     </script>
 </body>

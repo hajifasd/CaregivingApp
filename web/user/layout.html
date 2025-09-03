@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>护理助手 - 用户端</title>
+    <!-- 引入Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- 引入自定义样式 -->
+    <link href="/css/components.css" rel="stylesheet">
+    <!-- 引入JavaScript模块 -->
+    <script src="/js/pageBuilder.js"></script>
+    <script src="/js/common.js"></script>
+    <script src="/js/modules/auth.js"></script>
+    <script src="/js/modules/navigation.js"></script>
+    <script src="/js/modules/ui.js"></script>
+    
+    <!-- 配置Tailwind自定义主题 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36CFC9',
+                        accent: '#722ED1',
+                        neutral: '#F5F7FA',
+                        'neutral-dark': '#4E5969',
+                        success: '#52C41A',
+                        warning: '#FAAD14',
+                        danger: '#FF4D4F',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .card-shadow {
+                @apply shadow-sm hover:shadow-md transition-shadow duration-300;
+            }
+        }
+    </style>
+</head>
+<body class="font-inter bg-gray-50 text-gray-800">
+    <!-- 顶部导航栏 -->
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                    <i class="fa fa-heartbeat text-white text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-primary">护理助手</h1>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-6">
+            <div class="relative">
+                <input type="text" placeholder="搜索护工、服务..." 
+                    class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 w-64">
+                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <button class="p-2 rounded-full hover:bg-gray-100 relative" id="notification-btn">
+                <i class="fa fa-bell text-gray-600"></i>
+                <span class="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full" id="notification-badge"></span>
+            </button>
+            
+            <div class="flex items-center gap-3">
+                <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-9 h-9 rounded-full object-cover border-2 border-primary/20">
+                <div class="hidden md:block">
+                    <p class="text-sm font-medium" id="user-name">张阿姨</p>
+                    <p class="text-xs text-gray-500" id="user-role">普通用户</p>
+                </div>
+                <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-primary">登出</button>
+            </div>
+        </div>
+    </header>
+    
+    <!-- 主导航菜单 -->
+    <nav class="bg-white border-b border-gray-200 px-6">
+        <div class="flex items-center space-x-8">
+            <a href="/user/home" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50" data-nav="user-home">
+                <i class="fa fa-home mr-2"></i>首页
+            </a>
+            <a href="/user/profile" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50" data-nav="user-profile">
+                <i class="fa fa-user mr-2"></i>个人信息
+            </a>
+            <a href="/user/caregivers" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50" data-nav="user-caregivers">
+                <i class="fa fa-users mr-2"></i>寻找护工
+            </a>
+            <a href="/user/appointments" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50" data-nav="user-appointments">
+                <i class="fa fa-calendar mr-2"></i>我的预约
+            </a>
+            <a href="/user/employments" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50" data-nav="user-employments">
+                <i class="fa fa-handshake-o mr-2"></i>我的聘用
+            </a>
+            <a href="/user/messages" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50" data-nav="user-messages">
+                <i class="fa fa-comments mr-2"></i>消息中心
+            </a>
+            <a href="#" class="py-4 px-2 text-danger hover:text-danger/80 hover:border-b-2 hover:border-danger/50">
+                <i class="fa fa-exclamation-triangle mr-2"></i>紧急呼叫
+            </a>
+        </div>
+    </nav>
+    
+    <!-- 页面内容区域 -->
+    <main class="p-6 bg-gray-50">
+        <!-- 这里将插入具体页面的内容 -->
+        <div id="page-content">
+            <!-- 页面内容将通过JavaScript动态加载 -->
+        </div>
+    </main>
+    
+    <!-- 返回顶部按钮 -->
+    <button id="back-to-top" class="fixed bottom-6 right-6 w-12 h-12 bg-primary text-white rounded-full shadow-lg hover:bg-primary/90 transition-all duration-300 hidden">
+        <i class="fa fa-arrow-up"></i>
+    </button>
+    
+    <script>
+        // 导航高亮逻辑
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('[data-nav]');
+            
+            navLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('text-primary', 'border-b-2', 'border-primary');
+                    link.classList.remove('text-gray-500');
+                }
+            });
+            
+            // 返回顶部按钮
+            const backToTopBtn = document.getElementById('back-to-top');
+            window.addEventListener('scroll', () => {
+                if (window.pageYOffset > 300) {
+                    backToTopBtn.classList.remove('hidden');
+                } else {
+                    backToTopBtn.classList.add('hidden');
+                }
+            });
+            
+            backToTopBtn.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+            
+            // 登出功能
+            document.getElementById('logout-btn').addEventListener('click', function() {
+                if (confirm('确定要登出吗？')) {
+                    // 清除用户会话
+                    localStorage.removeItem('user_token');
+                    localStorage.removeItem('user_info');
+                    // 跳转到首页
+                    window.location.href = '/';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>护理助手 - 我的预约</title>
+    <!-- 引入Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- 配置Tailwind自定义主题 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36CFC9',
+                        accent: '#722ED1',
+                        neutral: '#F5F7FA',
+                        'neutral-dark': '#4E5969',
+                        success: '#52C41A',
+                        warning: '#FAAD14',
+                        danger: '#FF4D4F',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .card-shadow {
+                @apply shadow-sm hover:shadow-md transition-shadow duration-300;
+            }
+        }
+    </style>
+</head>
+<body class="font-inter bg-gray-50 text-gray-800">
+    <!-- 顶部导航栏 -->
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                    <i class="fa fa-heartbeat text-white text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-primary">护理助手</h1>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-6">
+            <div class="relative">
+                <input type="text" placeholder="搜索护工、服务..." 
+                    class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 w-64">
+                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <button class="p-2 rounded-full hover:bg-gray-100 relative">
+                <i class="fa fa-bell text-gray-600"></i>
+                <span class="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full"></span>
+            </button>
+            
+            <div class="flex items-center gap-3">
+                <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-9 h-9 rounded-full object-cover border-2 border-primary/20">
+                <div class="hidden md:block">
+                    <p class="text-sm font-medium">张阿姨</p>
+                    <p class="text-xs text-gray-500">普通用户</p>
+                </div>
+                <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-primary">登出</button>
+            </div>
+        </div>
+    </header>
+    
+    <!-- 主导航菜单 -->
+    <nav class="bg-white border-b border-gray-200 px-6">
+        <div class="flex items-center space-x-8">
+            <a href="/user/home" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                首页
+            </a>
+            <a href="/user/profile" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                个人信息
+            </a>
+            <a href="/user/caregivers" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                寻找护工
+            </a>
+            <a href="/user/appointments" class="py-4 px-2 text-primary border-b-2 border-primary">
+                我的预约
+            </a>
+            <a href="/user/employments" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                我的聘用
+            </a>
+            <a href="/user/messages" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                消息中心
+            </a>
+            <a href="#" class="py-4 px-2 text-danger hover:text-danger/80 hover:border-b-2 hover:border-danger/50">
+                紧急呼叫
+            </a>
+        </div>
+    </nav>
+    
+    <!-- 页面内容 -->
+    <main class="p-6 bg-gray-50">
+        <!-- 页面标题 -->
+        <div class="text-center mb-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-4">我的预约管理</h2>
+            <p class="text-gray-600 text-lg">管理您的所有护理服务预约</p>
+        </div>
+        
+        <!-- 统计卡片 -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl p-6 card-shadow text-center">
+                <div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                    <i class="fa fa-calendar text-primary text-xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-primary mb-1">8</h3>
+                <p class="text-sm text-gray-600">总预约数</p>
+            </div>
+            <div class="bg-white rounded-xl p-6 card-shadow text-center">
+                <div class="w-12 h-12 rounded-lg bg-warning/10 flex items-center justify-center mx-auto mb-3">
+                    <i class="fa fa-clock-o text-warning text-xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-warning mb-1">2</h3>
+                <p class="text-sm text-gray-600">待确认</p>
+            </div>
+            <div class="bg-white rounded-xl p-6 card-shadow text-center">
+                <div class="w-12 h-12 rounded-lg bg-success/10 flex items-center justify-center mx-auto mb-3">
+                    <i class="fa fa-check-circle text-success text-xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-success mb-1">4</h3>
+                <p class="text-sm text-gray-600">已确认</p>
+            </div>
+            <div class="bg-white rounded-xl p-6 card-shadow text-center">
+                <div class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center mx-auto mb-3">
+                    <i class="fa fa-star text-gray-600 text-xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-600 mb-1">4.9</h3>
+                <p class="text-sm text-gray-600">平均评分</p>
+            </div>
+        </div>
+        
+        <!-- 筛选和操作区域 -->
+        <div class="bg-white rounded-xl p-6 card-shadow mb-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div class="flex flex-wrap gap-4">
+                    <button class="px-4 py-2 bg-primary text-white rounded-lg text-sm">全部</button>
+                    <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">待确认</button>
+                    <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">已确认</button>
+                    <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">进行中</button>
+                    <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">已完成</button>
+                    <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">已取消</button>
+                </div>
+                <button class="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg transition-colors">
+                    <i class="fa fa-plus mr-2"></i>新建预约
+                </button>
+            </div>
+        </div>
+        
+        <!-- 预约列表 -->
+        <div class="bg-white rounded-xl card-shadow overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-200">
+                            <th class="text-left px-6 py-4 text-sm font-semibold text-gray-600">护工信息</th>
+                            <th class="text-left px-6 py-4 text-sm font-semibold text-gray-600">服务类型</th>
+                            <th class="text-left px-6 py-4 text-sm font-semibold text-gray-600">预约时间</th>
+                            <th class="text-left px-6 py-4 text-sm font-semibold text-gray-600">服务时长</th>
+                            <th class="text-left px-6 py-4 text-sm font-semibold text-gray-600">状态</th>
+                            <th class="text-left px-6 py-4 text-sm font-semibold text-gray-600">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="appointments-container">
+                        <!-- 预约数据将通过JavaScript动态生成 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- 分页 -->
+        <div class="flex justify-center mt-8">
+            <nav class="flex items-center space-x-2">
+                <button class="px-3 py-2 text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                    <i class="fa fa-chevron-left"></i>
+                </button>
+                <button class="px-3 py-2 bg-primary text-white rounded-lg">1</button>
+                <button class="px-3 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">2</button>
+                <button class="px-3 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">3</button>
+                <button class="px-3 py-2 text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                    <i class="fa fa-chevron-right"></i>
+                </button>
+            </nav>
+        </div>
+    </main>
+    
+    <!-- 返回顶部按钮 -->
+    <button id="back-to-top" class="fixed bottom-6 right-6 w-12 h-12 bg-primary text-white rounded-full shadow-lg hover:bg-primary/90 transition-all duration-300 hidden">
+        <i class="fa fa-arrow-up"></i>
+    </button>
+    
+    <script>
+        // 页面数据
+        const appointmentsData = [
+            {
+                id: 1,
+                caregiver: {
+                    name: '李敏',
+                    avatar: 'https://picsum.photos/id/26/50/50',
+                    id: 'CG20230567'
+                },
+                serviceType: '老年日常护理',
+                date: '2023-10-15',
+                startTime: '09:00',
+                endTime: '11:00',
+                duration: '2小时',
+                status: 'confirmed',
+                price: 180
+            },
+            {
+                id: 2,
+                caregiver: {
+                    name: '王芳',
+                    avatar: 'https://picsum.photos/id/91/50/50',
+                    id: 'CG20230421'
+                },
+                serviceType: '母婴护理咨询',
+                date: '2023-10-18',
+                startTime: '14:00',
+                endTime: '16:00',
+                duration: '2小时',
+                status: 'pending',
+                price: 220
+            },
+            {
+                id: 3,
+                caregiver: {
+                    name: '张伟',
+                    avatar: 'https://picsum.photos/id/177/50/50',
+                    id: 'CG20230678'
+                },
+                serviceType: '术后康复护理',
+                date: '2023-10-20',
+                startTime: '08:00',
+                endTime: '12:00',
+                duration: '4小时',
+                status: 'in-progress',
+                price: 260
+            },
+            {
+                id: 4,
+                caregiver: {
+                    name: '刘丽',
+                    avatar: 'https://picsum.photos/id/237/50/50',
+                    id: 'CG20230789'
+                },
+                serviceType: '老年心理护理',
+                date: '2023-10-12',
+                startTime: '15:00',
+                endTime: '17:00',
+                duration: '2小时',
+                status: 'completed',
+                price: 200
+            },
+            {
+                id: 5,
+                caregiver: {
+                    name: '陈华',
+                    avatar: 'https://picsum.photos/id/238/50/50',
+                    id: 'CG20230890'
+                },
+                serviceType: '产后修复指导',
+                date: '2023-10-10',
+                startTime: '10:00',
+                endTime: '12:00',
+                duration: '2小时',
+                status: 'cancelled',
+                price: 240
+            }
+        ];
+        
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 生成预约列表
+            generateAppointmentsList();
+            
+            // 绑定返回顶部按钮
+            bindBackToTop();
+            
+            // 绑定筛选按钮事件
+            bindFilterEvents();
+        });
+        
+        // 生成预约列表
+        function generateAppointmentsList() {
+            const container = document.getElementById('appointments-container');
+            
+            container.innerHTML = appointmentsData.map(appointment => `
+                <tr class="border-b border-gray-100 hover:bg-gray-50">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <img src="${appointment.caregiver.avatar}" alt="${appointment.caregiver.name}护工" class="w-10 h-10 rounded-full object-cover">
+                            <div>
+                                <p class="font-medium">${appointment.caregiver.name}</p>
+                                <p class="text-sm text-gray-500">ID: ${appointment.caregiver.id}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="text-sm">${appointment.serviceType}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <p class="text-sm">${appointment.date}</p>
+                        <p class="text-sm text-gray-500">${appointment.startTime} - ${appointment.endTime}</p>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="text-sm">${appointment.duration}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-1 text-xs rounded-full ${getStatusClass(appointment.status)}">${getStatusText(appointment.status)}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex gap-2">
+                            <button class="text-primary hover:text-primary/80 text-sm" onclick="viewAppointmentDetail(${appointment.id})">详情</button>
+                            ${getActionButton(appointment.status, appointment.id)}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        // 获取状态样式类
+        function getStatusClass(status) {
+            const statusMap = {
+                'pending': 'bg-yellow-100 text-yellow-800',
+                'confirmed': 'bg-green-100 text-green-800',
+                'in-progress': 'bg-blue-100 text-blue-800',
+                'completed': 'bg-gray-100 text-gray-800',
+                'cancelled': 'bg-red-100 text-red-800'
+            };
+            return statusMap[status] || 'bg-yellow-100 text-yellow-800';
+        }
+        
+        // 获取状态文本
+        function getStatusText(status) {
+            const statusMap = {
+                'pending': '待确认',
+                'confirmed': '已确认',
+                'in-progress': '进行中',
+                'completed': '已完成',
+                'cancelled': '已取消'
+            };
+            return statusMap[status] || status;
+        }
+        
+        // 获取操作按钮
+        function getActionButton(status, id) {
+            switch (status) {
+                case 'pending':
+                    return `<button class="text-danger hover:text-danger/80 text-sm" onclick="cancelAppointment(${id})">取消</button>`;
+                case 'confirmed':
+                    return `<button class="text-primary hover:text-primary/80 text-sm" onclick="startService(${id})">开始服务</button>`;
+                case 'in-progress':
+                    return `<button class="text-success hover:text-success/80 text-sm" onclick="completeService(${id})">完成服务</button>`;
+                case 'completed':
+                    return `<button class="text-warning hover:text-warning/80 text-sm" onclick="writeReview(${id})">写评价</button>`;
+                default:
+                    return '';
+            }
+        }
+        
+        // 绑定筛选按钮事件
+        function bindFilterEvents() {
+            const filterButtons = document.querySelectorAll('.bg-gray-100');
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // 移除其他按钮的选中状态
+                    filterButtons.forEach(btn => {
+                        btn.classList.remove('bg-primary', 'text-white');
+                        btn.classList.add('bg-gray-100', 'text-gray-700');
+                    });
+                    
+                    // 设置当前按钮为选中状态
+                    this.classList.remove('bg-gray-100', 'text-gray-700');
+                    this.classList.add('bg-primary', 'text-white');
+                    
+                    // 这里可以添加筛选逻辑
+                    const filterType = this.textContent.trim();
+                    console.log('筛选类型:', filterType);
+                });
+            });
+        }
+        
+        // 查看预约详情
+        function viewAppointmentDetail(id) {
+            window.location.href = `/user/appointments?id=${id}&view=detail`;
+        }
+        
+        // 取消预约
+        function cancelAppointment(id) {
+            if (confirm('确定要取消这个预约吗？')) {
+                // 这里应该调用实际的取消API
+                alert('预约已取消');
+                // 刷新页面数据
+                location.reload();
+            }
+        }
+        
+        // 开始服务
+        function startService(id) {
+            if (confirm('确定要开始服务吗？')) {
+                // 这里应该调用实际的开始服务API
+                alert('服务已开始');
+                // 刷新页面数据
+                location.reload();
+            }
+        }
+        
+        // 完成服务
+        function completeService(id) {
+            if (confirm('确定要完成服务吗？')) {
+                // 这里应该调用实际的完成服务API
+                alert('服务已完成');
+                // 刷新页面数据
+                location.reload();
+            }
+        }
+        
+        // 写评价
+        function writeReview(id) {
+            window.location.href = `/user/appointments?id=${id}&action=review`;
+        }
+        
+        // 绑定返回顶部按钮
+        function bindBackToTop() {
+            const backToTopBtn = document.getElementById('back-to-top');
+            
+            window.addEventListener('scroll', () => {
+                if (window.pageYOffset > 300) {
+                    backToTopBtn.classList.remove('hidden');
+                } else {
+                    backToTopBtn.classList.add('hidden');
+                }
+            });
+            
+            backToTopBtn.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+    </script>
+</body>
+</html>

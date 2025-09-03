@@ -120,11 +120,12 @@ def check_login_status():
     # 定义公开路由（无需登录验证）
     public_routes = [
         'index', 'static',
-        'admin_login_page', 
-        'user_register_page', 'caregiver_register_page',
-        'admin_caregivers_page', 'admin_dashboard_page',
+        'admin_login_page', 'admin_caregivers_page', 'admin_dashboard_page',
         'admin_users_page', 'admin_job_analysis_page',
-        'user_dashboard_page'
+        'user_register_page', 'user_dashboard_page', 'user_home_page',
+        'user_caregivers_page', 'user_appointments_page', 'user_employments_page',
+        'user_messages_page', 'user_profile_page',
+        'caregiver_register_page', 'caregiver_dashboard_page'
     ]
     
     if request.endpoint in public_routes:
@@ -140,37 +141,41 @@ def index():
         return "网站首页模板不存在", 500
     return render_template('index.html')
 
-@app.route('/admin-login.html')
+@app.route('/admin/login')
+@app.route('/admin/admin-login.html')
 def admin_login_page():
     """管理员登录页面"""
-    template_path = os.path.join(WEB_FOLDER, 'admin-login.html')
+    template_path = os.path.join(WEB_FOLDER, 'admin', 'admin-login.html')
     if not os.path.exists(template_path):
         logger.error(f"admin-login.html模板文件不存在: {template_path}")
         return "管理员登录模板不存在", 500
-    return render_template('admin-login.html')
+    return render_template('admin/admin-login.html')
 
-@app.route('/user-register.html')
+@app.route('/user/register')
+@app.route('/user/user-register.html')
 def user_register_page():
     """用户注册页面"""
-    template_path = os.path.join(WEB_FOLDER, 'user-register.html')
+    template_path = os.path.join(WEB_FOLDER, 'user', 'user-register.html')
     if not os.path.exists(template_path):
         logger.error(f"user-register.html模板文件不存在: {template_path}")
         return "用户注册模板不存在", 500
-    return render_template('user-register.html')
+    return render_template('user/user-register.html')
 
-@app.route('/caregiver-register.html')
+@app.route('/caregiver/register')
+@app.route('/caregiver/caregiver-register.html')
 def caregiver_register_page():
     """护工注册页面"""
-    template_path = os.path.join(WEB_FOLDER, 'caregiver-register.html')
+    template_path = os.path.join(WEB_FOLDER, 'caregiver', 'caregiver-register.html')
     if not os.path.exists(template_path):
         logger.error(f"caregiver-register.html模板文件不存在: {template_path}")
         return "护工注册模板不存在", 500
-    return render_template('caregiver-register.html')
+    return render_template('caregiver/caregiver-register.html')
 
-@app.route('/admin-caregivers.html')
+@app.route('/admin/caregivers')
+@app.route('/admin/admin-caregivers.html')
 def admin_caregivers_page():
     """管理员护工管理页面"""
-    template_path = os.path.join(WEB_FOLDER, 'admin-caregivers.html')
+    template_path = os.path.join(WEB_FOLDER, 'admin', 'admin-caregivers.html')
     if not os.path.exists(template_path):
         logger.error(f"admin-caregivers.html模板文件不存在: {template_path}")
         return "管理员护工管理模板不存在", 500
@@ -189,12 +194,13 @@ def admin_caregivers_page():
         CaregiverModel.is_approved == True
     ).order_by(CaregiverModel.approved_at.desc()).all()
     
-    return render_template('admin-caregivers.html', unapproved=unapproved, approved=approved)
+    return render_template('admin/admin-caregivers.html', unapproved=unapproved, approved=approved)
 
-@app.route('/admin-dashboard.html')
+@app.route('/admin/dashboard')
+@app.route('/admin/admin-dashboard.html')
 def admin_dashboard_page():
     """管理员仪表盘页面"""
-    template_path = os.path.join(WEB_FOLDER, 'admin-dashboard.html')
+    template_path = os.path.join(WEB_FOLDER, 'admin', 'admin-dashboard.html')
     if not os.path.exists(template_path):
         logger.error(f"admin-dashboard.html模板文件不存在: {template_path}")
         return "管理员仪表盘模板不存在", 500
@@ -219,7 +225,7 @@ def admin_dashboard_page():
     # 获取职位数据数量
     job_count = JobDataModel.query.count()
     
-    return render_template('admin-dashboard.html', 
+    return render_template('admin/admin-dashboard.html', 
                          user_count=user_count,
                          approved_user_count=approved_user_count,
                          pending_user_count=pending_user_count,
@@ -227,10 +233,11 @@ def admin_dashboard_page():
                          unapproved_caregiver_count=unapproved_caregiver_count,
                          job_count=job_count)
 
-@app.route('/admin-users.html')
+@app.route('/admin/users')
+@app.route('/admin/admin-users.html')
 def admin_users_page():
     """管理员用户管理页面"""
-    template_path = os.path.join(WEB_FOLDER, 'admin-users.html')
+    template_path = os.path.join(WEB_FOLDER, 'admin', 'admin-users.html')
     if not os.path.exists(template_path):
         logger.error(f"admin-users.html模板文件不存在: {template_path}")
         return "管理员用户管理模板不存在", 500
@@ -245,29 +252,144 @@ def admin_users_page():
     # 获取已审核用户
     approved_users = UserModel.query.filter_by(is_approved=True).order_by(UserModel.approved_at.desc()).all()
     
-    return render_template('admin-users.html', pending=pending_users, approved=approved_users)
+    return render_template('admin/admin-users.html', pending=pending_users, approved=approved_users)
 
-@app.route('/admin-job-analysis.html')
+@app.route('/admin/job-analysis')
+@app.route('/admin/admin-job-analysis.html')
 def admin_job_analysis_page():
     """管理员职位分析页面"""
-    template_path = os.path.join(WEB_FOLDER, 'admin-job-analysis.html')
+    template_path = os.path.join(WEB_FOLDER, 'admin', 'admin-job-analysis.html')
     if not os.path.exists(template_path):
         logger.error(f"admin-job-analysis.html模板文件不存在: {template_path}")
         return "管理员职位分析模板不存在", 500
     
     # 这里可以添加职位分析的数据
     # 暂时返回空数据
-    return render_template('admin-job-analysis.html')
+    return render_template('admin/admin-job-analysis.html')
 
-@app.route('/user-dashboard.html')
+@app.route('/user/dashboard')
+@app.route('/user/user-dashboard.html')
 def user_dashboard_page():
     """用户仪表盘页面"""
-    template_path = os.path.join(WEB_FOLDER, 'user-dashboard.html')
+    template_path = os.path.join(WEB_FOLDER, 'user', 'user-dashboard.html')
     if not os.path.exists(template_path):
         logger.error(f"user-dashboard.html模板文件不存在: {template_path}")
         return "用户仪表盘模板不存在", 500
     
-    return render_template('user-dashboard.html')
+    return render_template('user/user-dashboard.html')
+
+# 添加更多用户端路由
+@app.route('/user/home')
+@app.route('/user/user-home.html')
+def user_home_page():
+    """用户主页"""
+    template_path = os.path.join(WEB_FOLDER, 'user', 'user-home.html')
+    if not os.path.exists(template_path):
+        logger.error(f"user-home.html模板文件不存在: {template_path}")
+        return "用户主页模板不存在", 500
+    return render_template('user/user-home.html')
+
+@app.route('/user/caregivers')
+@app.route('/user/user-caregivers.html')
+def user_caregivers_page():
+    """用户护工列表页面"""
+    template_path = os.path.join(WEB_FOLDER, 'user', 'user-caregivers.html')
+    if not os.path.exists(template_path):
+        logger.error(f"user-caregivers.html模板文件不存在: {template_path}")
+        return "用户护工列表模板不存在", 500
+    return render_template('user/user-caregivers.html')
+
+@app.route('/user/appointments')
+@app.route('/user/user-appointments.html')
+def user_appointments_page():
+    """用户预约管理页面"""
+    template_path = os.path.join(WEB_FOLDER, 'user', 'user-appointments.html')
+    if not os.path.exists(template_path):
+        logger.error(f"user-appointments.html模板文件不存在: {template_path}")
+        return "用户预约管理模板不存在", 500
+    return render_template('user/user-appointments.html')
+
+@app.route('/user/employments')
+@app.route('/user/user-employments.html')
+def user_employments_page():
+    """用户雇佣管理页面"""
+    template_path = os.path.join(WEB_FOLDER, 'user', 'user-employments.html')
+    if not os.path.exists(template_path):
+        logger.error(f"user-employments.html模板文件不存在: {template_path}")
+        return "用户雇佣管理模板不存在", 500
+    return render_template('user/user-employments.html')
+
+@app.route('/user/messages')
+@app.route('/user/user-messages.html')
+def user_messages_page():
+    """用户消息管理页面"""
+    template_path = os.path.join(WEB_FOLDER, 'user', 'user-messages.html')
+    if not os.path.exists(template_path):
+        logger.error(f"user-messages.html模板文件不存在: {template_path}")
+        return "用户消息管理模板不存在", 500
+    return render_template('user/user-messages.html')
+
+@app.route('/user/profile')
+@app.route('/user/user-profile.html')
+def user_profile_page():
+    """用户资料页面"""
+    template_path = os.path.join(WEB_FOLDER, 'user', 'user-profile.html')
+    if not os.path.exists(template_path):
+        logger.error(f"user-profile.html模板文件不存在: {template_path}")
+        return "用户资料模板不存在", 500
+    return render_template('user/user-profile.html')
+
+# 添加护工端路由
+@app.route('/caregiver/dashboard')
+@app.route('/caregiver/caregiver-dashboard.html')
+def caregiver_dashboard_page():
+    """护工仪表盘页面"""
+    template_path = os.path.join(WEB_FOLDER, 'caregiver', 'caregiver-dashboard.html')
+    if not os.path.exists(template_path):
+        logger.error(f"caregiver-dashboard.html模板文件不存在: {template_path}")
+        return "护工仪表盘模板不存在", 500
+    return render_template('caregiver/caregiver-dashboard.html')
+
+# ==================== 旧URL重定向 ====================
+@app.route('/admin-login.html')
+def redirect_admin_login():
+    """重定向旧的管理员登录URL"""
+    return redirect(url_for('admin_login_page'))
+
+@app.route('/user-register.html')
+def redirect_user_register():
+    """重定向旧的用户注册URL"""
+    return redirect(url_for('user_register_page'))
+
+@app.route('/caregiver-register.html')
+def redirect_caregiver_register():
+    """重定向旧的护工注册URL"""
+    return redirect(url_for('caregiver_register_page'))
+
+@app.route('/admin-caregivers.html')
+def redirect_admin_caregivers():
+    """重定向旧的管理员护工管理URL"""
+    return redirect(url_for('admin_caregivers_page'))
+
+@app.route('/admin-dashboard.html')
+def redirect_admin_dashboard():
+    """重定向旧的管理员仪表盘URL"""
+    return redirect(url_for('admin_dashboard_page'))
+
+@app.route('/admin-users.html')
+def redirect_admin_users():
+    """重定向旧的管理员用户管理URL"""
+    return redirect(url_for('admin_users_page'))
+
+@app.route('/admin-job-analysis.html')
+def redirect_admin_job_analysis():
+    """重定向旧的管理员职位分析URL"""
+    return redirect(url_for('admin_job_analysis_page'))
+
+@app.route('/user-dashboard.html')
+def redirect_user_dashboard():
+    """重定向旧的用户仪表盘URL"""
+    return redirect(url_for('user_dashboard_page'))
 
 # ==================== 文件访问 ====================
 @app.route('/uploads/<filename>')
@@ -287,9 +409,20 @@ if __name__ == '__main__':
     else:
         print(f"成功找到web文件夹: {WEB_FOLDER}")
         print("模板文件列表:")
+        
+        # 检查根目录HTML文件
         for file in os.listdir(WEB_FOLDER):
             if file.endswith('.html'):
                 print(f"- {file}")
+        
+        # 检查各端目录
+        for subdir in ['admin', 'user', 'caregiver']:
+            subdir_path = os.path.join(WEB_FOLDER, subdir)
+            if os.path.exists(subdir_path):
+                print(f"\n{subdir.upper()}端文件:")
+                for file in os.listdir(subdir_path):
+                    if file.endswith('.html'):
+                        print(f"  - {subdir}/{file}")
     
     # 初始化数据库（MySQL 已迁移完成）
     try:

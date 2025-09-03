@@ -8,32 +8,112 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入Font Awesome -->
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <!-- 引入自定义样式 -->
-    <link href="css/components.css" rel="stylesheet">
-    <!-- 引入JavaScript模块 -->
-    <script src="js/pageBuilder.js"></script>
-    <script src="js/common.js"></script>
-    <script src="js/modules/auth.js"></script>
-    <script src="js/modules/navigation.js"></script>
-    <script src="js/modules/ui.js"></script>
+    
+    <!-- 配置Tailwind自定义主题 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36CFC9',
+                        accent: '#722ED1',
+                        neutral: '#F5F7FA',
+                        'neutral-dark': '#4E5969',
+                        success: '#52C41A',
+                        warning: '#FAAD14',
+                        danger: '#FF4D4F',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .card-shadow {
+                @apply shadow-sm hover:shadow-md transition-shadow duration-300;
+            }
+        }
+    </style>
 </head>
 <body class="font-inter bg-gray-50 text-gray-800">
+    <!-- 顶部导航栏 -->
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                    <i class="fa fa-heartbeat text-white text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-primary">护理助手</h1>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-6">
+            <div class="relative">
+                <input type="text" placeholder="搜索护工、服务..." 
+                    class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 w-64">
+                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <button class="p-2 rounded-full hover:bg-gray-100 relative">
+                <i class="fa fa-bell text-gray-600"></i>
+                <span class="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full"></span>
+            </button>
+            
+            <div class="flex items-center gap-3">
+                <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-9 h-9 rounded-full object-cover border-2 border-primary/20">
+                <div class="hidden md:block">
+                    <p class="text-sm font-medium">张阿姨</p>
+                    <p class="text-xs text-gray-500">普通用户</p>
+                </div>
+                <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-primary">登出</button>
+            </div>
+        </div>
+    </header>
+    
+    <!-- 主导航菜单 -->
+    <nav class="bg-white border-b border-gray-200 px-6">
+        <div class="flex items-center space-x-8">
+            <a href="/user/home" class="py-4 px-2 text-primary border-b-2 border-primary">
+                首页
+            </a>
+            <a href="/user/profile" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                个人信息
+            </a>
+            <a href="/user/caregivers" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                寻找护工
+            </a>
+            <a href="/user/appointments" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                我的预约
+            </a>
+            <a href="/user/employments" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                我的聘用
+            </a>
+            <a href="/user/messages" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                消息中心
+            </a>
+            <a href="#" class="py-4 px-2 text-danger hover:text-danger/80 hover:border-b-2 hover:border-danger/50">
+                紧急呼叫
+            </a>
+        </div>
+    </nav>
+    
     <!-- 页面内容 -->
     <main class="p-6 bg-gray-50">
         <!-- 欢迎区域 -->
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-            <div>
-                <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold">欢迎回来，张阿姨</h2>
-                <p class="text-gray-500">今天是 <span id="current-date"></span>，祝您生活愉快</p>
-            </div>
-            <button class="mt-4 md:mt-0 btn btn-primary btn-lg" onclick="quickBook()">
-                <i class="fa fa-plus mr-2"></i>
-                <span>立即预约</span>
-            </button>
+        <div class="text-center mb-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-4">欢迎回来，张阿姨</h2>
+            <p class="text-gray-600 text-lg">今天是 <span id="current-date"></span>，祝您生活愉快</p>
         </div>
         
         <!-- 快捷统计卡片 -->
-        <div class="stats-grid" id="stats-container">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" id="stats-container">
             <!-- 统计卡片将通过JavaScript动态生成 -->
         </div>
         
@@ -41,7 +121,7 @@
         <div class="mb-8">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-bold">为您推荐的护工</h3>
-                <a href="user-caregivers.html" class="text-primary hover:text-primary/80 text-sm flex items-center">
+                <a href="/user/caregivers" class="text-primary hover:text-primary/80 text-sm flex items-center">
                     查看全部 <i class="fa fa-angle-right ml-1"></i>
                 </a>
             </div>
@@ -55,12 +135,12 @@
         <div>
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-bold">近期预约</h3>
-                <a href="user-appointments.html" class="text-primary hover:text-primary/80 text-sm flex items-center">
+                <a href="/user/appointments" class="text-primary hover:text-primary/80 text-sm flex items-center">
                     全部预约 <i class="fa fa-angle-right ml-1"></i>
                 </a>
             </div>
             
-            <div class="table" id="appointments-container">
+            <div class="bg-white rounded-xl p-6 card-shadow" id="appointments-container">
                 <!-- 预约表格将通过JavaScript动态生成 -->
             </div>
         </div>
@@ -172,6 +252,9 @@
             
             // 启动实时更新
             startRealTimeUpdates();
+            
+            // 绑定返回顶部按钮
+            bindBackToTop();
         });
         
         // 初始化页面
@@ -198,61 +281,54 @@
             
             container.innerHTML = `
                 <!-- 预约统计卡片 -->
-                <div class="card">
-                    <div class="card-header">
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <div class="flex items-center justify-between mb-4">
                         <div>
-                            <p class="card-title">预约统计</p>
-                            <h3 class="card-value text-primary" id="total-appointments">${stats.appointments.total}</h3>
+                            <p class="text-sm text-gray-600 mb-1">预约统计</p>
+                            <h3 class="text-2xl font-bold text-primary">${stats.appointments.total}</h3>
                         </div>
-                        <div class="card-icon bg-primary/10">
+                        <div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
                             <i class="fa fa-calendar-check-o text-primary text-xl"></i>
                         </div>
                     </div>
                     
                     <div class="grid grid-cols-2 gap-3 mb-4">
-                        <div class="stats-item pending" onclick="filterAppointments('pending')">
+                        <div class="text-center p-3 bg-blue-50 rounded-lg cursor-pointer" onclick="filterAppointments('pending')">
                             <p class="text-xs text-gray-600">待确认</p>
-                            <p class="text-lg font-bold text-blue-600" id="pending-confirm">${stats.appointments.pending}</p>
+                            <p class="text-lg font-bold text-blue-600">${stats.appointments.pending}</p>
                         </div>
-                        <div class="stats-item confirmed" onclick="filterAppointments('confirmed')">
+                        <div class="text-center p-3 bg-green-50 rounded-lg cursor-pointer" onclick="filterAppointments('confirmed')">
                             <p class="text-xs text-gray-600">已确认</p>
-                            <p class="text-lg font-bold text-green-600" id="confirmed">${stats.appointments.confirmed}</p>
+                            <p class="text-lg font-bold text-green-600">${stats.appointments.confirmed}</p>
                         </div>
-                        <div class="stats-item progress" onclick="filterAppointments('in-progress')">
+                        <div class="text-center p-3 bg-yellow-50 rounded-lg cursor-pointer" onclick="filterAppointments('in-progress')">
                             <p class="text-xs text-gray-600">进行中</p>
-                            <p class="text-lg font-bold text-yellow-600" id="in-progress">${stats.appointments.inProgress}</p>
+                            <p class="text-lg font-bold text-yellow-600">${stats.appointments.inProgress}</p>
                         </div>
-                        <div class="stats-item completed" onclick="filterAppointments('completed')">
+                        <div class="text-center p-3 bg-gray-50 rounded-lg cursor-pointer" onclick="filterAppointments('completed')">
                             <p class="text-xs text-gray-600">已完成</p>
-                            <p class="text-lg font-bold text-gray-600" id="completed">${stats.appointments.completed}</p>
+                            <p class="text-lg font-bold text-gray-600">${stats.appointments.completed}</p>
                         </div>
                     </div>
                     
                     <div class="flex gap-2">
-                        <button class="btn btn-primary flex-1" onclick="quickBook()">
+                        <button class="flex-1 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg transition-colors" onclick="quickBook()">
                             <i class="fa fa-plus mr-1"></i>快速预约
                         </button>
-                        <button class="btn btn-secondary flex-1" onclick="viewAll()">
+                        <button class="flex-1 bg-secondary hover:bg-secondary/90 text-white px-4 py-2 rounded-lg transition-colors" onclick="viewAll()">
                             <i class="fa fa-list mr-1"></i>查看全部
                         </button>
-                    </div>
-                    
-                    <div class="mt-3 p-2 bg-orange-50 rounded-lg border-l-4 border-orange-400">
-                        <p class="text-xs text-orange-800">
-                            <i class="fa fa-exclamation-triangle mr-1"></i>
-                            <span id="today-reminder">今日有${stats.appointments.pending}个预约需要确认</span>
-                        </p>
                     </div>
                 </div>
                 
                 <!-- 聘用统计卡片 -->
-                <div class="card">
-                    <div class="card-header">
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <div class="flex items-center justify-between mb-4">
                         <div>
-                            <p class="card-title">聘用统计</p>
-                            <h3 class="card-value text-secondary" id="total-employments">${stats.employments.total}</h3>
+                            <p class="text-sm text-gray-600 mb-1">聘用统计</p>
+                            <h3 class="text-2xl font-bold text-secondary">${stats.employments.total}</h3>
                         </div>
-                        <div class="card-icon bg-secondary/10">
+                        <div class="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center">
                             <i class="fa fa-handshake-o text-secondary text-xl"></i>
                         </div>
                     </div>
@@ -260,39 +336,39 @@
                     <div class="space-y-3 mb-4">
                         <div class="flex items-center justify-between p-2 bg-green-50 rounded-lg">
                             <span class="text-sm text-gray-600">进行中</span>
-                            <span class="text-lg font-bold text-green-600" id="active-employments">${stats.employments.active}</span>
+                            <span class="text-lg font-bold text-green-600">${stats.employments.active}</span>
                         </div>
                         <div class="flex items-center justify-between p-2 bg-blue-50 rounded-lg">
                             <span class="text-sm text-gray-600">待开始</span>
-                            <span class="text-lg font-bold text-blue-600" id="pending-employments">${stats.employments.pending}</span>
+                            <span class="text-lg font-bold text-blue-600">${stats.employments.pending}</span>
                         </div>
                         <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
                             <span class="text-sm text-gray-600">已完成</span>
-                            <span class="text-lg font-bold text-gray-600" id="completed-employments">${stats.employments.completed}</span>
+                            <span class="text-lg font-bold text-gray-600">${stats.employments.completed}</span>
                         </div>
                     </div>
                     
                     <div class="flex gap-2">
-                        <button class="btn btn-secondary flex-1" onclick="newEmployment()">
+                        <button class="flex-1 bg-secondary hover:bg-secondary/90 text-white px-4 py-2 rounded-lg transition-colors" onclick="newEmployment()">
                             <i class="fa fa-plus mr-1"></i>长期聘用
                         </button>
-                        <button class="btn btn-outline flex-1" onclick="viewEmployments()">
+                        <button class="flex-1 border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg transition-colors" onclick="viewEmployments()">
                             <i class="fa fa-list mr-1"></i>管理聘用
                         </button>
                     </div>
                 </div>
                 
                 <!-- 服务评价卡片 -->
-                <div class="card">
-                    <div class="card-header">
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <div class="flex items-center justify-between mb-4">
                         <div>
-                            <p class="card-title">服务评价</p>
-                            <h3 class="card-value text-accent" id="avg-rating">${stats.rating.average}</h3>
+                            <p class="text-sm text-gray-600 mb-1">服务评价</p>
+                            <h3 class="text-2xl font-bold text-accent">${stats.rating.average}</h3>
                             <div class="flex text-warning mt-1">
                                 ${generateStars(stats.rating.average)}
                             </div>
                         </div>
-                        <div class="card-icon bg-accent/10">
+                        <div class="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
                             <i class="fa fa-star text-accent text-xl"></i>
                         </div>
                     </div>
@@ -302,10 +378,10 @@
                     </div>
                     
                     <div class="flex gap-2">
-                        <button class="btn btn-accent flex-1" onclick="writeReview()">
+                        <button class="flex-1 bg-accent hover:bg-accent/90 text-white px-4 py-2 rounded-lg transition-colors" onclick="writeReview()">
                             <i class="fa fa-pencil mr-1"></i>写评价
                         </button>
-                        <button class="btn btn-outline flex-1" onclick="viewReviews()">
+                        <button class="flex-1 border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg transition-colors" onclick="viewReviews()">
                             <i class="fa fa-eye mr-1"></i>查看评价
                         </button>
                     </div>
@@ -318,7 +394,7 @@
             const container = document.getElementById('caregivers-container');
             
             container.innerHTML = pageData.caregivers.map(caregiver => `
-                <div class="card overflow-hidden">
+                <div class="bg-white rounded-xl overflow-hidden card-shadow">
                     <div class="relative">
                         <img src="${caregiver.avatar}" alt="${caregiver.name}工作照" class="w-full h-48 object-cover">
                         <div class="absolute top-3 right-3 ${caregiver.status === 'available' ? 'bg-success' : 'bg-warning'} text-white text-xs px-2 py-1 rounded-full">
@@ -328,9 +404,9 @@
                     <div class="p-5">
                         <div class="flex items-center justify-between mb-3">
                             <h4 class="font-bold text-lg">${caregiver.name} 护工</h4>
-                            <div class="rating">
-                                <i class="fa fa-star rating-star"></i>
-                                <span class="ml-1 text-sm font-medium">${caregiver.rating}</span>
+                            <div class="flex items-center">
+                                <i class="fa fa-star text-warning mr-1"></i>
+                                <span class="text-sm font-medium">${caregiver.rating}</span>
                             </div>
                         </div>
                         
@@ -346,7 +422,7 @@
                                 <span class="text-primary font-bold">¥${caregiver.price}</span>
                                 <span class="text-gray-500 text-sm">/小时</span>
                             </div>
-                            <button class="btn btn-outline btn-sm" onclick="viewCaregiverDetail(${caregiver.id})">
+                            <button class="border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg transition-colors text-sm" onclick="viewCaregiverDetail(${caregiver.id})">
                                 查看详情
                             </button>
                         </div>
@@ -362,37 +438,37 @@
             container.innerHTML = `
                 <table class="w-full">
                     <thead>
-                        <tr class="bg-gray-50 border-b border-gray-200">
-                            <th class="text-left px-6 py-4 text-sm font-semibold text-gray-600">护工信息</th>
-                            <th class="text-left px-6 py-4 text-sm font-semibold text-gray-600">服务类型</th>
-                            <th class="text-left px-6 py-4 text-sm font-semibold text-gray-600">日期时间</th>
-                            <th class="text-left px-6 py-4 text-sm font-semibold text-gray-600">状态</th>
-                            <th class="text-left px-6 py-4 text-sm font-semibold text-gray-600">操作</th>
+                        <tr class="border-b border-gray-200">
+                            <th class="text-left py-3 text-sm font-semibold text-gray-600">护工信息</th>
+                            <th class="text-left py-3 text-sm font-semibold text-gray-600">服务类型</th>
+                            <th class="text-left py-3 text-sm font-semibold text-gray-600">日期时间</th>
+                            <th class="text-left py-3 text-sm font-semibold text-gray-600">状态</th>
+                            <th class="text-left py-3 text-sm font-semibold text-gray-600">操作</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${pageData.appointments.map(appointment => `
                             <tr class="border-b border-gray-100 hover:bg-gray-50">
-                                <td class="px-6 py-4">
+                                <td class="py-3">
                                     <div class="flex items-center gap-3">
-                                        <img src="${appointment.caregiver.avatar}" alt="${appointment.caregiver.name}护工" class="avatar avatar-md">
+                                        <img src="${appointment.caregiver.avatar}" alt="${appointment.caregiver.name}护工" class="w-10 h-10 rounded-full object-cover">
                                         <div>
                                             <p class="font-medium">${appointment.caregiver.name}</p>
                                             <p class="text-sm text-gray-500">ID: CG${appointment.caregiver.id}</p>
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="py-3">
                                     <span class="text-sm">${appointment.serviceType}</span>
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="py-3">
                                     <p class="text-sm">${appointment.date}</p>
                                     <p class="text-sm text-gray-500">${appointment.startTime} - ${appointment.endTime}</p>
                                 </td>
-                                <td class="px-6 py-4">
-                                    <span class="status-badge ${getStatusClass(appointment.status)}">${getStatusText(appointment.status)}</span>
+                                <td class="py-3">
+                                    <span class="px-2 py-1 text-xs rounded-full ${getStatusClass(appointment.status)}">${getStatusText(appointment.status)}</span>
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="py-3">
                                     <button class="text-primary hover:text-primary/80 text-sm mr-3" onclick="viewAppointmentDetail(${appointment.id})">详情</button>
                                     <button class="text-danger hover:text-danger/80 text-sm" onclick="cancelAppointment(${appointment.id})">取消</button>
                                 </td>
@@ -441,13 +517,13 @@
         // 获取状态样式类
         function getStatusClass(status) {
             const statusMap = {
-                'pending': 'status-pending',
-                'confirmed': 'status-confirmed',
-                'in-progress': 'status-progress',
-                'completed': 'status-completed',
-                'cancelled': 'status-cancelled'
+                'pending': 'bg-yellow-100 text-yellow-800',
+                'confirmed': 'bg-green-100 text-green-800',
+                'in-progress': 'bg-blue-100 text-blue-800',
+                'completed': 'bg-gray-100 text-gray-800',
+                'cancelled': 'bg-red-100 text-red-800'
             };
-            return statusMap[status] || 'status-pending';
+            return statusMap[status] || 'bg-yellow-100 text-yellow-800';
         }
         
         // 获取状态文本
@@ -465,23 +541,17 @@
         // 加载页面数据
         async function loadPageData() {
             try {
-                UIManager.showLoading('加载数据中...');
-                
                 // 这里应该调用实际的API
-                // const response = await Http.get('/api/user/dashboard/stats');
-                // if (response.success) {
-                //     updatePageData(response.data);
+                // const response = await fetch('/api/user/dashboard/stats');
+                // if (response.ok) {
+                //     const data = await response.json();
+                //     updatePageData(data);
                 // }
                 
                 // 模拟API延迟
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 
-                UIManager.hideLoading();
-                UIManager.showSuccess('数据加载完成');
-                
             } catch (error) {
-                UIManager.hideLoading();
-                UIManager.showError('数据加载失败');
                 console.error('加载数据失败:', error);
             }
         }
@@ -489,23 +559,12 @@
         // 启动实时更新
         function startRealTimeUpdates() {
             setInterval(() => {
-                const pendingCount = parseInt(document.getElementById('pending-confirm').textContent);
-                if (pendingCount > 0 && Math.random() > 0.8) {
+                const pendingCount = document.getElementById('pending-confirm');
+                if (pendingCount && Math.random() > 0.8) {
                     // 模拟预约状态变化
-                    const newCount = Math.max(0, pendingCount - 1);
-                    document.getElementById('pending-confirm').textContent = newCount;
-                    document.getElementById('total-appointments').textContent = 
-                        parseInt(document.getElementById('total-appointments').textContent) - 1;
-                    
-                    // 更新提醒
-                    if (newCount > 0) {
-                        document.getElementById('today-reminder').textContent = 
-                            `今日有${newCount}个预约需要确认`;
-                    } else {
-                        document.getElementById('today-reminder').textContent = '今日预约已全部确认';
-                        document.getElementById('today-reminder').parentElement.classList.remove('bg-orange-50', 'border-orange-400');
-                        document.getElementById('today-reminder').parentElement.classList.add('bg-green-50', 'border-green-400');
-                    }
+                    const currentCount = parseInt(pendingCount.textContent);
+                    const newCount = Math.max(0, currentCount - 1);
+                    pendingCount.textContent = newCount;
                 }
             }, 30000); // 30秒检查一次
         }
@@ -514,79 +573,91 @@
         
         // 快速预约
         function quickBook() {
-            NavigationManager.navigateTo('user-caregivers.html', { quickbook: 'true' });
+            window.location.href = '/user/caregivers?action=book';
         }
         
         // 查看全部预约
         function viewAll() {
-            NavigationManager.navigateTo('user-appointments.html');
+            window.location.href = '/user/appointments';
         }
         
         // 筛选预约
         function filterAppointments(status) {
-            NavigationManager.navigateTo('user-appointments.html', { status: status });
+            window.location.href = `/user/appointments?status=${status}`;
         }
         
         // 长期聘用
         function newEmployment() {
-            NavigationManager.navigateTo('user-caregivers.html', { employment: 'true' });
+            window.location.href = '/user/caregivers?employment=true';
         }
         
         // 管理聘用
         function viewEmployments() {
-            NavigationManager.navigateTo('user-employments.html');
+            window.location.href = '/user/employments';
         }
         
         // 写评价
         function writeReview() {
-            const completedCount = parseInt(document.getElementById('completed').textContent);
-            if (completedCount > 0) {
-                NavigationManager.navigateTo('user-appointments.html', { filter: 'completed', action: 'review' });
+            const completedCount = document.getElementById('completed');
+            if (completedCount && parseInt(completedCount.textContent) > 0) {
+                window.location.href = '/user/appointments?filter=completed&action=review';
             } else {
-                UIManager.showWarning('暂无可评价的已完成预约');
+                alert('暂无可评价的已完成预约');
             }
         }
         
         // 查看评价
         function viewReviews() {
-            NavigationManager.navigateTo('user-appointments.html', { filter: 'completed' });
+            window.location.href = '/user/appointments?filter=completed';
         }
         
         // 查看护工详情
         function viewCaregiverDetail(id) {
-            NavigationManager.navigateTo('user-caregivers.html', { id: id, view: 'detail' });
+            window.location.href = `/user/caregivers?id=${id}&view=detail`;
         }
         
         // 查看预约详情
         function viewAppointmentDetail(id) {
-            NavigationManager.navigateTo('user-appointments.html', { id: id, view: 'detail' });
+            window.location.href = `/user/appointments?id=${id}&view=detail`;
         }
         
         // 取消预约
         async function cancelAppointment(id) {
-            const confirmed = await UIManager.showConfirm('确定要取消这个预约吗？', '取消预约');
-            if (confirmed) {
+            if (confirm('确定要取消这个预约吗？')) {
                 try {
-                    UIManager.showLoading('取消预约中...');
-                    
                     // 这里应该调用实际的取消API
-                    // await Http.delete(`/api/user/appointments/${id}`);
+                    // await fetch(`/api/user/appointments/${id}`, { method: 'DELETE' });
                     
                     // 模拟API延迟
                     await new Promise(resolve => setTimeout(resolve, 1000));
                     
-                    UIManager.hideLoading();
-                    UIManager.showSuccess('预约已取消');
+                    alert('预约已取消');
                     
                     // 刷新页面数据
                     loadPageData();
                     
                 } catch (error) {
-                    UIManager.hideLoading();
-                    UIManager.showError('取消预约失败');
+                    alert('取消预约失败');
                     console.error('取消预约失败:', error);
                 }
             }
+        }
+        
+        // 绑定返回顶部按钮
+        function bindBackToTop() {
+            const backToTopBtn = document.getElementById('back-to-top');
+            
+            window.addEventListener('scroll', () => {
+                if (window.pageYOffset > 300) {
+                    backToTopBtn.classList.remove('hidden');
+                } else {
+                    backToTopBtn.classList.add('hidden');
+                }
+            });
+            
+            backToTopBtn.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
         }
     </script>
 </body>

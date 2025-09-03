@@ -36,6 +36,8 @@ from api.user import user_bp
 from api.caregiver_business import caregiver_business_bp
 from api.chat import chat_bp, init_socketio
 from api.employment_contract import employment_contract_bp
+from api.caregiver_hire_info import caregiver_hire_info_bp
+from api.notification import notification_bp
 
 # ==================== 日志配置 ====================
 logging.basicConfig(level=logging.INFO)
@@ -77,6 +79,7 @@ def init_models():
     from models.business import JobData, AnalysisResult, Appointment, Employment, Message
     from models.chat import ChatMessage, ChatConversation
     from models.employment_contract import EmploymentContract, ServiceRecord, ContractApplication
+    from models.caregiver_hire_info import CaregiverHireInfo
     
     # 创建实际的模型类
     UserModel = User.get_model(db)
@@ -92,6 +95,7 @@ def init_models():
     EmploymentContractModel = EmploymentContract.get_model(db)
     ServiceRecordModel = ServiceRecord.get_model(db)
     ContractApplicationModel = ContractApplication.get_model(db)
+    CaregiverHireInfoModel = CaregiverHireInfo.get_model(db)
     
     # 初始化消息服务，设置数据库连接
     from services.message_service import message_service
@@ -104,7 +108,8 @@ def init_models():
     return (UserModel, CaregiverModel, ServiceTypeModel, 
             JobDataModel, AnalysisResultModel, AppointmentModel, 
             EmploymentModel, MessageModel, ChatMessageModel, ChatConversationModel,
-            EmploymentContractModel, ServiceRecordModel, ContractApplicationModel)
+            EmploymentContractModel, ServiceRecordModel, ContractApplicationModel,
+            CaregiverHireInfoModel)
 
 # 全局模型变量
 UserModel = None
@@ -129,6 +134,8 @@ app.register_blueprint(user_bp)
 app.register_blueprint(caregiver_business_bp)
 app.register_blueprint(chat_bp)
 app.register_blueprint(employment_contract_bp)
+app.register_blueprint(caregiver_hire_info_bp)
+app.register_blueprint(notification_bp)
 
 # ==================== 初始化SocketIO ====================
 socketio = init_socketio(app)

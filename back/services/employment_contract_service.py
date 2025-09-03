@@ -64,9 +64,23 @@ class EmploymentContractService:
             self.db.session.add(application)
             self.db.session.commit()
             
+            # 为护工创建工作机会通知
+            try:
+                from services.notification_service import notification_service
+                notification_service.set_db(self.db)
+                notification_service.create_job_opportunity_notification(
+                    caregiver_id=caregiver_id,
+                    user_id=user_id,
+                    application_id=application.id,
+                    service_type=service_type
+                )
+            except Exception as e:
+                # 通知创建失败不影响主流程
+                print(f"创建通知失败: {e}")
+            
             return {
                 "success": True,
-                "message": "申请提交成功",
+                "message": "申请提交成功，护工将收到工作机会通知",
                 "data": application.to_dict()
             }
             

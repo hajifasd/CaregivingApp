@@ -224,6 +224,147 @@
                 return;
             }
         }
+
+        // 页面加载完成后加载通知
+        document.addEventListener('DOMContentLoaded', function() {
+            // 延迟加载通知，确保DOM已准备好
+            setTimeout(() => {
+                loadNotifications();
+            }, 1000);
+        });
+
+        // 加载通知
+        function loadNotifications() {
+            // 这里应该从JWT token中解析用户ID
+            const userId = 1; // 示例ID
+            
+            fetch(`/api/notifications?user_id=${userId}&user_type=user`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayNotifications(data.data.notifications);
+                    updateNotificationBadge(data.data.unread_count);
+                } else {
+                    console.error('加载通知失败:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('加载通知失败:', error);
+            });
+        }
+
+        // 显示通知
+        function displayNotifications(notifications) {
+            const container = document.getElementById('notifications-list');
+            
+            if (!notifications || notifications.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fa fa-bell text-4xl text-gray-300 mb-4"></i>
+                        <p class="text-gray-500">暂无通知</p>
+                        <p class="text-sm text-gray-400">当有新的通知时，会在这里显示</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = notifications.map(notification => `
+                <div class="bg-white rounded-xl p-4 card-shadow mb-4 ${notification.is_read ? 'opacity-75' : ''}">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-2">
+                                <h3 class="text-lg font-semibold text-gray-800">${notification.title}</h3>
+                                ${!notification.is_read ? '<span class="w-2 h-2 bg-primary rounded-full"></span>' : ''}
+                            </div>
+                            <p class="text-gray-600 mb-3">${notification.content}</p>
+                            <div class="flex items-center gap-4 text-sm text-gray-500">
+                                <span>${new Date(notification.created_at).toLocaleString()}</span>
+                                <span class="capitalize">${notification.notification_type}</span>
+                                ${notification.priority !== 'normal' ? `
+                                <span class="px-2 py-1 text-xs rounded-full ${
+                                    notification.priority === 'high' ? 'bg-warning text-white' :
+                                    notification.priority === 'urgent' ? 'bg-danger text-white' : 'bg-primary text-white'
+                                }">${notification.priority}</span>
+                                ` : ''}
+                            </div>
+                        </div>
+                        ${!notification.is_read ? `
+                        <button onclick="markNotificationRead(${notification.id})" 
+                                class="text-primary hover:text-primary/80 text-sm">
+                            标记已读
+                        </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 标记通知为已读
+        function markNotificationRead(notificationId) {
+            const userId = 1; // 示例ID
+            
+            fetch(`/api/notifications/${notificationId}/read`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    user_id: userId,
+                    user_type: 'user'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadNotifications(); // 重新加载通知
+                } else {
+                    console.error('标记已读失败:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('标记已读失败:', error);
+            });
+        }
+
+        // 全部标记已读
+        document.getElementById('mark-all-read').addEventListener('click', function() {
+            const userId = 1; // 示例ID
+            
+            fetch('/api/notifications/read-all', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    user_id: userId,
+                    user_type: 'user'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    loadNotifications(); // 重新加载通知
+                } else {
+                    alert(data.message || '操作失败');
+                }
+            })
+            .catch(error => {
+                console.error('全部标记已读失败:', error);
+                alert('网络错误，请稍后重试');
+            });
+        });
+
+        // 更新通知徽章
+        function updateNotificationBadge(unreadCount) {
+            const badge = document.getElementById('notifications-badge');
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
     </script>
 </body>
 </html>

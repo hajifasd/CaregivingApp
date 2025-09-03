@@ -190,144 +190,124 @@
     
     <script>
         // 页面数据
-        const caregiversData = [
-            {
-                id: 1,
-                name: '李敏',
-                avatar: 'https://picsum.photos/id/26/400/200',
-                rating: 4.8,
-                skills: ['老年护理', '康复护理'],
-                experience: '5年经验',
-                description: '擅长老年日常护理、康复辅助，有耐心，责任心强，持有专业护理证书。',
-                price: 180,
-                status: 'available',
-                location: '北京市朝阳区',
-                certificates: ['护理师证书', '康复护理证书']
-            },
-            {
-                id: 2,
-                name: '王芳',
-                avatar: 'https://picsum.photos/id/91/400/200',
-                rating: 4.9,
-                skills: ['母婴护理', '育儿嫂'],
-                experience: '8年经验',
-                description: '专业母婴护理师，擅长新生儿照料、产后恢复指导，服务细致周到。',
-                price: 220,
-                status: 'available',
-                location: '北京市海淀区',
-                certificates: ['母婴护理师证书', '育婴师证书']
-            },
-            {
-                id: 3,
-                name: '张伟',
-                avatar: 'https://picsum.photos/id/177/400/200',
-                rating: 4.7,
-                skills: ['医疗护理', '术后护理'],
-                experience: '10年经验',
-                description: '原医院护士，擅长术后护理、医疗辅助，熟悉各种医疗设备使用。',
-                price: 260,
-                status: 'busy',
-                location: '北京市西城区',
-                certificates: ['护士执业证书', 'ICU护理证书']
-            },
-            {
-                id: 4,
-                name: '刘丽',
-                avatar: 'https://picsum.photos/id/237/400/200',
-                rating: 4.6,
-                skills: ['老年护理', '心理护理'],
-                experience: '6年经验',
-                description: '专业老年护理师，擅长老年心理疏导、生活照料，有爱心和耐心。',
-                price: 200,
-                status: 'available',
-                location: '北京市丰台区',
-                certificates: ['老年护理师证书', '心理咨询师证书']
-            },
-            {
-                id: 5,
-                name: '陈华',
-                avatar: 'https://picsum.photos/id/238/400/200',
-                rating: 4.5,
-                skills: ['母婴护理', '产后修复'],
-                experience: '7年经验',
-                description: '专业产后修复师，擅长产后身体恢复、母乳喂养指导，服务贴心。',
-                price: 240,
-                status: 'available',
-                location: '北京市东城区',
-                certificates: ['产后修复师证书', '母乳喂养指导师证书']
-            },
-            {
-                id: 6,
-                name: '赵敏',
-                avatar: 'https://picsum.photos/id/239/400/200',
-                rating: 4.4,
-                skills: ['康复护理', '运动康复'],
-                experience: '4年经验',
-                description: '康复治疗师，擅长运动损伤康复、术后康复训练，专业水平高。',
-                price: 190,
-                status: 'available',
-                location: '北京市石景山区',
-                certificates: ['康复治疗师证书', '运动康复师证书']
-            }
-        ];
+        let caregiversData = [];
+  
         
         // 页面初始化
         document.addEventListener('DOMContentLoaded', function() {
-            // 生成护工卡片
-            generateCaregiverCards();
+            // 加载护工数据
+            loadCaregiversData();
             
             // 绑定返回顶部按钮
             bindBackToTop();
         });
         
+        // 从后端加载护工数据
+        async function loadCaregiversData() {
+            try {
+                const response = await fetch('/api/caregivers/hire-info');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        caregiversData = data.data || [];
+                        generateCaregiverCards();
+                    } else {
+                        console.error('获取护工数据失败:', data.message);
+                        showNotification('获取护工数据失败', 'error');
+                    }
+                } else {
+                    console.error('API请求失败:', response.status);
+                    showNotification('网络请求失败', 'error');
+                }
+            } catch (error) {
+                console.error('加载护工数据出错:', error);
+                showNotification('加载数据时出错', 'error');
+            }
+        }
+        
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            // 创建通知元素
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+                type === 'error' ? 'bg-red-500 text-white' : 
+                type === 'success' ? 'bg-green-500 text-white' : 
+                'bg-blue-500 text-white'
+            }`;
+            notification.textContent = message;
+            
+            // 添加到页面
+            document.body.appendChild(notification);
+            
+            // 3秒后自动移除
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 3000);
+        }
+        
         // 生成护工卡片
         function generateCaregiverCards() {
             const container = document.getElementById('caregivers-container');
             
+            if (caregiversData.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <div class="text-gray-400 mb-4">
+                            <i class="fa fa-users text-6xl"></i>
+                        </div>
+                        <h3 class="text-xl font-medium text-gray-600 mb-2">暂无护工信息</h3>
+                        <p class="text-gray-500">目前没有可用的护工，请稍后再试</p>
+                    </div>
+                `;
+                return;
+            }
+            
             container.innerHTML = caregiversData.map(caregiver => `
                 <div class="bg-white rounded-xl overflow-hidden card-shadow">
                     <div class="relative">
-                        <img src="${caregiver.avatar}" alt="${caregiver.name}工作照" class="w-full h-48 object-cover">
+                        <img src="${caregiver.avatar || 'https://picsum.photos/id/64/400/300'}" alt="${caregiver.name || '护工'}工作照" class="w-full h-48 object-cover">
                         <div class="absolute top-3 right-3 ${caregiver.status === 'available' ? 'bg-success' : 'bg-warning'} text-white text-xs px-2 py-1 rounded-full">
-                            ${caregiver.status === 'available' ? '可立即预约' : '需提前预约'}
+                            ${caregiver.status === 'available' ? '可立即聘用' : '需提前预约'}
                         </div>
                         <div class="absolute top-3 left-3 bg-white/90 text-gray-800 text-xs px-2 py-1 rounded-full">
-                            <i class="fa fa-map-marker mr-1"></i>${caregiver.location}
+                            <i class="fa fa-map-marker mr-1"></i>${caregiver.service_area || '服务区域'}
                         </div>
                     </div>
                     <div class="p-5">
                         <div class="flex items-center justify-between mb-3">
-                            <h4 class="font-bold text-lg">${caregiver.name} 护工</h4>
+                            <h4 class="font-bold text-lg">${caregiver.name || '护工'} 护工</h4>
                             <div class="flex items-center">
                                 <i class="fa fa-star text-warning mr-1"></i>
-                                <span class="text-sm font-medium">${caregiver.rating}</span>
+                                <span class="text-sm font-medium">${caregiver.rating || '5.0'}</span>
                             </div>
                         </div>
                         
                         <div class="flex flex-wrap gap-2 mb-3">
-                            ${caregiver.skills.map(skill => `<span class="bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">${skill}</span>`).join('')}
-                            <span class="bg-secondary/10 text-secondary text-xs px-3 py-1 rounded-full">${caregiver.experience}</span>
+                            ${(caregiver.skills ? caregiver.skills.split(',').map(skill => `<span class="bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">${skill.trim()}</span>`).join('') : '')}
+                            <span class="bg-secondary/10 text-secondary text-xs px-3 py-1 rounded-full">${caregiver.work_time || '全职'}</span>
                         </div>
                         
-                        <p class="text-gray-600 text-sm mb-4 line-clamp-2">${caregiver.description}</p>
+                        <p class="text-gray-600 text-sm mb-4 line-clamp-2">${caregiver.commitment || '专业护理服务，经验丰富，服务周到'}</p>
                         
                         <div class="mb-4">
-                            <p class="text-xs text-gray-500 mb-2">持有证书：</p>
+                            <p class="text-xs text-gray-500 mb-2">服务类型：</p>
                             <div class="flex flex-wrap gap-1">
-                                ${caregiver.certificates.map(cert => `<span class="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded">${cert}</span>`).join('')}
+                                <span class="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded">${caregiver.service_type || '居家护理'}</span>
                             </div>
                         </div>
                         
                         <div class="flex items-center justify-between">
                             <div>
-                                <span class="text-primary font-bold text-lg">¥${caregiver.price}</span>
+                                <span class="text-primary font-bold text-lg">¥${caregiver.hourly_rate || '50'}</span>
                                 <span class="text-gray-500 text-sm">/小时</span>
                             </div>
                             <div class="flex gap-2">
-                                <button class="border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg transition-colors text-sm" onclick="viewCaregiverDetail(${caregiver.id})">
+                                <button class="border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg transition-colors text-sm" onclick="viewCaregiverDetail(${caregiver.caregiver_id})">
                                     查看详情
                                 </button>
-                                <button class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg transition-colors text-sm" onclick="bookCaregiver(${caregiver.id})">
+                                <button class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg transition-colors text-sm" onclick="bookCaregiver(${caregiver.caregiver_id})">
                                     立即聘用
                                 </button>
                             </div>

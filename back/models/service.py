@@ -28,6 +28,7 @@ class ServiceType:
             - description: 服务类型描述
             """
             __tablename__ = 'service_type'
+            __table_args__ = {'extend_existing': True}  # 允许表重新定义
             
             id = db.Column(db.Integer, primary_key=True)
             name = db.Column(db.String(50), unique=True, nullable=False)

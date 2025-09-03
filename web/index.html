@@ -373,7 +373,10 @@
                         localStorage.setItem('caregiver_token', data.data.token);
                         // 同时存储到cookie，确保页面跳转时能携带token
                         document.cookie = `caregiver_token=${data.data.token}; path=/; max-age=7200`; // 2小时过期
-                        window.location.href = '/caregiver-dashboard.html';
+                        // 跳转到护工仪表板
+                        setTimeout(() => {
+                            window.location.href = '/caregiver/caregiver-dashboard.html';
+                        }, 1000);
                     } else {
                         alert(data.message || '登录失败');
                     }

@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>护理助手 - 聘用护工</title>
+    <!-- 引入Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- 配置Tailwind自定义主题 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36CFC9',
+                        accent: '#722ED1',
+                        neutral: '#F5F7FA',
+                        'neutral-dark': '#4E5969',
+                        success: '#52C41A',
+                        warning: '#FAAD14',
+                        danger: '#FF4D4F',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .card-shadow {
+                @apply shadow-sm hover:shadow-md transition-shadow duration-300;
+            }
+        }
+    </style>
+</head>
+<body class="font-inter bg-gray-50 text-gray-800">
+    <!-- 顶部导航栏 -->
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                    <i class="fa fa-heartbeat text-white text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-primary">护理助手</h1>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-6">
+            <div class="relative">
+                <input type="text" placeholder="搜索护工、服务..." 
+                    class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 w-64">
+                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <button class="p-2 rounded-full hover:bg-gray-100 relative">
+                <i class="fa fa-bell text-gray-600"></i>
+                <span class="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full"></span>
+            </button>
+            
+            <div class="flex items-center gap-3">
+                <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-9 h-9 rounded-full object-cover border-2 border-primary/20">
+                <div class="hidden md:block">
+                    <p class="text-sm font-medium">张阿姨</p>
+                    <p class="text-xs text-gray-500">普通用户</p>
+                </div>
+                <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-primary">登出</button>
+            </div>
+        </div>
+    </header>
+    
+    <!-- 主导航菜单 -->
+    <nav class="bg-white border-b border-gray-200 px-6">
+        <div class="flex items-center space-x-8">
+            <a href="/user/home" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                首页
+            </a>
+            <a href="/user/profile" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                个人信息
+            </a>
+            <a href="/user/caregivers" class="py-4 px-2 text-primary border-b-2 border-primary">
+                寻找护工
+            </a>
+            <a href="/user/appointments" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                我的预约
+            </a>
+            <a href="/user/employments" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                我的聘用
+            </a>
+            <a href="/user/messages" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                消息中心
+            </a>
+            <a href="#" class="py-4 px-2 text-danger hover:text-danger/80 hover:border-b-2 hover:border-danger/50">
+                紧急呼叫
+            </a>
+        </div>
+    </nav>
+    
+    <!-- 页面内容 -->
+    <main class="p-6 bg-gray-50">
+        <!-- 面包屑导航 -->
+        <div class="mb-6">
+            <nav class="flex" aria-label="Breadcrumb">
+                <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                    <li class="inline-flex items-center">
+                        <a href="/user/caregivers" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-primary">
+                            <i class="fa fa-home mr-2"></i>
+                            护工列表
+                        </a>
+                    </li>
+                    <li>
+                        <div class="flex items-center">
+                            <i class="fa fa-chevron-right text-gray-400 mx-2"></i>
+                            <span class="text-sm font-medium text-gray-500">聘用护工</span>
+                        </div>
+                    </li>
+                </ol>
+            </nav>
+        </div>
+        
+        <!-- 页面标题 -->
+        <div class="text-center mb-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-4">聘用护工</h2>
+            <p class="text-gray-600 text-lg">与专业护工建立正式的聘用关系，享受优质护理服务</p>
+        </div>
+        
+        <!-- 护工信息卡片 -->
+        <div class="bg-white rounded-xl overflow-hidden card-shadow mb-8">
+            <div class="relative">
+                <img id="caregiver-avatar" src="https://picsum.photos/id/26/400/200" alt="护工工作照" class="w-full h-48 object-cover">
+                <div class="absolute top-3 right-3 bg-success text-white text-xs px-2 py-1 rounded-full">
+                    可立即聘用
+                </div>
+                <div class="absolute top-3 left-3 bg-white/90 text-gray-800 text-xs px-2 py-1 rounded-full">
+                    <i class="fa fa-map-marker mr-1"></i><span id="caregiver-location">北京市朝阳区</span>
+                </div>
+            </div>
+            <div class="p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="font-bold text-lg" id="caregiver-name">李敏 护工</h4>
+                    <div class="flex items-center">
+                        <i class="fa fa-star text-warning mr-1"></i>
+                        <span class="text-sm font-medium" id="caregiver-rating">4.8</span>
+                    </div>
+                </div>
+                
+                <div class="flex flex-wrap gap-2 mb-3" id="caregiver-skills">
+                    <span class="bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">老年护理</span>
+                    <span class="bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">康复护理</span>
+                    <span class="bg-secondary/10 text-secondary text-xs px-3 py-1 rounded-full">5年经验</span>
+                </div>
+                
+                <p class="text-gray-600 text-sm mb-4" id="caregiver-description">擅长老年日常护理、康复辅助，有耐心，责任心强，持有专业护理证书。</p>
+                
+                <div class="mb-4">
+                    <p class="text-xs text-gray-500 mb-2">持有证书：</p>
+                    <div class="flex flex-wrap gap-1" id="caregiver-certificates">
+                        <span class="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded">护理师证书</span>
+                        <span class="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded">康复护理证书</span>
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="text-primary font-bold text-lg">¥<span id="caregiver-price">180</span></span>
+                        <span class="text-gray-500 text-sm">/小时</span>
+                    </div>
+                    <div class="text-sm text-gray-500">
+                        <i class="fa fa-phone mr-1"></i><span id="caregiver-phone">17661895381</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 聘用申请表单 -->
+        <div class="bg-white rounded-xl p-6 card-shadow">
+            <h3 class="text-xl font-bold text-gray-800 mb-6">聘用申请</h3>
+            
+            <form id="hire-form" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">服务类型 <span class="text-danger">*</span></label>
+                        <select id="service-type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" required>
+                            <option value="">请选择服务类型</option>
+                            <option value="elderly">老年护理</option>
+                            <option value="maternal">母婴护理</option>
+                            <option value="medical">医疗护理</option>
+                            <option value="rehabilitation">康复护理</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">开始日期 <span class="text-danger">*</span></label>
+                        <input type="date" id="start-date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">结束日期</label>
+                        <input type="date" id="end-date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
+                        <p class="text-xs text-gray-500 mt-1">可选，不填表示长期聘用</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">服务时长（小时） <span class="text-danger">*</span></label>
+                        <input type="number" id="service-hours" min="1" max="200" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" placeholder="如：40" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">时薪（元/小时） <span class="text-danger">*</span></label>
+                        <input type="number" id="hourly-rate" min="1" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" placeholder="如：50.00" required>
+                        <p class="text-xs text-gray-500 mt-1">建议时薪：¥<span id="suggested-rate">180</span></p>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">申请说明</label>
+                    <textarea id="application-message" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" placeholder="请详细描述您的护理需求、特殊要求等..."></textarea>
+                </div>
+                
+                <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+                    <a href="/user/caregivers" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                        <i class="fa fa-arrow-left mr-2"></i>返回护工列表
+                    </a>
+                    <button type="submit" class="bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-lg transition-colors">
+                        <i class="fa fa-paper-plane mr-2"></i>提交聘用申请
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- 聘用流程说明 -->
+        <div class="bg-white rounded-xl p-6 card-shadow mt-8">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">聘用流程</h3>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fa fa-file-text text-primary text-xl"></i>
+                    </div>
+                    <h4 class="font-semibold text-gray-800 mb-2">1. 提交申请</h4>
+                    <p class="text-sm text-gray-600">填写聘用申请表，详细说明护理需求</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fa fa-comments text-secondary text-xl"></i>
+                    </div>
+                    <h4 class="font-semibold text-gray-800 mb-2">2. 护工确认</h4>
+                    <p class="text-sm text-gray-600">护工查看申请并确认是否接受</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fa fa-handshake text-accent text-xl"></i>
+                    </div>
+                    <h4 class="font-semibold text-gray-800 mb-2">3. 签订合同</h4>
+                    <p class="text-sm text-gray-600">双方确认后签订正式聘用合同</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fa fa-check-circle text-success text-xl"></i>
+                    </div>
+                    <h4 class="font-semibold text-gray-800 mb-2">4. 开始服务</h4>
+                    <p class="text-sm text-gray-600">按合同约定开始护理服务</p>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- 返回顶部按钮 -->
+    <button id="back-to-top" class="fixed bottom-6 right-6 w-12 h-12 bg-primary text-white rounded-full shadow-lg hover:bg-primary/90 transition-all duration-300 hidden">
+        <i class="fa fa-arrow-up"></i>
+    </button>
+    
+    <!-- 通知提示 -->
+    <div id="notification" class="fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 hidden">
+        <div class="flex items-center">
+            <i id="notification-icon" class="mr-2"></i>
+            <span id="notification-message"></span>
+        </div>
+    </div>
+    
+    <script>
+        // 护工数据（模拟从护工列表页面传递过来的数据）
+        const caregiverData = {
+            1: {
+                id: 1,
+                name: '李敏',
+                avatar: 'https://picsum.photos/id/26/400/200',
+                rating: 4.8,
+                skills: ['老年护理', '康复护理'],
+                experience: '5年经验',
+                description: '擅长老年日常护理、康复辅助，有耐心，责任心强，持有专业护理证书。',
+                price: 180,
+                status: 'available',
+                location: '北京市朝阳区',
+                phone: '17661895381',
+                certificates: ['护理师证书', '康复护理证书']
+            },
+            2: {
+                id: 2,
+                name: '王芳',
+                avatar: 'https://picsum.photos/id/91/400/200',
+                rating: 4.9,
+                skills: ['母婴护理', '育儿嫂'],
+                experience: '8年经验',
+                description: '专业母婴护理师，擅长新生儿照料、产后恢复指导，服务细致周到。',
+                price: 220,
+                status: 'available',
+                location: '北京市海淀区',
+                phone: '17661895382',
+                certificates: ['母婴护理师证书', '育婴师证书']
+            },
+            3: {
+                id: 3,
+                name: '张伟',
+                avatar: 'https://picsum.photos/id/177/400/200',
+                rating: 4.7,
+                skills: ['医疗护理', '术后护理'],
+                experience: '10年经验',
+                description: '原医院护士，擅长术后护理、医疗辅助，熟悉各种医疗设备使用。',
+                price: 260,
+                status: 'busy',
+                location: '北京市西城区',
+                phone: '17661895383',
+                certificates: ['护士执业证书', 'ICU护理证书']
+            }
+        };
+        
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取URL参数中的护工ID
+            const caregiverId = getUrlParameter('caregiver_id');
+            if (caregiverId) {
+                console.log('护工ID:', caregiverId);
+                // 加载护工信息
+                loadCaregiverInfo(caregiverId);
+            } else {
+                showNotification('请从护工列表页面进入，缺少护工ID参数', 'error');
+            }
+            
+            // 设置默认开始日期为明天
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('start-date').value = tomorrow.toISOString().split('T')[0];
+            
+            // 绑定表单提交事件
+            bindFormEvents();
+            
+            // 绑定返回顶部按钮
+            bindBackToTop();
+        });
+        
+        // 获取URL参数
+        function getUrlParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+        
+        // 加载护工信息
+        function loadCaregiverInfo(caregiverId) {
+            const caregiver = caregiverData[caregiverId];
+            if (!caregiver) {
+                showNotification('未找到护工信息', 'error');
+                return;
+            }
+            
+            // 更新页面信息
+            document.getElementById('caregiver-avatar').src = caregiver.avatar;
+            document.getElementById('caregiver-name').textContent = caregiver.name + ' 护工';
+            document.getElementById('caregiver-phone').textContent = caregiver.phone;
+            document.getElementById('caregiver-price').textContent = caregiver.price;
+            document.getElementById('caregiver-rating').textContent = caregiver.rating;
+            document.getElementById('caregiver-location').textContent = caregiver.location;
+            document.getElementById('caregiver-description').textContent = caregiver.description;
+            document.getElementById('suggested-rate').textContent = caregiver.price;
+            
+            // 更新技能标签
+            const skillsContainer = document.getElementById('caregiver-skills');
+            skillsContainer.innerHTML = '';
+            caregiver.skills.forEach(skill => {
+                const skillSpan = document.createElement('span');
+                skillSpan.className = 'bg-primary/10 text-primary text-xs px-3 py-1 rounded-full';
+                skillSpan.textContent = skill;
+                skillsContainer.appendChild(skillSpan);
+            });
+            
+            // 添加经验标签
+            const experienceSpan = document.createElement('span');
+            experienceSpan.className = 'bg-secondary/10 text-secondary text-xs px-3 py-1 rounded-full';
+            experienceSpan.textContent = caregiver.experience;
+            skillsContainer.appendChild(experienceSpan);
+            
+            // 更新证书信息
+            const certificatesContainer = document.getElementById('caregiver-certificates');
+            certificatesContainer.innerHTML = '';
+            caregiver.certificates.forEach(cert => {
+                const certSpan = document.createElement('span');
+                certSpan.className = 'bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded';
+                certSpan.textContent = cert;
+                certificatesContainer.appendChild(certSpan);
+            });
+            
+            // 设置默认时薪
+            document.getElementById('hourly-rate').value = caregiver.price;
+        }
+        
+        // 绑定表单事件
+        function bindFormEvents() {
+            const form = document.getElementById('hire-form');
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const caregiverId = getUrlParameter('caregiver_id');
+                if (!caregiverId) {
+                    showNotification('缺少护工ID参数，请从护工列表页面进入', 'error');
+                    return;
+                }
+                
+                const formData = {
+                    user_id: 1, // 这里应该从登录状态获取
+                    caregiver_id: parseInt(caregiverId),
+                    service_type: document.getElementById('service-type').value,
+                    proposed_start_date: document.getElementById('start-date').value,
+                    proposed_end_date: document.getElementById('end-date').value || null,
+                    proposed_hours: parseInt(document.getElementById('service-hours').value),
+                    proposed_rate: parseFloat(document.getElementById('hourly-rate').value),
+                    application_message: document.getElementById('application-message').value.trim()
+                };
+                
+                console.log('提交的申请数据:', formData);
+                
+                try {
+                    const response = await fetch('/api/employment/apply', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData)
+                    });
+                    
+                    console.log('API响应状态:', response.status);
+                    const result = await response.json();
+                    console.log('API响应数据:', result);
+                    
+                    if (response.ok && result.success) {
+                        showNotification('申请提交成功！护工会尽快回复您', 'success');
+                        // 延迟跳转到聘用管理页面
+                        setTimeout(() => {
+                            window.location.href = '/user/employments';
+                        }, 2000);
+                    } else {
+                        showNotification(result.message || '申请提交失败，请重试', 'error');
+                    }
+                } catch (error) {
+                    console.error('提交申请失败:', error);
+                    showNotification('网络错误，请检查连接后重试', 'error');
+                }
+            });
+        }
+        
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            const icon = document.getElementById('notification-icon');
+            const messageEl = document.getElementById('notification-message');
+            
+            // 设置图标和样式
+            icon.className = 'mr-2';
+            if (type === 'success') {
+                icon.className += ' fa fa-check-circle text-success';
+                notification.className = 'fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 bg-white border-l-4 border-success';
+            } else if (type === 'error') {
+                icon.className += ' fa fa-exclamation-circle text-danger';
+                notification.className = 'fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 bg-white border-l-4 border-danger';
+            } else if (type === 'warning') {
+                icon.className += ' fa fa-exclamation-triangle text-warning';
+                notification.className = 'fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 bg-white border-l-4 border-warning';
+            } else {
+                icon.className += ' fa fa-info-circle text-primary';
+                notification.className = 'fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 bg-white border-l-4 border-primary';
+            }
+            
+            messageEl.textContent = message;
+            notification.classList.remove('hidden');
+            
+            // 3秒后自动隐藏
+            setTimeout(() => {
+                notification.classList.add('hidden');
+            }, 3000);
+        }
+        
+        // 绑定返回顶部按钮
+        function bindBackToTop() {
+            const backToTopBtn = document.getElementById('back-to-top');
+            
+            window.addEventListener('scroll', () => {
+                if (window.pageYOffset > 300) {
+                    backToTopBtn.classList.remove('hidden');
+                } else {
+                    backToTopBtn.classList.add('hidden');
+                }
+            });
+            
+            backToTopBtn.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+    </script>
+</body>
+</html>

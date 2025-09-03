@@ -32,6 +32,10 @@ from extensions import db
 from api.auth import auth_bp
 from api.admin import admin_bp
 from api.caregiver import caregiver_bp
+from api.user import user_bp
+from api.caregiver_business import caregiver_business_bp
+from api.chat import chat_bp, init_socketio
+from api.employment_contract import employment_contract_bp
 
 # ==================== 日志配置 ====================
 logging.basicConfig(level=logging.INFO)
@@ -71,6 +75,8 @@ def init_models():
     from models.caregiver import Caregiver
     from models.service import ServiceType
     from models.business import JobData, AnalysisResult, Appointment, Employment, Message
+    from models.chat import ChatMessage, ChatConversation
+    from models.employment_contract import EmploymentContract, ServiceRecord, ContractApplication
     
     # 创建实际的模型类
     UserModel = User.get_model(db)
@@ -81,10 +87,24 @@ def init_models():
     AppointmentModel = Appointment.get_model(db)
     EmploymentModel = Employment.get_model(db)
     MessageModel = Message.get_model(db)
+    ChatMessageModel = ChatMessage.get_model(db)
+    ChatConversationModel = ChatConversation.get_model(db)
+    EmploymentContractModel = EmploymentContract.get_model(db)
+    ServiceRecordModel = ServiceRecord.get_model(db)
+    ContractApplicationModel = ContractApplication.get_model(db)
+    
+    # 初始化消息服务，设置数据库连接
+    from services.message_service import message_service
+    message_service.set_db(db)
+    
+    # 初始化聘用合同服务，设置数据库连接
+    from services.employment_contract_service import employment_contract_service
+    employment_contract_service.set_db(db)
     
     return (UserModel, CaregiverModel, ServiceTypeModel, 
             JobDataModel, AnalysisResultModel, AppointmentModel, 
-            EmploymentModel, MessageModel)
+            EmploymentModel, MessageModel, ChatMessageModel, ChatConversationModel,
+            EmploymentContractModel, ServiceRecordModel, ContractApplicationModel)
 
 # 全局模型变量
 UserModel = None
@@ -95,11 +115,23 @@ AnalysisResultModel = None
 AppointmentModel = None
 EmploymentModel = None
 MessageModel = None
+ChatMessageModel = None
+ChatConversationModel = None
+EmploymentContractModel = None
+ServiceRecordModel = None
+ContractApplicationModel = None
 
 # ==================== 注册蓝图 ====================
 app.register_blueprint(auth_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(caregiver_bp)
+app.register_blueprint(user_bp)
+app.register_blueprint(caregiver_business_bp)
+app.register_blueprint(chat_bp)
+app.register_blueprint(employment_contract_bp)
+
+# ==================== 初始化SocketIO ====================
+socketio = init_socketio(app)
 
 # ==================== 上传目录权限检查 ====================
 try:
@@ -430,15 +462,20 @@ if __name__ == '__main__':
         with app.app_context():
             db.create_all()
             print("数据库表创建完成")
+            
+            # 初始化所有数据模型和服务
+            init_models()
+            print("数据模型初始化完成")
+            
         print("数据库初始化完成")
     except Exception as e:
         print(f"数据库初始化失败: {e}")
         print("继续启动应用...")
     
     try:
-        from waitress import serve
-        print("使用waitress启动服务...")
-        serve(app, host='0.0.0.0', port=8000)
-    except ImportError:
-        print("使用开发服务器启动...")
-        app.run(debug=True, host='0.0.0.0', port=8000) 
+        print("🚀 启动支持WebSocket的服务器...")
+        socketio.run(app, host='127.0.0.1', port=8000, debug=True, allow_unsafe_werkzeug=True)
+    except Exception as e:
+        print(f"启动失败: {e}")
+        print("尝试使用开发服务器启动...")
+        app.run(debug=True, host='127.0.0.1', port=8000) 

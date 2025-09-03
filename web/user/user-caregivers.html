@@ -328,7 +328,7 @@
                                     查看详情
                                 </button>
                                 <button class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg transition-colors text-sm" onclick="bookCaregiver(${caregiver.id})">
-                                    立即预约
+                                    立即聘用
                                 </button>
                             </div>
                         </div>
@@ -342,9 +342,9 @@
             window.location.href = `/user/caregivers?id=${id}&view=detail`;
         }
         
-        // 预约护工
+        // 聘用护工
         function bookCaregiver(id) {
-            window.location.href = `/user/appointments?caregiver=${id}&action=book`;
+            window.location.href = `/user/user-hire-caregiver.html?caregiver_id=${id}`;
         }
         
         // 绑定返回顶部按钮

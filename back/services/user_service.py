@@ -6,7 +6,7 @@
 """
 
 from models.user import User
-from utils.auth import hash_password, verify_password
+from utils.auth import generate_token, verify_token
 from extensions import db
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone
@@ -48,12 +48,12 @@ class UserService:
         
         # 尝试通过邮箱查找
         user = UserModel.query.filter_by(email=account).first()
-        if user and user.is_approved and verify_password(user.password_hash, password):
+        if user and user.is_approved and user.check_password(password):
             return user
         
         # 尝试通过手机号查找
         user = UserModel.query.filter_by(phone=account).first()
-        if user and user.is_approved and verify_password(user.password_hash, password):
+        if user and user.is_approved and user.check_password(password):
             return user
         
         return None

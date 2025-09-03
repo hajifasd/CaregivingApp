@@ -37,6 +37,7 @@ class JobData:
             - crawl_time: 爬取时间
             """
             __tablename__ = 'job_data'
+            __table_args__ = {'extend_existing': True}  # 允许表重新定义
             
             id = db.Column(db.Integer, primary_key=True)
             job_name = db.Column(db.String(100))
@@ -76,6 +77,7 @@ class AnalysisResult:
             - create_time: 创建时间
             """
             __tablename__ = 'analysis_result'
+            __table_args__ = {'extend_existing': True}  # 允许表重新定义
             
             id = db.Column(db.Integer, primary_key=True)
             type = db.Column(db.String(50))
@@ -115,6 +117,7 @@ class Appointment:
             - created_at: 创建时间
             """
             __tablename__ = 'appointment'
+            __table_args__ = {'extend_existing': True}  # 允许表重新定义
             
             id = db.Column(db.Integer, primary_key=True)
             user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -161,6 +164,7 @@ class Employment:
             - created_at: 创建时间
             """
             __tablename__ = 'employment'
+            __table_args__ = {'extend_existing': True}  # 允许表重新定义
             
             id = db.Column(db.Integer, primary_key=True)
             user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -205,6 +209,7 @@ class Message:
             - created_at: 创建时间
             """
             __tablename__ = 'message'
+            __table_args__ = {'extend_existing': True}  # 允许表重新定义
             
             id = db.Column(db.Integer, primary_key=True)
             sender_id = db.Column(db.Integer, nullable=False)

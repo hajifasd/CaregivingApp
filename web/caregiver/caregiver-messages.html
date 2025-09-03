@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>护理助手 - 护工消息中心</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="/js/chat-manager.js"></script>
+</head>
+<body class="bg-gray-50">
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center">
+                <i class="fa fa-heartbeat text-white text-xl"></i>
+            </div>
+            <h1 class="text-xl font-bold text-blue-600">护理助手</h1>
+        </div>
+        
+        <div id="connection-status" class="text-xs px-2 py-1 rounded bg-green-100 text-green-700">
+            已连接
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <button id="logout-btn" onclick="logout()" class="text-sm text-gray-500 hover:text-blue-600">登出</button>
+        </div>
+    </header>
+    
+    <nav class="bg-white border-b border-gray-200 px-6">
+        <div class="flex items-center space-x-8">
+            <a href="/caregiver/dashboard" class="py-4 px-2 text-gray-500 hover:text-blue-600">工作台</a>
+            <a href="/caregiver/messages" class="py-4 px-2 text-blue-600 border-b-2 border-blue-600">消息中心</a>
+        </div>
+    </nav>
+    
+    <main class="p-6">
+        <div class="text-center mb-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-4">护工消息中心</h2>
+            <p class="text-gray-600 text-lg">与用户沟通和查看系统通知</p>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 bg-white rounded-xl shadow-sm">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-bold text-gray-800">消息列表</h3>
+                </div>
+                
+                <div id="messages-container" class="divide-y divide-gray-200">
+                    <!-- 消息列表将通过JavaScript动态生成 -->
+                </div>
+            </div>
+            
+            <div class="space-y-6">
+                <div class="bg-white rounded-xl p-6 shadow-sm">
+                    <h4 class="font-bold text-lg mb-4">快速操作</h4>
+                    <button id="new-chat-btn" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                                <i class="fa fa-plus text-blue-600"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-sm">主动联系用户</p>
+                                <p class="text-xs text-gray-500">联系用户提供服务</p>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+                
+                <div class="bg-white rounded-xl p-6 shadow-sm">
+                    <h4 class="font-bold text-lg mb-4">最近联系人</h4>
+                    <div id="recent-contacts" class="space-y-3">
+                        <!-- 最近联系人将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script>
+        // 护工端消息数据
+        const messagesData = [
+            {
+                id: 1,
+                contactId: 'user_001',
+                type: 'user',
+                sender: '张阿姨',
+                avatar: 'https://picsum.photos/id/64/50/50',
+                content: '李护工，明天上午9点的护理服务请准时到达',
+                time: '10:30',
+                unread: true
+            },
+            {
+                id: 2,
+                contactId: 'system',
+                type: 'system',
+                sender: '系统通知',
+                avatar: 'https://picsum.photos/id/100/50/50',
+                content: '您的新预约已确认，用户张阿姨，时间：明天上午9:00-11:00',
+                time: '09:15',
+                unread: false
+            }
+        ];
+        
+        const recentContactsData = [
+            {
+                id: 'user_001',
+                name: '张阿姨',
+                avatar: 'https://picsum.photos/id/64/50/50',
+                lastMessage: '明天上午9点的护理服务请准时到达',
+                time: '10:30'
+            }
+        ];
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            generateMessagesList();
+            generateRecentContacts();
+            bindEvents();
+        });
+        
+        function generateMessagesList() {
+            const container = document.getElementById('messages-container');
+            container.innerHTML = messagesData.map(message => `
+                <div class="p-6 hover:bg-gray-50 cursor-pointer" onclick="openMessage('${message.contactId}', '${message.sender}', '${message.avatar}')">
+                    <div class="flex items-start gap-4">
+                        <img src="${message.avatar}" alt="${message.sender}" class="w-12 h-12 rounded-full">
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-medium">${message.sender}</h4>
+                                <span class="text-xs text-gray-500">${message.time}</span>
+                            </div>
+                            <p class="text-sm text-gray-600">${message.content}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function generateRecentContacts() {
+            const container = document.getElementById('recent-contacts');
+            container.innerHTML = recentContactsData.map(contact => `
+                <div class="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer" 
+                     onclick="openChat('${contact.id}', '${contact.name}', '${contact.avatar}')">
+                    <img src="${contact.avatar}" alt="${contact.name}" class="w-10 h-10 rounded-full">
+                    <div class="flex-1">
+                        <h5 class="font-medium text-sm">${contact.name}</h5>
+                        <p class="text-xs text-gray-500">${contact.lastMessage}</p>
+                    </div>
+                    <span class="text-xs text-gray-400">${contact.time}</span>
+                </div>
+            `).join('');
+        }
+        
+        function bindEvents() {
+            const newChatBtn = document.getElementById('new-chat-btn');
+            if (newChatBtn) {
+                newChatBtn.addEventListener('click', showActiveContactModal);
+            }
+        }
+        
+        function showActiveContactModal() {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-6">
+                    <h3 class="text-lg font-bold mb-4">主动联系用户</h3>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">选择用户</label>
+                        <select id="user-select" class="w-full p-3 border border-gray-300 rounded-lg">
+                            <option value="">请选择用户...</option>
+                            <option value="user_001">张阿姨 - 老年护理需求</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-end gap-3">
+                        <button onclick="this.closest('.fixed').remove()" class="px-4 py-2 text-gray-600 border rounded-lg">取消</button>
+                        <button onclick="startActiveContact()" class="px-6 py-2 bg-blue-600 text-white rounded-lg">开始联系</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        
+        function startActiveContact() {
+            const select = document.getElementById('user-select');
+            const selectedValue = select.value;
+            
+            if (!selectedValue) {
+                alert('请选择用户');
+                return;
+            }
+            
+            const user = recentContactsData.find(u => u.id === selectedValue);
+            if (user) {
+                openChat(user.id, user.name, user.avatar);
+                document.querySelector('.fixed').remove();
+            }
+        }
+        
+        function openMessage(contactId, contactName, contactAvatar) {
+            if (contactId === 'system') {
+                showSystemMessageDetail(contactId, contactName, contactAvatar);
+            } else {
+                openChat(contactId, contactName, contactAvatar);
+            }
+        }
+        
+        function openChat(contactId, contactName, contactAvatar) {
+            if (typeof chatManager !== 'undefined' && chatManager.openChat) {
+                chatManager.openChat(contactId, contactName, contactAvatar);
+            } else {
+                alert('聊天功能正在初始化，请稍后再试');
+            }
+        }
+        
+        function showSystemMessageDetail(contactId, contactName, contactAvatar) {
+            alert('系统消息详情：' + contactName);
+        }
+        
+        function logout() {
+            if (confirm('确定要登出吗？')) {
+                localStorage.removeItem('caregiverInfo');
+                localStorage.removeItem('token');
+                window.location.href = '/caregiver/register';
+            }
+        }
+    </script>
+</body>
+</html>

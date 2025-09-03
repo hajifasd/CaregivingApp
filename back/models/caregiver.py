@@ -19,11 +19,13 @@ class Caregiver:
     @classmethod
     def get_model(cls, db):
         """获取实际的SQLAlchemy模型"""
+        # 如果模型已经存在，直接返回
         if cls._model_class is not None:
             return cls._model_class
         
         class CaregiverModel(db.Model):
             __tablename__ = 'caregiver'
+            __table_args__ = {'extend_existing': True}  # 允许表重新定义
             
             # 基础字段
             id = db.Column(db.Integer, primary_key=True)
@@ -76,6 +78,14 @@ class Caregiver:
                 """设置密码"""
                 import bcrypt
                 self.password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+            
+            def check_password(self, password: str) -> bool:
+                """验证密码"""
+                import bcrypt
+                try:
+                    return bcrypt.checkpw(password.encode(), self.password_hash.encode())
+                except Exception:
+                    return False
         
         cls._model_class = CaregiverModel
         return CaregiverModel 

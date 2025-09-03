@@ -84,6 +84,7 @@ CaregivingApp/
 - Python 3.8+
 - MySQL 8.0+
 - 现代浏览器
+- Node.js (用于Socket.IO服务器)
 
 ### 2. 安装依赖
 ```bash
@@ -101,7 +102,15 @@ cd back
 python app.py
 ```
 
-### 5. 访问应用
+### 5. 启动聊天服务器 (可选)
+```bash
+# 如果需要实时聊天功能
+cd web
+npm install socket.io
+node chat-server.js
+```
+
+### 6. 访问应用
 - 主页: http://localhost:5000/
 - 管理端: http://localhost:5000/admin/admin-login.html
 - 用户端: http://localhost:5000/user/user-home.html
@@ -134,6 +143,7 @@ python scripts/import_data_to_mysql.py
 - 👨‍⚕️ 护工管理 (注册、审核、资质管理)
 - 📅 预约服务 (在线预约、时间管理)
 - 💼 雇佣管理 (长期雇佣关系)
+- 💬 实时聊天 (用户与护工即时沟通)
 - 📊 数据分析 (工作数据统计)
 - 📁 文件上传 (身份证、证书等)
 
@@ -143,6 +153,7 @@ python scripts/import_data_to_mysql.py
 - **前端**: HTML5 + CSS3 + JavaScript
 - **数据库**: MySQL 8.0
 - **认证**: JWT + bcrypt
+- **实时通信**: Socket.IO + WebSocket
 - **文件处理**: 支持图片和PDF上传
 
 ## 🎨 前端架构特点
@@ -156,6 +167,14 @@ python scripts/import_data_to_mysql.py
 - 通用组件库 (`components/`) 提供一致的UI体验
 - 各端独立组件目录，便于维护和扩展
 - 响应式设计，支持多设备访问
+
+### 实时通信系统
+- **聊天管理器 (chat-manager.js)**: 核心通信模块
+  - WebSocket实时消息收发
+  - 多窗口聊天管理
+  - 消息历史记录
+  - 在线状态监控
+  - 消息搜索功能
 
 ### 文件组织
 - 按用户角色分离功能模块
@@ -177,6 +196,6 @@ python scripts/import_data_to_mysql.py
 
 欢迎提交Issue和Pull Request来改进项目！
 
-## �� 许可证
+## 📄 许可证
 
 本项目采用MIT许可证。

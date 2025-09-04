@@ -292,3 +292,32 @@ def get_approved_caregivers():
         })
     except Exception as e:
         return jsonify({'success': False, 'message': f'获取失败：{str(e)}'}), 500
+
+@caregiver_bp.route('/api/caregiver/search', methods=['GET'])
+def search_caregivers():
+    """搜索护工接口
+    
+    支持按姓名、手机号等关键词搜索已审核通过的护工
+    """
+    try:
+        keyword = request.args.get('keyword', '').strip()
+        limit = request.args.get('limit', 20, type=int)
+        
+        # 限制最大返回数量
+        if limit > 50:
+            limit = 50
+        
+        caregivers = CaregiverService.search_caregivers(keyword, limit)
+        
+        return jsonify({
+            'success': True,
+            'data': caregivers,
+            'message': f'搜索到 {len(caregivers)} 位护工',
+            'total': len(caregivers)
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False, 
+            'message': f'搜索失败：{str(e)}'
+        }), 500

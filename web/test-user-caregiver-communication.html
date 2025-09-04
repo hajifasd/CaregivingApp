@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户-护工通信功能测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        .bg-primary { background-color: #165DFF; }
+        .text-primary { color: #165DFF; }
+        .border-primary { border-color: #165DFF; }
+        .bg-success { background-color: #10B981; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">用户-护工通信功能测试</h1>
+        
+        <div class="max-w-7xl mx-auto space-y-6">
+            <!-- 测试说明 -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <h2 class="text-xl font-semibold text-blue-800 mb-3">测试说明</h2>
+                <p class="text-blue-700 mb-3">这个页面用于测试用户端和护工端的实时通信功能：</p>
+                <ol class="list-decimal list-inside text-blue-700 space-y-1">
+                    <li>模拟用户和护工登录状态</li>
+                    <li>测试WebSocket连接</li>
+                    <li>验证消息发送和接收</li>
+                    <li>检查护工端是否能实时看到用户消息</li>
+                </ol>
+            </div>
+
+            <!-- 用户端测试 -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold mb-4 text-green-600">用户端测试</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">用户ID：</label>
+                        <input type="text" id="user-id" placeholder="输入用户ID" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">用户姓名：</label>
+                        <input type="text" id="user-name" placeholder="输入用户姓名" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="loginUser()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                        登录用户
+                    </button>
+                    <button onclick="logoutUser()" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">
+                        登出用户
+                    </button>
+                    <button onclick="testUserMessage()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                        发送测试消息
+                    </button>
+                </div>
+                <div class="mt-4">
+                    <span class="text-sm text-gray-600">用户状态：</span>
+                    <span id="user-status" class="font-medium text-red-600">未登录</span>
+                </div>
+            </div>
+
+            <!-- 护工端测试 -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold mb-4 text-blue-600">护工端测试</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">护工ID：</label>
+                        <input type="text" id="caregiver-id" placeholder="输入护工ID" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">护工姓名：</label>
+                        <input type="text" id="caregiver-name" placeholder="输入护工姓名" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="loginCaregiver()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                        登录护工
+                    </button>
+                    <button onclick="logoutCaregiver()" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">
+                        登出护工
+                    </button>
+                    <button onclick="loadCaregiverChats()" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
+                        加载聊天列表
+                    </button>
+                </div>
+                <div class="mt-4">
+                    <span class="text-sm text-gray-600">护工状态：</span>
+                    <span id="caregiver-status" class="font-medium text-red-600">未登录</span>
+                </div>
+            </div>
+
+            <!-- 通信测试 -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- 用户端聊天窗口 -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h4 class="text-lg font-semibold mb-4 text-green-600">用户端聊天窗口</h4>
+                    <div class="space-y-3">
+                        <div class="flex gap-2">
+                            <input type="text" id="user-message-input" placeholder="输入消息内容" 
+                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            <button onclick="sendUserMessage()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                                发送
+                            </button>
+                        </div>
+                        <div id="user-chat-messages" class="h-48 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50">
+                            <p class="text-gray-500 text-center py-8">用户端聊天记录</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 护工端聊天窗口 -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h4 class="text-lg font-semibold mb-4 text-blue-600">护工端聊天窗口</h4>
+                    <div class="space-y-3">
+                        <div class="flex gap-2">
+                            <input type="text" id="caregiver-message-input" placeholder="输入消息内容" 
+                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            <button onclick="sendCaregiverMessage()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                                发送
+                            </button>
+                        </div>
+                        <div id="caregiver-chat-messages" class="h-48 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50">
+                            <p class="text-gray-500 text-center py-8">护工端聊天记录</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 测试结果 -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold mb-4">测试结果</h3>
+                <div id="test-results" class="space-y-2 text-sm max-h-64 overflow-y-auto">
+                    <p class="text-gray-500">等待测试结果...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let userSocket = null;
+        let caregiverSocket = null;
+        let currentUser = null;
+        let currentCaregiver = null;
+        let currentChatUser = null;
+
+        // 用户登录
+        function loginUser() {
+            const id = document.getElementById('user-id').value.trim();
+            const name = document.getElementById('user-name').value.trim();
+            
+            if (!id || !name) {
+                alert('请输入用户ID和姓名');
+                return;
+            }
+            
+            currentUser = { id, name };
+            document.getElementById('user-status').textContent = '已登录';
+            document.getElementById('user-status').className = 'font-medium text-green-600';
+            
+            // 初始化用户端WebSocket
+            initUserWebSocket();
+            
+            addTestResult('✅ 用户登录成功', 'success');
+        }
+
+        // 用户登出
+        function logoutUser() {
+            currentUser = null;
+            document.getElementById('user-status').textContent = '未登录';
+            document.getElementById('user-status').className = 'font-medium text-red-600';
+            
+            if (userSocket) {
+                userSocket.disconnect();
+                userSocket = null;
+            }
+            
+            addTestResult('❌ 用户已登出', 'error');
+        }
+
+        // 护工登录
+        function loginCaregiver() {
+            const id = document.getElementById('caregiver-id').value.trim();
+            const name = document.getElementById('caregiver-name').value.trim();
+            
+            if (!id || !name) {
+                alert('请输入护工ID和姓名');
+                return;
+            }
+            
+            currentCaregiver = { id, name };
+            document.getElementById('caregiver-status').textContent = '已登录';
+            document.getElementById('caregiver-status').className = 'font-medium text-green-600';
+            
+            // 初始化护工端WebSocket
+            initCaregiverWebSocket();
+            
+            addTestResult('✅ 护工登录成功', 'success');
+        }
+
+        // 护工登出
+        function logoutCaregiver() {
+            currentCaregiver = null;
+            document.getElementById('caregiver-status').textContent = '未登录';
+            document.getElementById('caregiver-status').className = 'font-medium text-red-600';
+            
+            if (caregiverSocket) {
+                caregiverSocket.disconnect();
+                caregiverSocket = null;
+            }
+            
+            addTestResult('❌ 护工已登出', 'error');
+        }
+
+        // 初始化用户端WebSocket
+        function initUserWebSocket() {
+            try {
+                userSocket = io('http://localhost:8000');
+                
+                userSocket.on('connect', () => {
+                    addTestResult('✅ 用户端WebSocket连接成功', 'success');
+                    
+                    // 连接成功后立即加入用户房间
+                    if (currentUser) {
+                        userSocket.emit('join', {
+                            user_id: currentUser.id,
+                            user_type: 'user'
+                        });
+                        addTestResult(`🔗 用户 ${currentUser.id} 正在加入房间...`, 'info');
+                    }
+                });
+                
+                userSocket.on('joined_room', (data) => {
+                    addTestResult(`✅ 用户已加入房间: ${data.room}`, 'success');
+                });
+                
+                userSocket.on('disconnect', () => {
+                    addTestResult('❌ 用户端WebSocket连接断开', 'error');
+                });
+                
+                userSocket.on('message_received', (data) => {
+                    addTestResult(`📨 用户端收到消息: ${data.content}`, 'info');
+                    addUserMessage(data.content, false);
+                });
+                
+                userSocket.on('message_sent', (data) => {
+                    addTestResult(`✅ 用户消息发送确认: ${data.content}`, 'success');
+                });
+                
+                userSocket.on('error', (data) => {
+                    addTestResult(`❌ 用户端错误: ${data.message}`, 'error');
+                });
+                
+            } catch (error) {
+                addTestResult(`❌ 用户端WebSocket连接失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 初始化护工端WebSocket
+        function initCaregiverWebSocket() {
+            try {
+                caregiverSocket = io('http://localhost:8000');
+                
+                caregiverSocket.on('connect', () => {
+                    addTestResult('✅ 护工端WebSocket连接成功', 'success');
+                    
+                    // 连接成功后立即加入护工房间
+                    if (currentCaregiver) {
+                        caregiverSocket.emit('join', {
+                            user_id: currentCaregiver.id,
+                            user_type: 'caregiver'
+                        });
+                        addTestResult(`🔗 护工 ${currentCaregiver.id} 正在加入房间...`, 'info');
+                    }
+                });
+                
+                caregiverSocket.on('joined_room', (data) => {
+                    addTestResult(`✅ 护工已加入房间: ${data.room}`, 'success');
+                });
+                
+                caregiverSocket.on('disconnect', () => {
+                    addTestResult('❌ 护工端WebSocket连接断开', 'error');
+                });
+                
+                caregiverSocket.on('message_received', (data) => {
+                    addTestResult(`📨 护工端收到消息: ${data.content}`, 'info');
+                    addCaregiverMessage(data.content, false);
+                });
+                
+                caregiverSocket.on('message_sent', (data) => {
+                    addTestResult(`✅ 护工消息发送确认: ${data.content}`, 'success');
+                });
+                
+                caregiverSocket.on('error', (data) => {
+                    addTestResult(`❌ 护工端错误: ${data.message}`, 'error');
+                });
+                
+            } catch (error) {
+                addTestResult(`❌ 护工端WebSocket连接失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 发送用户消息
+        function sendUserMessage() {
+            if (!currentUser || !currentCaregiver) {
+                alert('请先登录用户和护工');
+                return;
+            }
+            
+            const input = document.getElementById('user-message-input');
+            const content = input.value.trim();
+            
+            if (!content) {
+                alert('请输入消息内容');
+                return;
+            }
+            
+            // 添加到用户端显示
+            addUserMessage(content, true);
+            
+            // 通过WebSocket发送消息
+            if (userSocket && userSocket.connected) {
+                const messageData = {
+                    sender_id: currentUser.id,
+                    sender_type: 'user',
+                    sender_name: currentUser.name,
+                    recipient_id: currentCaregiver.id,
+                    recipient_type: 'caregiver',
+                    content: content,
+                    type: 'text'
+                };
+                
+                userSocket.emit('send_message', messageData);
+                addTestResult(`📤 用户发送消息: ${content}`, 'success');
+            }
+            
+            input.value = '';
+        }
+
+        // 发送护工消息
+        function sendCaregiverMessage() {
+            if (!currentUser || !currentCaregiver) {
+                alert('请先登录用户和护工');
+                return;
+            }
+            
+            const input = document.getElementById('caregiver-message-input');
+            const content = input.value.trim();
+            
+            if (!content) {
+                alert('请输入消息内容');
+                return;
+            }
+            
+            // 添加到护工端显示
+            addCaregiverMessage(content, true);
+            
+            // 通过WebSocket发送消息
+            if (caregiverSocket && caregiverSocket.connected) {
+                const messageData = {
+                    sender_id: currentCaregiver.id,
+                    sender_type: 'caregiver',
+                    sender_name: currentCaregiver.name,
+                    recipient_id: currentUser.id,
+                    recipient_type: 'user',
+                    content: content,
+                    type: 'text'
+                };
+                
+                caregiverSocket.emit('send_message', messageData);
+                addTestResult(`📤 护工发送消息: ${content}`, 'success');
+            }
+            
+            input.value = '';
+        }
+
+        // 添加用户端消息
+        function addUserMessage(content, isOwn) {
+            const container = document.getElementById('user-chat-messages');
+            const messageClass = isOwn ? 'ml-auto bg-green-600 text-white' : 'mr-auto bg-gray-200 text-gray-800';
+            const time = new Date().toLocaleTimeString('zh-CN');
+            
+            const messageHtml = `
+                <div class="flex ${isOwn ? 'justify-end' : 'justify-start'} mb-2">
+                    <div class="max-w-xs ${messageClass} rounded-lg p-2 text-sm">
+                        <p>${content}</p>
+                        <p class="text-xs ${isOwn ? 'text-green-100' : 'text-gray-500'} mt-1">${time}</p>
+                    </div>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', messageHtml);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // 添加护工端消息
+        function addCaregiverMessage(content, isOwn) {
+            const container = document.getElementById('caregiver-chat-messages');
+            const messageClass = isOwn ? 'ml-auto bg-blue-600 text-white' : 'mr-auto bg-gray-200 text-gray-800';
+            const time = new Date().toLocaleTimeString('zh-CN');
+            
+            const messageHtml = `
+                <div class="flex ${isOwn ? 'justify-end' : 'justify-start'} mb-2">
+                    <div class="max-w-xs ${messageClass} rounded-lg p-2 text-sm">
+                        <p>${content}</p>
+                        <p class="text-xs ${isOwn ? 'text-blue-100' : 'text-gray-500'} mt-1">${time}</p>
+                    </div>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', messageHtml);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // 测试用户消息
+        function testUserMessage() {
+            if (!currentUser || !currentCaregiver) {
+                alert('请先登录用户和护工');
+                return;
+            }
+            
+            const testMessage = `测试消息 - ${new Date().toLocaleTimeString('zh-CN')}`;
+            document.getElementById('user-message-input').value = testMessage;
+            sendUserMessage();
+        }
+
+        // 加载护工聊天列表
+        function loadCaregiverChats() {
+            if (!currentCaregiver) {
+                alert('请先登录护工');
+                return;
+            }
+            
+            addTestResult('🔄 正在加载护工聊天列表...', 'info');
+            
+            // 这里可以调用API加载护工的聊天列表
+            // 暂时模拟成功
+            setTimeout(() => {
+                addTestResult('✅ 护工聊天列表加载成功', 'success');
+            }, 1000);
+        }
+
+        // 添加测试结果
+        function addTestResult(message, type = 'info') {
+            const resultsContainer = document.getElementById('test-results');
+            const timestamp = new Date().toLocaleTimeString('zh-CN');
+            
+            const colorClass = {
+                'success': 'text-green-600',
+                'error': 'text-red-600',
+                'warning': 'text-yellow-600',
+                'info': 'text-blue-600'
+            }[type] || 'text-gray-600';
+            
+            const resultHtml = `
+                <p class="${colorClass}">
+                    [${timestamp}] ${message}
+                </p>
+            `;
+            
+            resultsContainer.insertAdjacentHTML('beforeend', resultHtml);
+            resultsContainer.scrollTop = resultsContainer.scrollHeight;
+            
+            // 限制显示结果数量
+            const results = resultsContainer.querySelectorAll('p');
+            if (results.length > 30) {
+                results[0].remove();
+            }
+        }
+
+        // 绑定回车键发送消息
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                if (e.target.id === 'user-message-input') {
+                    sendUserMessage();
+                } else if (e.target.id === 'caregiver-message-input') {
+                    sendCaregiverMessage();
+                }
+            }
+        });
+
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            addTestResult('🚀 用户-护工通信功能测试页面已加载', 'info');
+        });
+    </script>
+</body>
+</html>

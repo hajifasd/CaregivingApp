@@ -294,3 +294,52 @@ class CaregiverService:
             print(f"修改护工密码失败: {e}")
             db.session.rollback()
             return False
+
+    @staticmethod
+    def search_caregivers(keyword: str, limit: int = 20) -> list:
+        """搜索护工
+        
+        Args:
+            keyword: 搜索关键词（姓名、手机号等）
+            limit: 返回结果数量限制
+            
+        Returns:
+            护工列表
+        """
+        try:
+            from extensions import db
+            
+            CaregiverModel = Caregiver.get_model(db)
+            
+            # 构建搜索查询
+            query = CaregiverModel.query.filter(
+                CaregiverModel.is_approved == True,  # 只搜索已审核通过的护工
+                CaregiverModel.status != "rejected"   # 排除被拒绝的护工
+            )
+            
+            # 如果有关键词，添加搜索条件
+            if keyword and keyword.strip():
+                keyword = keyword.strip()
+                # 支持按姓名、手机号搜索
+                query = query.filter(
+                    (CaregiverModel.name.like(f'%{keyword}%')) |
+                    (CaregiverModel.phone.like(f'%{keyword}%'))
+                )
+            
+            # 按创建时间排序，限制结果数量
+            caregivers = query.order_by(CaregiverModel.created_at.desc()).limit(limit).all()
+            
+            # 转换为字典格式，只返回必要的信息
+            result = []
+            for caregiver in caregivers:
+                caregiver_dict = caregiver.to_dict()
+                # 为了安全，不返回敏感信息
+                if 'password_hash' in caregiver_dict:
+                    del caregiver_dict['password_hash']
+                result.append(caregiver_dict)
+            
+            return result
+            
+        except Exception as e:
+            print(f"搜索护工失败: {e}")
+            return []

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>聊天记录持久化测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .bg-primary { background-color: #3B82F6; }
+        .text-primary { color: #3B82F6; }
+        .border-primary { border-color: #3B82F6; }
+        .bg-success { background-color: #10B981; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">聊天记录持久化测试</h1>
+        
+        <div class="max-w-4xl mx-auto space-y-6">
+            <!-- 测试说明 -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <h2 class="text-xl font-semibold text-blue-800 mb-3">测试说明</h2>
+                <p class="text-blue-700 mb-3">这个页面用于测试聊天记录的持久化功能：</p>
+                <ol class="list-decimal list-inside text-blue-700 space-y-1">
+                    <li>模拟与护工聊天，发送几条消息</li>
+                    <li>刷新页面，验证聊天记录是否保留</li>
+                    <li>检查localStorage中的数据</li>
+                </ol>
+            </div>
+
+            <!-- 模拟护工列表 -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold mb-4">模拟护工列表</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <div class="flex items-center gap-3 mb-3">
+                            <img src="https://picsum.photos/id/64/40/40" alt="护工1" class="w-12 h-12 rounded-full">
+                            <div>
+                                <h4 class="font-medium">张护工</h4>
+                                <p class="text-sm text-gray-500">专业护理师</p>
+                            </div>
+                        </div>
+                        <button onclick="startChatWithCaregiver('caregiver_001', '张护工')" 
+                                class="w-full bg-primary text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors">
+                            开始聊天
+                        </button>
+                    </div>
+                    
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <div class="flex items-center gap-3 mb-3">
+                            <img src="https://picsum.photos/id/65/40/40" alt="护工2" class="w-12 h-12 rounded-full">
+                            <div>
+                                <h4 class="font-medium">李护工</h4>
+                                <p class="text-sm text-gray-500">资深护理员</p>
+                            </div>
+                        </div>
+                        <button onclick="startChatWithCaregiver('caregiver_002', '李护工')" 
+                                class="w-full bg-primary text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors">
+                            开始聊天
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 聊天记录状态 -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold mb-4">聊天记录状态</h3>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span>localStorage中的聊天记录：</span>
+                        <span id="storage-status" class="font-medium">未检查</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span>内存中的聊天记录：</span>
+                        <span id="memory-status" class="font-medium">未检查</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span>护工数量：</span>
+                        <span id="caregiver-count" class="font-medium">0</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span>总消息数量：</span>
+                        <span id="message-count" class="font-medium">0</span>
+                    </div>
+                </div>
+                <div class="mt-4 space-x-3">
+                    <button onclick="checkStorageStatus()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                        检查状态
+                    </button>
+                    <button onclick="clearAllChats()" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                        清除所有聊天
+                    </button>
+                    <button onclick="refreshPage()" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
+                        刷新页面
+                    </button>
+                </div>
+            </div>
+
+            <!-- 聊天窗口 -->
+            <div id="chat-window" class="hidden bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold" id="chat-title">聊天窗口</h3>
+                    <button onclick="closeChatWindow()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <div id="chat-messages" class="border border-gray-200 rounded-lg p-4 h-64 overflow-y-auto mb-4">
+                    <!-- 聊天消息将在这里显示 -->
+                </div>
+                
+                <div class="flex gap-3">
+                    <input type="text" id="chat-input" placeholder="输入消息..." 
+                           class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    <button onclick="sendMessage()" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-blue-600">
+                        发送
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 聊天记录存储
+        let chatRecords = new Map();
+        let currentCaregiverId = null;
+        let currentCaregiverName = null;
+
+        // 从localStorage加载聊天记录
+        function loadChatRecordsFromStorage() {
+            try {
+                const stored = localStorage.getItem('caregiverChatRecords');
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    chatRecords = new Map(parsed);
+                    console.log('从localStorage加载聊天记录:', chatRecords);
+                }
+            } catch (error) {
+                console.error('加载聊天记录失败:', error);
+                chatRecords = new Map();
+            }
+        }
+
+        // 保存聊天记录到localStorage
+        function saveChatRecordsToStorage() {
+            try {
+                const serialized = JSON.stringify(Array.from(chatRecords.entries()));
+                localStorage.setItem('caregiverChatRecords', serialized);
+                console.log('聊天记录已保存到localStorage');
+            } catch (error) {
+                console.error('保存聊天记录失败:', error);
+            }
+        }
+
+        // 开始与护工聊天
+        function startChatWithCaregiver(caregiverId, caregiverName) {
+            currentCaregiverId = caregiverId;
+            currentCaregiverName = caregiverName;
+            
+            // 初始化护工的聊天记录（如果还没有的话）
+            if (!chatRecords.has(caregiverId)) {
+                chatRecords.set(caregiverId, []);
+                saveChatRecordsToStorage();
+            }
+            
+            // 显示聊天窗口
+            showChatWindow(caregiverId, caregiverName);
+            
+            // 加载聊天记录
+            loadChatHistory(caregiverId);
+            
+            // 更新状态显示
+            updateStatusDisplay();
+        }
+
+        // 显示聊天窗口
+        function showChatWindow(caregiverId, caregiverName) {
+            document.getElementById('chat-window').classList.remove('hidden');
+            document.getElementById('chat-title').textContent = `与 ${caregiverName} 聊天`;
+            
+            // 聚焦输入框
+            setTimeout(() => {
+                document.getElementById('chat-input').focus();
+            }, 100);
+        }
+
+        // 关闭聊天窗口
+        function closeChatWindow() {
+            document.getElementById('chat-window').classList.add('hidden');
+            currentCaregiverId = null;
+            currentCaregiverName = null;
+        }
+
+        // 发送消息
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const content = input.value.trim();
+            
+            if (!content || !currentCaregiverId) return;
+            
+            // 添加用户消息
+            addMessageToChat(content, true);
+            
+            // 保存聊天记录
+            saveChatRecord(currentCaregiverId, currentCaregiverName, content, true);
+            
+            // 模拟护工回复
+            setTimeout(() => {
+                const reply = `收到您的消息："${content}"，我会尽快回复您。`;
+                addMessageToChat(reply, false);
+                saveChatRecord(currentCaregiverId, currentCaregiverName, reply, false);
+            }, 1000);
+            
+            // 清空输入框
+            input.value = '';
+            
+            // 更新状态显示
+            updateStatusDisplay();
+        }
+
+        // 添加消息到聊天窗口
+        function addMessageToChat(content, isUserMessage) {
+            const messagesContainer = document.getElementById('chat-messages');
+            const messageClass = isUserMessage ? 'ml-auto bg-primary text-white' : 'mr-auto bg-gray-200 text-gray-800';
+            const time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            
+            const messageHtml = `
+                <div class="flex ${isUserMessage ? 'justify-end' : 'justify-start'} mb-3">
+                    <div class="max-w-xs ${messageClass} rounded-lg p-3">
+                        <p class="text-sm">${content}</p>
+                        <p class="text-xs ${isUserMessage ? 'text-white/70' : 'text-gray-500'} mt-1">
+                            ${time}
+                        </p>
+                    </div>
+                </div>
+            `;
+            
+            messagesContainer.insertAdjacentHTML('beforeend', messageHtml);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // 保存聊天记录
+        function saveChatRecord(caregiverId, caregiverName, content, isUserMessage) {
+            if (!chatRecords.has(caregiverId)) {
+                chatRecords.set(caregiverId, []);
+            }
+            
+            const records = chatRecords.get(caregiverId);
+            const timestamp = new Date().toISOString();
+            
+            records.push({
+                id: Date.now(),
+                content: content,
+                isUserMessage: isUserMessage,
+                timestamp: timestamp,
+                caregiverId: caregiverId,
+                caregiverName: caregiverName,
+                unread: !isUserMessage
+            });
+            
+            // 限制聊天记录数量
+            if (records.length > 100) {
+                records.splice(0, records.length - 100);
+            }
+            
+            // 保存到localStorage
+            saveChatRecordsToStorage();
+        }
+
+        // 加载聊天历史记录
+        function loadChatHistory(caregiverId) {
+            const messagesContainer = document.getElementById('chat-messages');
+            messagesContainer.innerHTML = '';
+            
+            const records = chatRecords.get(caregiverId);
+            if (records && records.length > 0) {
+                records.forEach(record => {
+                    addMessageToChat(record.content, record.isUserMessage);
+                });
+            } else {
+                // 显示欢迎消息
+                const welcomeMessage = `开始与 ${currentCaregiverName} 的对话`;
+                addMessageToChat(welcomeMessage, false);
+            }
+        }
+
+        // 检查存储状态
+        function checkStorageStatus() {
+            const stored = localStorage.getItem('caregiverChatRecords');
+            const hasStorage = stored !== null;
+            
+            document.getElementById('storage-status').textContent = hasStorage ? '有数据' : '无数据';
+            document.getElementById('storage-status').className = hasStorage ? 'font-medium text-green-600' : 'font-medium text-red-600';
+            
+            updateStatusDisplay();
+        }
+
+        // 更新状态显示
+        function updateStatusDisplay() {
+            document.getElementById('memory-status').textContent = chatRecords.size > 0 ? '有数据' : '无数据';
+            document.getElementById('memory-status').className = chatRecords.size > 0 ? 'font-medium text-green-600' : 'font-medium text-red-600';
+            
+            document.getElementById('caregiver-count').textContent = chatRecords.size;
+            
+            let totalMessages = 0;
+            chatRecords.forEach(records => {
+                totalMessages += records.length;
+            });
+            document.getElementById('message-count').textContent = totalMessages;
+        }
+
+        // 清除所有聊天
+        function clearAllChats() {
+            if (confirm('确定要清除所有聊天记录吗？')) {
+                chatRecords.clear();
+                localStorage.removeItem('caregiverChatRecords');
+                closeChatWindow();
+                updateStatusDisplay();
+                alert('所有聊天记录已清除');
+            }
+        }
+
+        // 刷新页面
+        function refreshPage() {
+            location.reload();
+        }
+
+        // 绑定回车键发送消息
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && e.target.id === 'chat-input') {
+                sendMessage();
+            }
+        });
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 从localStorage加载聊天记录
+            loadChatRecordsFromStorage();
+            
+            // 更新状态显示
+            updateStatusDisplay();
+            
+            console.log('聊天记录持久化测试页面已加载');
+        });
+    </script>
+</body>
+</html>

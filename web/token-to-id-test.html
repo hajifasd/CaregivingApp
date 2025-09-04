@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token转ID测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        .log-container {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 14px;
+            height: 200px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+        .log-info { background: #e3f2fd; }
+        .log-success { background: #e8f5e8; }
+        .log-error { background: #ffebee; }
+        .log-warning { background: #fff3e0; }
+    </style>
+</head>
+<body class="p-6 bg-gray-100">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-8 text-blue-600">Token转ID测试</h1>
+        
+        <!-- Token输入区域 -->
+        <div class="bg-white p-6 rounded-lg shadow-lg mb-6">
+            <h2 class="text-xl font-semibold mb-4 text-green-600">输入Token</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">用户Token:</label>
+                    <textarea id="user-token" placeholder="粘贴用户token" rows="3" class="w-full p-2 border rounded font-mono text-xs"></textarea>
+                    <p class="text-xs text-gray-500 mt-1">从用户端页面的localStorage中复制</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">护工Token:</label>
+                    <textarea id="caregiver-token" placeholder="粘贴护工token" rows="3" class="w-full p-2 border rounded font-mono text-xs"></textarea>
+                    <p class="text-xs text-gray-500 mt-1">从护工端页面的localStorage中复制</p>
+                </div>
+            </div>
+            
+            <div class="space-y-2">
+                <button onclick="parseTokens()" class="w-full bg-blue-500 text-white p-3 rounded hover:bg-blue-600 text-lg">
+                    解析Token获取ID
+                </button>
+            </div>
+        </div>
+        
+        <!-- 解析结果 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-lg font-semibold mb-4 text-green-600">用户端</h3>
+                <div class="space-y-2">
+                    <div><strong>用户ID:</strong> <span id="user-id" class="font-mono bg-gray-100 px-2 py-1 rounded">-</span></div>
+                    <div><strong>房间:</strong> <span id="user-room" class="font-mono bg-gray-100 px-2 py-1 rounded">-</span></div>
+                    <div><strong>状态:</strong> <span id="user-status" class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">未连接</span></div>
+                </div>
+                <div class="mt-4">
+                    <h4 class="font-medium mb-2">日志:</h4>
+                    <div id="user-log" class="log-container"></div>
+                </div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-lg font-semibold mb-4 text-purple-600">护工端</h3>
+                <div class="space-y-2">
+                    <div><strong>护工ID:</strong> <span id="caregiver-id" class="font-mono bg-gray-100 px-2 py-1 rounded">-</span></div>
+                    <div><strong>房间:</strong> <span id="caregiver-room" class="font-mono bg-gray-100 px-2 py-1 rounded">-</span></div>
+                    <div><strong>状态:</strong> <span id="caregiver-status" class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">未连接</span></div>
+                </div>
+                <div class="mt-4">
+                    <h4 class="font-medium mb-2">日志:</h4>
+                    <div id="caregiver-log" class="log-container"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 测试消息 -->
+        <div class="bg-white p-6 rounded-lg shadow-lg mb-6">
+            <h2 class="text-xl font-semibold mb-4 text-orange-600">测试消息</h2>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">消息内容:</label>
+                <input type="text" id="test-message" value="你好！这是一条测试消息" class="w-full p-2 border rounded">
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button onclick="sendUserMessage()" class="bg-green-500 text-white p-3 rounded hover:bg-green-600">
+                    用户发送消息给护工
+                </button>
+                <button onclick="sendCaregiverMessage()" class="bg-purple-500 text-white p-3 rounded hover:bg-purple-600">
+                    护工回复消息给用户
+                </button>
+            </div>
+        </div>
+        
+        <!-- 消息历史 -->
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+            <h2 class="text-xl font-semibold mb-4 text-indigo-600">消息历史</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="font-medium mb-2">用户端收到的消息:</h3>
+                    <div id="user-messages" class="log-container"></div>
+                </div>
+                <div>
+                    <h3 class="font-medium mb-2">护工端收到的消息:</h3>
+                    <div id="caregiver-messages" class="log-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let userSocket = null;
+        let caregiverSocket = null;
+        let userLoggedIn = false;
+        let caregiverLoggedIn = false;
+        let userId = null;
+        let caregiverId = null;
+        
+        // 解析Token
+        function parseTokens() {
+            const userToken = document.getElementById('user-token').value.trim();
+            const caregiverToken = document.getElementById('caregiver-token').value.trim();
+            
+            if (!userToken || !caregiverToken) {
+                alert('请输入用户和护工的Token');
+                return;
+            }
+            
+            try {
+                // 解析用户Token
+                const userPayload = userToken.split('.')[1];
+                if (userPayload) {
+                    const userDecoded = JSON.parse(decodeURIComponent(escape(atob(userPayload.replace(/-/g, '+').replace(/_/g, '/')))));
+                    userId = userDecoded.user_id;
+                    addLog('user', `✅ Token解析成功: ${JSON.stringify(userDecoded, null, 2)}`, 'success');
+                    addLog('user', `🔑 用户ID: ${userId}`, 'success');
+                } else {
+                    addLog('user', '❌ 用户Token格式无效', 'error');
+                    return;
+                }
+                
+                // 解析护工Token
+                const caregiverPayload = caregiverToken.split('.')[1];
+                if (caregiverPayload) {
+                    const caregiverDecoded = JSON.parse(decodeURIComponent(escape(atob(caregiverPayload.replace(/-/g, '+').replace(/_/g, '/')))));
+                    caregiverId = caregiverDecoded.user_id || caregiverDecoded.caregiver_id;
+                    addLog('caregiver', `✅ Token解析成功: ${JSON.stringify(caregiverDecoded, null, 2)}`, 'success');
+                    addLog('caregiver', `🔑 护工ID: ${caregiverId}`, 'success');
+                } else {
+                    addLog('caregiver', '❌ 护工Token格式无效', 'error');
+                    return;
+                }
+                
+                // 显示ID信息
+                document.getElementById('user-id').textContent = userId;
+                document.getElementById('caregiver-id').textContent = caregiverId;
+                document.getElementById('user-room').textContent = `user_${userId}`;
+                document.getElementById('caregiver-room').textContent = `caregiver_${caregiverId}`;
+                
+                // 连接WebSocket
+                connectUserWebSocket();
+                connectCaregiverWebSocket();
+                
+            } catch (e) {
+                addLog('user', `❌ Token解析失败: ${e.message}`, 'error');
+                addLog('caregiver', `❌ Token解析失败: ${e.message}`, 'error');
+            }
+        }
+        
+        // 连接用户WebSocket
+        function connectUserWebSocket() {
+            if (!userId) {
+                addLog('user', '请先解析用户Token', 'error');
+                return;
+            }
+            
+            try {
+                userSocket = io('http://localhost:8000');
+                
+                userSocket.on('connect', () => {
+                    addLog('user', '✅ 用户端WebSocket连接成功', 'success');
+                    updateStatus('user', '已连接', 'success');
+                    
+                    // 加入用户房间
+                    userSocket.emit('join', {
+                        user_id: userId,
+                        user_type: 'user'
+                    });
+                    addLog('user', `🔗 用户 ${userId} 正在加入房间...`, 'info');
+                });
+                
+                userSocket.on('joined_room', (data) => {
+                    addLog('user', `✅ 用户已加入房间: ${data.room}`, 'success');
+                    userLoggedIn = true;
+                });
+                
+                userSocket.on('message_sent', (data) => {
+                    addLog('user', `✅ 用户消息发送确认: ${JSON.stringify(data)}`, 'success');
+                });
+                
+                userSocket.on('message_received', (data) => {
+                    addLog('user', `📨 用户收到消息: ${JSON.stringify(data)}`, 'info');
+                    addMessage('user', data);
+                });
+                
+                userSocket.on('error', (data) => {
+                    addLog('user', `❌ 用户端错误: ${data.message}`, 'error');
+                });
+                
+                userSocket.on('disconnect', () => {
+                    addLog('user', '❌ 用户端WebSocket连接断开', 'error');
+                    updateStatus('user', '已断开', 'error');
+                });
+                
+            } catch (error) {
+                addLog('user', `❌ 用户端连接失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 连接护工WebSocket
+        function connectCaregiverWebSocket() {
+            if (!caregiverId) {
+                addLog('caregiver', '请先解析护工Token', 'error');
+                return;
+            }
+            
+            try {
+                caregiverSocket = io('http://localhost:8000');
+                
+                caregiverSocket.on('connect', () => {
+                    addLog('caregiver', '✅ 护工端WebSocket连接成功', 'success');
+                    updateStatus('caregiver', '已连接', 'success');
+                    
+                    // 加入护工房间
+                    caregiverSocket.emit('join', {
+                        user_id: caregiverId,
+                        user_type: 'caregiver'
+                    });
+                    addLog('caregiver', `🔗 护工 ${caregiverId} 正在加入房间...`, 'info');
+                });
+                
+                caregiverSocket.on('joined_room', (data) => {
+                    addLog('caregiver', `✅ 护工已加入房间: ${data.room}`, 'success');
+                    caregiverLoggedIn = true;
+                });
+                
+                caregiverSocket.on('message_sent', (data) => {
+                    addLog('caregiver', `✅ 护工消息发送确认: ${JSON.stringify(data)}`, 'success');
+                });
+                
+                caregiverSocket.on('message_received', (data) => {
+                    addLog('caregiver', `📨 护工收到消息: ${JSON.stringify(data)}`, 'info');
+                    addMessage('caregiver', data);
+                });
+                
+                caregiverSocket.on('error', (data) => {
+                    addLog('caregiver', `❌ 护工端错误: ${data.message}`, 'error');
+                });
+                
+                caregiverSocket.on('disconnect', () => {
+                    addLog('caregiver', '❌ 护工端WebSocket连接断开', 'error');
+                    updateStatus('caregiver', '已断开', 'error');
+                });
+                
+            } catch (error) {
+                addLog('caregiver', `❌ 护工端连接失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 用户发送消息
+        function sendUserMessage() {
+            if (!userLoggedIn || !userSocket || !caregiverId) {
+                addLog('user', '请先连接用户WebSocket并解析护工Token', 'error');
+                return;
+            }
+            
+            const messageContent = document.getElementById('test-message').value;
+            
+            const messageData = {
+                sender_id: userId,
+                sender_type: 'user',
+                sender_name: '张阿姨',
+                recipient_id: caregiverId,
+                recipient_type: 'caregiver',
+                content: messageContent,
+                type: 'text'
+            };
+            
+            userSocket.emit('send_message', messageData);
+            addLog('user', `📤 用户发送消息: ${JSON.stringify(messageData)}`, 'info');
+        }
+        
+        // 护工发送消息
+        function sendCaregiverMessage() {
+            if (!caregiverLoggedIn || !caregiverSocket || !userId) {
+                addLog('caregiver', '请先连接护工WebSocket并解析用户Token', 'error');
+                return;
+            }
+            
+            const messageContent = document.getElementById('test-message').value;
+            
+            const messageData = {
+                sender_id: caregiverId,
+                sender_type: 'caregiver',
+                sender_name: '茶鲤',
+                recipient_id: userId,
+                recipient_type: 'user',
+                content: `回复: ${messageContent}`,
+                type: 'text'
+            };
+            
+            caregiverSocket.emit('send_message', messageData);
+            addLog('caregiver', `📤 护工发送消息: ${JSON.stringify(messageData)}`, 'info');
+        }
+        
+        // 工具函数
+        function addLog(type, message, level = 'info') {
+            const container = document.getElementById(`${type}-log`);
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${level}`;
+            entry.innerHTML = `<span class="font-mono text-xs text-gray-500">[${timestamp}]</span> ${message}`;
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        function addMessage(type, data) {
+            const container = document.getElementById(`${type}-messages`);
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'log-entry log-info';
+            entry.innerHTML = `<span class="font-mono text-xs text-gray-500">[${timestamp}]</span> ${data.content} (来自: ${data.sender_name || data.sender_id})`;
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        function updateStatus(type, status, level = 'info') {
+            const element = document.getElementById(`${type}-status`);
+            element.textContent = status;
+            
+            // 更新样式
+            element.className = `px-2 py-1 text-xs rounded-full ${
+                level === 'success' ? 'bg-green-100 text-green-800' :
+                level === 'error' ? 'bg-red-100 text-red-800' :
+                level === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                'bg-gray-100 text-gray-800'
+            }`;
+        }
+        
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog('user', '页面加载完成，请粘贴用户和护工的Token开始测试', 'info');
+            addLog('caregiver', '页面加载完成，请粘贴用户和护工的Token开始测试', 'info');
+        });
+    </script>
+</body>
+</html>

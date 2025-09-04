@@ -368,3 +368,21 @@ def get_caregiver_applications(caregiver_id):
             'success': False,
             'message': f'获取申请列表失败: {str(e)}'
         }), 500
+
+@employment_contract_bp.route('/api/employment/hired-caregivers/user/<int:user_id>', methods=['GET'])
+def get_user_hired_caregivers(user_id):
+    """获取用户已经聘用的护工列表（用于消息页面的新建对话）"""
+    try:
+        from services.employment_contract_service import employment_contract_service
+        result = employment_contract_service.get_user_hired_caregivers(user_id)
+        
+        if result['success']:
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'获取已聘用护工列表失败: {str(e)}'
+        }), 500

@@ -173,8 +173,14 @@ class ChatManager {
     showChatWindow(contactId) {
         const chatWindow = this.chatWindows.get(contactId);
         if (chatWindow) {
-            chatWindow.classList.remove('hidden');
-            chatWindow.classList.add('flex');
+            chatWindow.style.display = 'block';
+            chatWindow.style.zIndex = '50';
+            
+            // 聚焦到输入框
+            const input = chatWindow.querySelector(`#input-${contactId}`);
+            if (input) {
+                input.focus();
+            }
         }
     }
     
@@ -219,18 +225,31 @@ class ChatManager {
             userId = userInfo.id || '1';
         }
         
-        // 确保contactId是数字格式（用于后端API）
+        // 处理contactId格式 - 支持多种ID格式
         let numericContactId = contactId;
-        if (typeof contactId === 'string' && contactId.startsWith('caregiver_')) {
-            numericContactId = contactId.replace('caregiver_', '');
+        let receiverType = 'caregiver';
+        
+        if (typeof contactId === 'string') {
+            if (contactId.startsWith('caregiver_')) {
+                numericContactId = contactId.replace('caregiver_', '');
+                receiverType = 'caregiver';
+            } else if (contactId.startsWith('user_')) {
+                numericContactId = contactId.replace('user_', '');
+                receiverType = 'user';
+            } else if (contactId.isdigit()) {
+                numericContactId = contactId;
+                receiverType = 'caregiver'; // 默认假设是护工
+            }
         }
         
-        // 创建消息对象
+        // 创建消息对象 - 包含完整的字段信息
         const messageData = {
             id: Date.now(),
             senderId: userId,
             senderName: this.userName || '用户',
-            receiverId: numericContactId, // 使用数字ID发送到后端
+            senderType: 'user', // 明确指定发送者类型
+            receiverId: numericContactId,
+            receiverType: receiverType, // 明确指定接收者类型
             content: message,
             timestamp: new Date().toISOString(),
             type: 'text'
@@ -259,12 +278,12 @@ class ChatManager {
     
     // 处理接收到的消息
     handleIncomingMessage(data) {
-        const { senderId, content, timestamp } = data;
+        const { senderId, content, timestamp, senderType } = data;
         
         // 确定联系人ID（可能是数字ID，需要转换为前端格式）
         let contactId = senderId;
         
-        // 如果senderId是数字，需要找到对应的护工ID
+        // 如果senderId是数字，需要找到对应的护工ID或用户ID
         if (typeof senderId === 'string' && senderId.match(/^\d+$/)) {
             // 查找当前打开的聊天窗口，确定contactId
             for (let [key, window] of this.chatWindows) {
@@ -275,11 +294,27 @@ class ChatManager {
                         contactId = key;
                         break;
                     }
+                } else if (key.startsWith('user_')) {
+                    // 提取数字部分进行比较
+                    const numericKey = key.replace('user_', '');
+                    if (numericKey === senderId) {
+                        contactId = key;
+                        break;
+                    }
+                }
+            }
+            
+            // 如果没找到对应的聊天窗口，根据发送者类型构造ID
+            if (contactId === senderId) {
+                if (senderType === 'caregiver') {
+                    contactId = `caregiver_${senderId}`;
+                } else if (senderType === 'user') {
+                    contactId = `user_${senderId}`;
                 }
             }
         }
         
-        console.log(`收到消息，联系人ID: ${contactId}, 原始senderId: ${senderId}`);
+        console.log(`收到消息，联系人ID: ${contactId}, 原始senderId: ${senderId}, 发送者类型: ${senderType}`);
         
         // 添加到消息历史（使用前端格式的contactId）
         this.addMessageToHistory(contactId, data);
@@ -294,7 +329,8 @@ class ChatManager {
         
         // 显示通知
         if (this.currentChat !== contactId) {
-            this.showNotification(`收到来自护工的新消息: ${content.substring(0, 30)}...`, 'info');
+            const senderName = data.senderName || '联系人';
+            this.showNotification(`收到来自${senderName}的新消息: ${content.substring(0, 30)}...`, 'info');
         }
     }
     
@@ -303,7 +339,18 @@ class ChatManager {
         if (!this.messageHistory.has(contactId)) {
             this.messageHistory.set(contactId, []);
         }
-        this.messageHistory.get(contactId).push(message);
+        
+        // 确保消息有完整的字段信息
+        const enrichedMessage = {
+            ...message,
+            // 如果缺少字段，提供默认值
+            senderType: message.senderType || 'user',
+            receiverType: message.receiverType || 'caregiver',
+            timestamp: message.timestamp || new Date().toISOString(),
+            type: message.type || 'text'
+        };
+        
+        this.messageHistory.get(contactId).push(enrichedMessage);
         
         // 限制历史记录数量
         if (this.messageHistory.get(contactId).length > 100) {
@@ -316,7 +363,21 @@ class ChatManager {
         const messagesContainer = document.getElementById(`messages-${contactId}`);
         if (!messagesContainer) return;
         
-        const isOwnMessage = message.senderId === this.userId;
+        // 处理消息发送者ID - 支持多种格式
+        let messageSenderId = message.senderId;
+        if (typeof message.senderId === 'string' && message.senderId.match(/^\d+$/)) {
+            // 如果是数字ID，需要转换为前端格式
+            if (message.senderType === 'caregiver') {
+                messageSenderId = `caregiver_${message.senderId}`;
+            } else if (message.senderType === 'user') {
+                messageSenderId = `user_${message.senderId}`;
+            }
+        }
+        
+        const isOwnMessage = messageSenderId === this.userId || 
+                           (this.userId && messageSenderId === `user_${this.userId}`) ||
+                           (this.userId && messageSenderId === this.userId.toString());
+        
         const messageElement = document.createElement('div');
         messageElement.className = `flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`;
         
@@ -352,11 +413,16 @@ class ChatManager {
                 }
             }
             
-            // 确保contactId也是数字格式（用于后端API调用）
+            // 处理contactId格式 - 支持多种ID格式
             let numericContactId = contactId;
-            if (typeof contactId === 'string' && contactId.startsWith('caregiver_')) {
-                // 如果是 'caregiver_001' 格式，提取数字部分
-                numericContactId = contactId.replace('caregiver_', '');
+            if (typeof contactId === 'string') {
+                if (contactId.startsWith('caregiver_')) {
+                    numericContactId = contactId.replace('caregiver_', '');
+                } else if (contactId.startsWith('user_')) {
+                    numericContactId = contactId.replace('user_', '');
+                } else if (contactId.isdigit()) {
+                    numericContactId = contactId;
+                }
             }
             
             console.log(`使用用户ID: ${userId}, 联系人ID: ${numericContactId}`);
@@ -414,7 +480,15 @@ class ChatManager {
             if (messagesContainer) {
                 messagesContainer.innerHTML = '';
                 localMessages.forEach(message => {
-                    this.displayMessage(contactId, message);
+                    // 确保消息有完整的字段信息
+                    const enrichedMessage = {
+                        ...message,
+                        senderType: message.senderType || 'user',
+                        receiverType: message.receiverType || 'caregiver',
+                        timestamp: message.timestamp || new Date().toISOString(),
+                        type: message.type || 'text'
+                    };
+                    this.displayMessage(contactId, enrichedMessage);
                 });
                 
                 // 滚动到底部
@@ -435,6 +509,9 @@ class ChatManager {
             id: 'welcome',
             senderId: 'system',
             senderName: '系统',
+            senderType: 'system',
+            receiverId: contactId,
+            receiverType: 'user',
             content: '欢迎开始新的对话！您可以在这里与护工进行交流。',
             timestamp: new Date().toISOString(),
             type: 'system'
@@ -450,12 +527,12 @@ class ChatManager {
         if (messageItem) {
             const contentElement = messageItem.querySelector('.text-sm.text-gray-600');
             if (contentElement) {
-                contentElement.textContent = message.content;
+                contentElement.textContent = message.content || '';
             }
             
             const timeElement = messageItem.querySelector('.text-xs.text-gray-500');
             if (timeElement) {
-                timeElement.textContent = this.formatTime(message.timestamp);
+                timeElement.textContent = this.formatTime(message.timestamp || new Date().toISOString());
             }
         }
     }
@@ -740,18 +817,27 @@ class ChatManager {
     
     // 格式化时间
     formatTime(timestamp) {
-        const date = new Date(timestamp);
-        const now = new Date();
-        const diff = now - date;
-        
-        if (diff < 60000) { // 1分钟内
+        try {
+            if (!timestamp) return '刚刚';
+            
+            const date = new Date(timestamp);
+            if (isNaN(date.getTime())) return '刚刚';
+            
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) { // 1分钟内
+                return '刚刚';
+            } else if (diff < 3600000) { // 1小时内
+                return `${Math.floor(diff / 60000)}分钟前`;
+            } else if (diff < 86400000) { // 1天内
+                return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            } else {
+                return date.toLocaleDateString('zh-CN');
+            }
+        } catch (error) {
+            console.error('时间格式化失败:', error, timestamp);
             return '刚刚';
-        } else if (diff < 3600000) { // 1小时内
-            return `${Math.floor(diff / 60000)}分钟前`;
-        } else if (diff < 86400000) { // 1天内
-            return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-        } else {
-            return date.toLocaleDateString('zh-CN');
         }
     }
     

@@ -113,14 +113,14 @@ class ChatConversation:
             
             id = db.Column(db.Integer, primary_key=True)
             conversation_id = db.Column(db.String(100), unique=True, nullable=False, index=True)
-            user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-            caregiver_id = db.Column(db.Integer, db.ForeignKey('caregiver.id'), nullable=False)
+            user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+            caregiver_id = db.Column(db.Integer, db.ForeignKey('caregiver.id'), nullable=False, index=True)
             last_message_id = db.Column(db.Integer, db.ForeignKey('chat_message.id'))
             last_message_content = db.Column(db.Text)
-            last_message_time = db.Column(db.DateTime)
+            last_message_time = db.Column(db.DateTime, index=True)
             unread_count = db.Column(db.Integer, default=0)
-            is_active = db.Column(db.Boolean, default=True)
-            created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+            is_active = db.Column(db.Boolean, default=True, index=True)
+            created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
             updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
             def to_dict(self) -> Dict[str, Any]:

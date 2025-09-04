@@ -372,6 +372,19 @@
                         <p class="text-gray-500 text-center py-8">暂无消息</p>
                     </div>
                 </div>
+                
+                <!-- 聊天列表 -->
+                <div class="mt-6 bg-white rounded-xl p-6 card-shadow">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold">聊天列表</h3>
+                        <button id="refresh-messages" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                            <i class="fa fa-refresh mr-2"></i>刷新
+                        </button>
+                    </div>
+                    <div id="chat-list" class="space-y-3">
+                        <p class="text-gray-500 text-center py-8">暂无聊天记录</p>
+                    </div>
+                </div>
             </div>
 
             <!-- 评价管理内容 -->
@@ -540,6 +553,29 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- 聊天窗口 -->
+    <div id="chat-window" class="fixed bottom-20 right-6 bg-white rounded-lg shadow-lg w-full max-w-md h-96 flex flex-col hidden z-50">
+        <div class="flex items-center justify-between p-4 border-b border-gray-200">
+            <h3 id="chat-title" class="text-lg font-semibold text-gray-800">与用户聊天</h3>
+            <button id="close-chat" class="p-2 rounded-full hover:bg-gray-100 text-gray-600">
+                <i class="fa fa-times"></i>
+            </button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4">
+            <div id="chat-messages" class="space-y-4">
+                <p class="text-gray-500 text-center py-8">开始新的对话</p>
+            </div>
+        </div>
+        <div class="p-4 border-t border-gray-200">
+            <div class="flex items-center gap-2">
+                <input type="text" id="chat-input" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" placeholder="输入消息...">
+                <button id="send-message" class="p-2 rounded-full hover:bg-gray-100 text-primary">
+                    <i class="fa fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -755,10 +791,12 @@
             }
             
             try {
-                // 解析JWT token（这里使用简单的base64解码，实际应用中应该使用proper JWT库）
+                // 解析JWT token
                 const payload = token.split('.')[1];
                 if (payload) {
-                    const decoded = JSON.parse(atob(payload));
+                    // 使用更兼容的base64解码方法
+                    const decoded = JSON.parse(decodeURIComponent(escape(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))));
+                    console.log('解析的token载荷:', decoded);
                     return decoded.user_id || decoded.caregiver_id;
                 }
             } catch (e) {
@@ -769,6 +807,17 @@
             const userInfoElement = document.getElementById('user-name');
             if (userInfoElement && userInfoElement.dataset.caregiverId) {
                 return userInfoElement.dataset.caregiverId;
+            }
+            
+            // 最后尝试从localStorage中获取护工信息
+            try {
+                const caregiverInfo = localStorage.getItem('caregiver_info');
+                if (caregiverInfo) {
+                    const info = JSON.parse(caregiverInfo);
+                    return info.id;
+                }
+            } catch (e) {
+                console.error('解析护工信息失败:', e);
             }
             
             console.error('无法获取护工ID');
@@ -957,7 +1006,7 @@
             
             console.log('正在加载护工ID为', caregiverId, '的工作机会...');
             
-            fetch('/api/employment/applications?caregiver_id=' + caregiverId, {
+            fetch('/api/employment/applications/caregiver/' + caregiverId, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -1143,6 +1192,418 @@
             loadCurrentHireInfo();
             loadJobOpportunities();
         }, 1000);
+
+        // ==================== 聊天功能 ====================
+        let currentChatUser = null;
+        let socket = null;
+
+        // 初始化聊天功能
+        function initChat() {
+            // 连接WebSocket
+            try {
+                socket = io('http://localhost:8000');
+                
+                socket.on('connect', () => {
+                    console.log('✅ 护工端聊天服务器连接成功');
+                    
+                    // 连接成功后立即加入护工房间
+                    const caregiverId = getCurrentCaregiverId();
+                    if (caregiverId) {
+                        socket.emit('join', {
+                            user_id: caregiverId,
+                            user_type: 'caregiver'
+                        });
+                        console.log(`🔗 护工 ${caregiverId} 正在加入房间: caregiver_${caregiverId}`);
+                    } else {
+                        console.warn('⚠️ 无法获取护工ID，无法加入房间');
+                    }
+                });
+                
+                socket.on('disconnect', () => {
+                    console.log('❌ 护工端聊天服务器连接断开');
+                });
+                
+                socket.on('message_received', (data) => {
+                    console.log('护工端WebSocket收到消息:', data);
+                    handleIncomingMessage(data);
+                });
+                
+                // 监听其他可能的WebSocket事件
+                socket.on('new_message', (data) => {
+                    console.log('护工端收到新消息事件:', data);
+                    handleIncomingMessage(data);
+                });
+                
+                socket.on('user_message', (data) => {
+                    console.log('护工端收到用户消息:', data);
+                    handleIncomingMessage(data);
+                });
+                
+                socket.on('joined_room', (data) => {
+                    console.log(`✅ 护工已加入房间: ${data.room}`);
+                    console.log(`🔗 护工房间信息:`, data);
+                });
+                
+                socket.on('message_sent', (data) => {
+                    console.log('✅ 护工消息发送确认:', data);
+                });
+                
+                socket.on('error', (data) => {
+                    console.error('❌ 护工端错误:', data.message);
+                });
+                
+                // 添加连接状态监听
+                socket.on('connect_error', (error) => {
+                    console.error('❌ 护工端连接错误:', error);
+                });
+                
+            } catch (error) {
+                console.error('❌ 护工端Socket.IO连接失败:', error);
+            }
+
+            // 加载聊天列表
+            loadChatList();
+            
+            // 绑定事件
+            bindChatEvents();
+        }
+
+        // 绑定聊天相关事件
+        function bindChatEvents() {
+            // 刷新消息按钮
+            document.getElementById('refresh-messages').addEventListener('click', function() {
+                loadChatList();
+            });
+
+            // 发送消息按钮
+            document.getElementById('send-message').addEventListener('click', function() {
+                sendMessage();
+            });
+
+            // 回车发送消息
+            document.getElementById('chat-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+
+            // 关闭聊天窗口
+            document.getElementById('close-chat').addEventListener('click', function() {
+                closeChatWindow();
+            });
+        }
+
+        // 加载聊天列表
+        async function loadChatList() {
+            try {
+                const caregiverId = getCurrentCaregiverId();
+                if (!caregiverId) {
+                    console.warn('无法获取护工ID');
+                    return;
+                }
+
+                // 获取聘用合同列表（有合同的用户就是可以聊天的用户）
+                const response = await fetch(`/api/employment/contracts/caregiver/${caregiverId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const contracts = data.data.contracts || [];
+                    displayChatList(contracts);
+                } else {
+                    console.error('加载聊天列表失败:', data.message);
+                }
+            } catch (error) {
+                console.error('加载聊天列表失败:', error);
+            }
+        }
+
+        // 显示聊天列表
+        function displayChatList(contracts) {
+            const chatList = document.getElementById('chat-list');
+            
+            if (contracts.length === 0) {
+                chatList.innerHTML = '<p class="text-gray-500 text-center py-8">暂无聊天记录</p>';
+                return;
+            }
+
+            const chatItems = contracts.map(contract => {
+                const user = contract.user || {};
+                const userName = user.name || user.username || '用户';
+                const lastMessage = contract.last_message_content || '暂无消息';
+                const lastMessageTime = contract.last_message_time ? new Date(contract.last_message_time).toLocaleString('zh-CN') : '';
+                
+                return `
+                    <div class="chat-item p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors" 
+                         data-user-id="${user.id}" data-user-name="${userName}" onclick="openChat('${user.id}', '${userName}')">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                                <i class="fa fa-user text-white"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="font-medium text-gray-800">${userName}</h4>
+                                <p class="text-sm text-gray-600 truncate">${lastMessage}</p>
+                                <p class="text-xs text-gray-500">${lastMessageTime}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            chatList.innerHTML = chatItems;
+        }
+
+        // 打开聊天窗口
+        function openChat(userId, userName) {
+            currentChatUser = { id: userId, name: userName };
+            
+            // 显示聊天窗口
+            document.getElementById('chat-window').classList.remove('hidden');
+            document.getElementById('chat-title').textContent = `与 ${userName} 聊天`;
+            
+            // 加载聊天历史
+            loadChatHistory(userId);
+            
+            // 聚焦输入框
+            document.getElementById('chat-input').focus();
+        }
+
+        // 关闭聊天窗口
+        function closeChatWindow() {
+            document.getElementById('chat-window').classList.add('hidden');
+            currentChatUser = null;
+            
+            // 清空消息显示区域
+            document.getElementById('chat-messages').innerHTML = '<p class="text-gray-500 text-center py-8">开始新的对话</p>';
+            document.getElementById('chat-input').value = '';
+        }
+
+        // 加载聊天历史
+        async function loadChatHistory(userId) {
+            try {
+                const caregiverId = getCurrentCaregiverId();
+                if (!caregiverId) return;
+
+                const response = await fetch(`/api/chat/history/${userId}?user_id=${caregiverId}&user_type=caregiver&limit=100`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const messages = data.data.messages || [];
+                    displayChatHistory(messages);
+                } else {
+                    console.error('加载聊天历史失败:', data.message);
+                }
+            } catch (error) {
+                console.error('加载聊天历史失败:', error);
+            }
+        }
+
+        // 显示聊天历史
+        function displayChatHistory(messages) {
+            const messagesContainer = document.getElementById('chat-messages');
+            
+            if (messages.length === 0) {
+                messagesContainer.innerHTML = '<p class="text-gray-500 text-center py-8">开始新的对话</p>';
+                return;
+            }
+
+            const messagesHtml = messages.map(message => {
+                const isOwnMessage = message.sender_id == getCurrentCaregiverId();
+                const messageClass = isOwnMessage ? 'ml-auto bg-primary text-white' : 'mr-auto bg-gray-200 text-gray-800';
+                
+                return `
+                    <div class="flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-3">
+                        <div class="max-w-xs ${messageClass} rounded-lg p-3">
+                            <p class="text-sm">${message.content}</p>
+                            <p class="text-xs ${isOwnMessage ? 'text-white/70' : 'text-gray-500'} mt-1">
+                                ${new Date(message.timestamp).toLocaleString('zh-CN')}
+                            </p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            messagesContainer.innerHTML = messagesHtml;
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // 发送消息
+        async function sendMessage() {
+            if (!currentChatUser) return;
+
+            const input = document.getElementById('chat-input');
+            const content = input.value.trim();
+            
+            if (!content) return;
+
+            const caregiverId = getCurrentCaregiverId();
+            if (!caregiverId) return;
+
+            // 构造消息
+            const message = {
+                sender_id: caregiverId,
+                sender_type: 'caregiver',
+                sender_name: '护工',
+                recipient_id: currentChatUser.id,
+                recipient_type: 'user',
+                content: content,
+                type: 'text'
+            };
+
+            try {
+                // 发送消息到后端
+                const response = await fetch('/api/chat/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(message)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // 添加到本地显示
+                    addMessageToDisplay({
+                        ...message,
+                        timestamp: new Date().toISOString()
+                    });
+
+                    // 清空输入框
+                    input.value = '';
+
+                    // 刷新聊天列表
+                    loadChatList();
+                } else {
+                    console.error('发送消息失败:', data.message);
+                    alert('发送消息失败: ' + data.message);
+                }
+            } catch (error) {
+                console.error('发送消息失败:', error);
+                alert('发送消息失败，请稍后重试');
+            }
+        }
+
+        // 添加消息到显示区域
+        function addMessageToDisplay(message) {
+            const messagesContainer = document.getElementById('chat-messages');
+            const isOwnMessage = message.sender_id == getCurrentCaregiverId();
+            const messageClass = isOwnMessage ? 'ml-auto bg-primary text-white' : 'mr-auto bg-gray-200 text-gray-800';
+            
+            const messageHtml = `
+                <div class="flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-3">
+                    <div class="max-w-xs ${messageClass} rounded-lg p-3">
+                        <p class="text-sm">${message.content}</p>
+                        <p class="text-xs ${isOwnMessage ? 'text-white/70' : 'text-gray-500'} mt-1">
+                            ${new Date(message.timestamp).toLocaleString('zh-CN')}
+                        </p>
+                    </div>
+                </div>
+            `;
+
+            messagesContainer.insertAdjacentHTML('beforeend', messageHtml);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // 处理接收到的消息
+        function handleIncomingMessage(data) {
+            console.log('护工端收到消息:', data);
+            
+            // 确保消息数据格式正确
+            if (!data || !data.content) {
+                console.warn('收到无效消息数据:', data);
+                return;
+            }
+            
+            // 检查消息是否应该显示在聊天窗口中
+            let shouldDisplayInChat = false;
+            
+            // 如果当前聊天窗口打开且消息来自当前聊天的用户
+            if (currentChatUser && (data.sender_id == currentChatUser.id || data.recipient_id == currentChatUser.id)) {
+                shouldDisplayInChat = true;
+                addMessageToDisplay(data);
+                console.log('✅ 消息已添加到聊天窗口');
+            }
+            
+            // 更新聊天列表中的最新消息
+            updateChatListMessage(data);
+            
+            // 如果消息中心页面是可见的，自动刷新聊天列表
+            if (document.getElementById('messages-content').classList.contains('hidden') === false) {
+                setTimeout(() => {
+                    loadChatList();
+                }, 1000);
+            }
+            
+            // 显示通知
+            showMessageNotification(data);
+            
+            // 如果消息没有显示在聊天窗口中，在控制台显示详细信息
+            if (!shouldDisplayInChat) {
+                console.log('📨 收到新消息，但当前聊天窗口未打开或用户不匹配');
+                console.log('当前聊天用户:', currentChatUser);
+                console.log('消息发送者ID:', data.sender_id);
+                console.log('消息接收者ID:', data.recipient_id);
+                console.log('当前护工ID:', getCurrentCaregiverId());
+            }
+        }
+        
+        // 显示消息通知
+        function showMessageNotification(message) {
+            // 创建通知元素
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-primary text-white p-3 rounded-lg shadow-lg z-50';
+            notification.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <i class="fa fa-comment"></i>
+                    <span>收到新消息: ${message.content.substring(0, 30)}${message.content.length > 30 ? '...' : ''}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // 3秒后自动移除
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 3000);
+        }
+
+        // 更新聊天列表中的最新消息
+        function updateChatListMessage(message) {
+            // 更新聊天列表中对应用户的最新消息显示
+            const chatList = document.getElementById('chat-list');
+            const chatItems = chatList.querySelectorAll('.chat-item');
+            
+            chatItems.forEach(item => {
+                const userId = item.getAttribute('data-user-id');
+                if (userId == message.sender_id || userId == message.recipient_id) {
+                    // 更新最新消息内容
+                    const messageContent = item.querySelector('p.text-sm.text-gray-600');
+                    if (messageContent) {
+                        messageContent.textContent = message.content;
+                    }
+                    
+                    // 更新最新消息时间
+                    const messageTime = item.querySelector('p.text-xs.text-gray-500');
+                    if (messageTime) {
+                        messageTime.textContent = new Date(message.timestamp).toLocaleString('zh-CN');
+                    }
+                }
+            });
+        }
+
+        // 定时刷新聊天列表（每30秒刷新一次）
+        setInterval(() => {
+            if (document.getElementById('messages-content').classList.contains('hidden') === false) {
+                loadChatList();
+            }
+        }, 30000);
+
+        // 初始化聊天功能
+        setTimeout(() => {
+            initChat();
+        }, 2000);
     </script>
 </body>
 </html>

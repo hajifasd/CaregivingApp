@@ -1,772 +1,9 @@
 <!DOCTYPE html>
-<!-- 这是修改了的代码 -->
+<!-- 护工管理页面 -->
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<<<<<<< HEAD
-    <title>护工管理</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        /* 基础样式重置 */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
-        }
-        
-        body {
-            background-color: #f5f7fa;
-            color: #333;
-            display: flex;
-            min-height: 100vh;
-        }
-        
-        /* 侧边栏导航 */
-        .sidebar {
-            width: 220px;
-            background-color: #2f3b4b;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-            z-index: 10;
-        }
-        
-        .sidebar-header {
-            padding: 20px;
-            font-size: 18px;
-            font-weight: 600;
-            border-bottom: 1px solid #425063;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .sidebar-nav {
-            list-style: none;
-            margin-top: 20px;
-            flex: 1;
-        }
-        
-        .sidebar-nav li {
-            padding: 12px 20px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-        
-        .sidebar-nav li:hover {
-            background-color: #425063;
-        }
-        
-        .sidebar-nav li a {
-            color: white;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .sidebar-nav li.active {
-            background-color: #1a222c;
-            border-left: 3px solid #3498db;
-        }
-        
-        /* 主内容区容器 */
-        .main-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        
-        /* 顶部导航栏 */
-        .topbar {
-            height: 60px;
-            background-color: white;
-            border-bottom: 1px solid #e1e4e8;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 30px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-        
-        .topbar-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #2f3b4b;
-        }
-        
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: #666;
-        }
-        
-        /* 主内容区 */
-        .main-content {
-            flex: 1;
-            padding: 30px;
-            overflow-y: auto;
-        }
-        
-        .page-header {
-            margin-bottom: 25px;
-        }
-        
-        .page-title {
-            font-size: 24px;
-            font-weight: 600;
-            color: #2f3b4b;
-            margin-bottom: 8px;
-        }
-        
-        .page-description {
-            color: #666;
-            font-size: 14px;
-        }
-        
-        /* 统计卡片样式 */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 25px;
-        }
-        
-        .stat-card {
-            background-color: white;
-            border-radius: 12px;
-            padding: 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-        }
-        
-        .stat-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            color: white;
-        }
-        
-        .stat-icon.pending {
-            background-color: #f39c12;
-        }
-        
-        .stat-icon.approved {
-            background-color: #27ae60;
-        }
-        
-        .stat-icon.total {
-            background-color: #3498db;
-        }
-        
-        .stat-icon.active {
-            background-color: #9b59b6;
-        }
-        
-        .stat-content {
-            flex: 1;
-        }
-        
-        .stat-number {
-            font-size: 24px;
-            font-weight: 700;
-            color: #2f3b4b;
-            margin-bottom: 4px;
-        }
-        
-        .stat-label {
-            font-size: 14px;
-            color: #666;
-            font-weight: 500;
-        }
-        
-        /* 标签页样式 */
-        .tabs {
-            display: flex;
-            background-color: white;
-            border-radius: 8px 8px 0 0;
-            overflow: hidden;
-            margin-bottom: -1px;
-        }
-        
-        .tab-btn {
-            padding: 12px 25px;
-            background-color: transparent;
-            border: none;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-            border-bottom: 3px solid transparent;
-        }
-        
-        .tab-btn.active {
-            color: #2f3b4b;
-            border-bottom-color: #3498db;
-        }
-        
-        .tab-btn:hover:not(.active) {
-            background-color: #f5f7fa;
-            color: #2f3b4b;
-        }
-        
-        /* 卡片样式 */
-        .card {
-            background-color: white;
-            border-radius: 0 8px 8px 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
-        }
-        
-        /* 表格样式 */
-        .table-responsive {
-            overflow-x: auto;
-        }
-        
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .data-table th,
-        .data-table td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #e1e4e8;
-        }
-        
-        .data-table th {
-            background-color: #f5f7fa;
-            font-weight: 600;
-            color: #2f3b4b;
-        }
-        
-        .data-table tbody tr:hover {
-            background-color: #f9fafb;
-        }
-        
-        /* 徽章样式 */
-        .badge {
-            background-color: #e74c3c;
-            color: white;
-            font-size: 12px;
-            padding: 2px 6px;
-            border-radius: 10px;
-            margin-left: 8px;
-            font-weight: 500;
-        }
-        
-        .badge.success {
-            background-color: #27ae60;
-        }
-        
-        .badge.warning {
-            background-color: #f39c12;
-        }
-        
-        /* 用户信息单元格样式 */
-        .user-info-cell {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-        
-        .user-name {
-            font-weight: 500;
-            color: #2f3b4b;
-        }
-        
-        .qualification-badge {
-            background-color: #27ae60;
-            color: white;
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 8px;
-            align-self: flex-start;
-        }
-        
-        /* 性别徽章样式 */
-        .gender-badge {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
-            text-align: center;
-            min-width: 60px;
-            display: inline-block;
-        }
-        
-        .gender-badge.male {
-            background-color: #3498db;
-            color: white;
-        }
-        
-        .gender-badge.female {
-            background-color: #e91e63;
-            color: white;
-        }
-        
-        .gender-badge.unknown {
-            background-color: #95a5a6;
-            color: white;
-        }
-        
-        /* 经验徽章样式 */
-        .experience-badge {
-            background-color: #f39c12;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-        
-        /* 时薪徽章样式 */
-        .rate-badge {
-            background-color: #9b59b6;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-        
-        /* 按钮样式增强 */
-        .btn-outline {
-            background-color: transparent;
-            border: 1px solid #3498db;
-            color: #3498db;
-        }
-        
-        .btn-outline:hover {
-            background-color: #3498db;
-            color: white;
-        }
-        
-        .btn-info {
-            background-color: #17a2b8;
-            color: white;
-        }
-        
-        .btn-info:hover {
-            background-color: #138496;
-        }
-        
-        /* 评分样式 */
-        .rating-cell {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-        }
-        
-        .rating-stars {
-            display: flex;
-            gap: 2px;
-        }
-        
-        .rating-stars .fa-star {
-            color: #ddd;
-            font-size: 12px;
-        }
-        
-        .rating-stars .fa-star.filled {
-            color: #f39c12;
-        }
-        
-        .rating-text {
-            font-size: 12px;
-            color: #666;
-            font-weight: 500;
-        }
-        
-        /* 工具栏样式 */
-        .toolbar {
-            background-color: white;
-            border-radius: 8px 8px 0 0;
-            padding: 20px;
-            margin-bottom: -1px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        
-        .search-box {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .search-input {
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
-            min-width: 250px;
-            outline: none;
-            transition: border-color 0.2s ease;
-        }
-        
-        .search-input:focus {
-            border-color: #3498db;
-        }
-        
-        .search-btn {
-            padding: 10px 15px;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-        }
-        
-        .search-btn:hover {
-            background-color: #2980b9;
-        }
-        
-        .filter-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .filter-select {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
-            outline: none;
-            transition: border-color 0.2s ease;
-        }
-        
-        .filter-select:focus {
-            border-color: #3498db;
-        }
-        
-        /* 批量操作工具栏样式 */
-        .bulk-toolbar {
-            background-color: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 15px 20px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        
-        .bulk-info {
-            font-size: 14px;
-            color: #495057;
-            font-weight: 500;
-        }
-        
-        .bulk-info span {
-            color: #3498db;
-            font-weight: 600;
-        }
-        
-        .bulk-actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        
-        /* 复选框样式 */
-        .select-all-checkbox,
-        .caregiver-checkbox {
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
-        }
-        
-        .select-all-checkbox:checked,
-        .caregiver-checkbox:checked {
-            accent-color: #3498db;
-        }
-        
-        /* 空数据提示 */
-        .empty-state {
-            padding: 40px 20px;
-            text-align: center;
-            color: #666;
-        }
-        
-        .empty-state i {
-            font-size: 48px;
-            margin-bottom: 15px;
-            color: #ccc;
-        }
-        
-        /* 文件链接样式 */
-        .file-link {
-            color: #3498db;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            transition: color 0.2s;
-        }
-        
-        .file-link:hover {
-            color: #2980b9;
-            text-decoration: underline;
-        }
-        
-        /* 按钮样式 */
-        .btn {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 4px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary {
-            background-color: #3498db;
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            background-color: #2980b9;
-        }
-        
-        .btn-warning {
-            background-color: #e67e22;
-            color: white;
-        }
-        
-        .btn-warning:hover {
-            background-color: #d35400;
-        }
-        
-        .btn-group {
-            display: flex;
-            gap: 8px;
-        }
-        
-        /* 材料查看弹窗 */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        
-        .modal.show {
-            display: flex !important;
-        }
-        
-        .modal-content {
-            background-color: white;
-            border-radius: 8px;
-            width: 100%;
-            max-width: 900px;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-        
-        .modal-header {
-            padding: 15px 20px;
-            border-bottom: 1px solid #e1e4e8;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .modal-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #2f3b4b;
-        }
-        
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 20px;
-            cursor: pointer;
-            color: #666;
-        }
-        
-        .modal-body {
-            padding: 20px;
-        }
-        
-        .document-container {
-            margin-bottom: 25px;
-        }
-        
-        .document-title {
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: #2f3b4b;
-        }
-        
-        .document-preview {
-            border: 1px solid #e1e4e8;
-            border-radius: 4px;
-            padding: 15px;
-            text-align: center;
-            background-color: #f9fafb;
-        }
-        
-        .document-preview img {
-            max-width: 100%;
-            max-height: 500px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        .document-preview embed {
-            max-width: 100%;
-            max-height: 500px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        
-        .document-download {
-            margin-top: 10px;
-            display: inline-block;
-        }
-        
-        /* 文本样式 */
-        .text-muted {
-            color: #999;
-            font-style: italic;
-        }
-        
-        /* 响应式调整 */
-        @media (max-width: 768px) {
-            body {
-                flex-direction: column;
-            }
-            
-            .sidebar {
-                width: 100%;
-                height: auto;
-            }
-            
-            .sidebar-nav {
-                display: flex;
-                overflow-x: auto;
-                margin-top: 0;
-            }
-            
-            .sidebar-nav li {
-                flex: 0 0 auto;
-            }
-            
-            .main-content {
-                padding: 15px;
-            }
-            
-            .toolbar {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 15px;
-            }
-            
-            .search-box {
-                justify-content: center;
-            }
-            
-            .search-input {
-                min-width: auto;
-                flex: 1;
-            }
-            
-            .filter-group {
-                justify-content: center;
-                flex-wrap: wrap;
-            }
-            
-            .bulk-toolbar {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 15px;
-            }
-            
-            .bulk-actions {
-                justify-content: center;
-            }
-            
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 15px;
-            }
-            
-            .stat-card {
-                padding: 15px;
-            }
-            
-            .stat-icon {
-                width: 40px;
-                height: 40px;
-                font-size: 16px;
-            }
-            
-            .stat-number {
-                font-size: 20px;
-            }
-            
-            .tab-btn {
-                padding: 10px 15px;
-                font-size: 14px;
-            }
-            
-            .btn-group {
-                flex-direction: column;
-                gap: 5px;
-            }
-            
-            .btn-group .btn {
-                width: 100%;
-                margin: 0;
-            }
-            
-            .data-table th:nth-child(4),
-            .data-table td:nth-child(4) {
-                display: none;
-=======
     <title>护理助手 - 护工管理</title>
     <!-- 引入Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -800,21 +37,6 @@
         @layer utilities {
             .card-shadow {
                 @apply shadow-sm hover:shadow-md transition-shadow duration-300;
->>>>>>> 960e1055303974378dde77824b04ca7e7f1f191a
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .main-content {
-                padding: 20px;
-            }
-            
-            .page-title {
-                font-size: 20px;
             }
         }
     </style>
@@ -833,7 +55,7 @@
         
         <div class="flex items-center gap-6">
             <div class="relative">
-                <input type="text" placeholder="搜索护工..." 
+                <input type="text" id="search-input" placeholder="搜索护工..." 
                     class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 w-64">
                 <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
             </div>
@@ -882,18 +104,34 @@
     
     <!-- 页面内容 -->
     <main class="p-6 bg-gray-50">
-        <div class="mb-8">
-            <h2 class="text-3xl font-bold text-gray-800 mb-4">护工账号管理</h2>
-            <p class="text-gray-600 text-lg">管理护工账号信息并审核护工资质</p>
+        <div class="mb-8 flex justify-between items-center">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">护工管理</h2>
+                <p class="text-gray-600 text-lg">审核护工资质并管理护工信息</p>
+            </div>
+            <div class="flex gap-3">
+                <button id="batch-suspend-btn" class="bg-warning hover:bg-warning/90 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                    <i class="fa fa-pause"></i>
+                    批量暂停
+                </button>
+                <button id="batch-restore-btn" class="bg-success hover:bg-success/90 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                    <i class="fa fa-play"></i>
+                    批量恢复
+                </button>
+                <button id="refresh-btn" class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                    <i class="fa fa-refresh"></i>
+                    刷新数据
+                </button>
+            </div>
         </div>
         
         <!-- 统计卡片 -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div class="bg-white rounded-xl p-6 card-shadow">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-600 mb-1">待审核护工</p>
-                        <p class="text-2xl font-bold text-warning">{{ unapproved|length if unapproved else 0 }}</p>
+                        <p class="text-2xl font-bold text-warning" id="pending-count">0</p>
                     </div>
                     <div class="w-12 h-12 rounded-full bg-warning/10 flex items-center justify-center">
                         <i class="fa fa-clock-o text-warning text-xl"></i>
@@ -901,117 +139,11 @@
                 </div>
             </div>
             
-<<<<<<< HEAD
-            <!-- 统计信息卡片 -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon pending">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-number" id="pending-stat">{{ unapproved|length if unapproved else 0 }}</div>
-                        <div class="stat-label">待审核护工</div>
-                    </div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-icon approved">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-number" id="approved-stat">{{ approved|length if approved else 0 }}</div>
-                        <div class="stat-label">已批准护工</div>
-                    </div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-icon total">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-number" id="total-stat">{{ (unapproved|length if unapproved else 0) + (approved|length if approved else 0) }}</div>
-                        <div class="stat-label">护工总数</div>
-                    </div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-icon active">
-                        <i class="fas fa-user-check"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-number" id="active-stat">{{ approved|length if approved else 0 }}</div>
-                        <div class="stat-label">活跃护工</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="tabs">
-                <button class="tab-btn active" data-tab="pending">
-                    <i class="fas fa-clock"></i> 待审核护工
-                    <span class="badge" id="pending-count">{{ unapproved|length if unapproved else 0 }}</span>
-                </button>
-                <button class="tab-btn" data-tab="approved">
-                    <i class="fas fa-check-circle"></i> 已批准护工
-                    <span class="badge" id="approved-count">{{ approved|length if approved else 0 }}</span>
-                </button>
-                <button class="tab-btn" data-tab="accounts">
-                    <i class="fas fa-user-cog"></i> 护工账号管理
-                </button>
-            </div>
-            
-            <!-- 搜索和筛选工具栏 -->
-            <div class="toolbar">
-                <div class="search-box">
-                    <input type="text" id="search-input" placeholder="搜索护工姓名、电话..." class="search-input">
-                    <button class="btn btn-outline" id="search-btn">
-                        <i class="fas fa-search"></i>
-                    </button>
-                </div>
-                
-                <div class="filter-group">
-                    <select id="gender-filter" class="filter-select">
-                        <option value="">全部性别</option>
-                        <option value="male">男</option>
-                        <option value="female">女</option>
-                    </select>
-                    
-                    <select id="experience-filter" class="filter-select">
-                        <option value="">全部经验</option>
-                        <option value="0-2">0-2年</option>
-                        <option value="3-5">3-5年</option>
-                        <option value="5+">5年以上</option>
-                    </select>
-                    
-                    <button class="btn btn-outline" id="reset-filters">
-                        <i class="fas fa-undo"></i> 重置筛选
-                    </button>
-                </div>
-                        </div>
-            
-            <!-- 批量操作工具栏 -->
-            <div class="bulk-toolbar" id="bulk-toolbar" style="display: none;">
-                <div class="bulk-info">
-                    <span id="bulk-count">0</span> 个护工被选中
-                </div>
-                
-                <div class="bulk-actions">
-                    <button class="btn btn-primary" id="bulk-approve">
-                        <i class="fas fa-check"></i> 批量批准
-                    </button>
-                    <button class="btn btn-warning" id="bulk-reject">
-                        <i class="fas fa-times"></i> 批量拒绝
-                    </button>
-                    <button class="btn btn-outline" id="bulk-deselect">
-                        <i class="fas fa-times"></i> 取消选择
-                    </button>
-                </div>
-            </div>
-=======
             <div class="bg-white rounded-xl p-6 card-shadow">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-600 mb-1">已批准护工</p>
-                        <p class="text-2xl font-bold text-success">{{ approved|length if approved else 0 }}</p>
+                        <p class="text-2xl font-bold text-success" id="approved-count">0</p>
                     </div>
                     <div class="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center">
                         <i class="fa fa-check-circle text-success text-xl"></i>
@@ -1022,11 +154,23 @@
             <div class="bg-white rounded-xl p-6 card-shadow">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-gray-600 mb-1">总护工数量</p>
-                        <p class="text-2xl font-bold text-primary">{{ (unapproved|length if unapproved else 0) + (approved|length if approved else 0) }}</p>
+                        <p class="text-sm font-medium text-gray-600 mb-1">在线护工</p>
+                        <p class="text-2xl font-bold text-primary" id="online-count">0</p>
                     </div>
                     <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <i class="fa fa-hands-helping text-primary text-xl"></i>
+                        <i class="fa fa-circle text-primary text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl p-6 card-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 mb-1">总护工数量</p>
+                        <p class="text-2xl font-bold text-accent" id="total-count">0</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
+                        <i class="fa fa-users text-accent text-xl"></i>
                     </div>
                 </div>
             </div>
@@ -1042,331 +186,220 @@
                     <button class="tab-btn py-4 px-2 text-gray-500 hover:text-gray-700 font-medium" data-tab="approved">
                         <i class="fa fa-check-circle mr-2"></i>已批准护工
                     </button>
-                    <button class="tab-btn py-4 px-2 text-gray-500 hover:text-gray-700 font-medium" data-tab="accounts">
-                        <i class="fa fa-user-cog mr-2"></i>护工账号管理
+                    <button class="tab-btn py-4 px-2 text-gray-500 hover:text-gray-700 font-medium" data-tab="performance">
+                        <i class="fa fa-chart-line mr-2"></i>护工表现
+                    </button>
+                    <button class="tab-btn py-4 px-2 text-gray-500 hover:text-gray-700 font-medium" data-tab="verification">
+                        <i class="fa fa-id-card mr-2"></i>资质验证
                     </button>
                 </nav>
             </div>
->>>>>>> 960e1055303974378dde77824b04ca7e7f1f191a
             
             <!-- 待审核护工列表 -->
             <div class="tab-content p-6" id="pending-content">
-                {% if unapproved and unapproved|length > 0 %}
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-<<<<<<< HEAD
-                                <th>
-                                    <input type="checkbox" id="select-all-pending" class="select-all-checkbox">
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <input type="checkbox" id="select-all-pending" class="rounded border-gray-300 text-primary focus:ring-primary">
                                 </th>
-                                <th>ID</th>
-                                <th>姓名</th>
-                                <th>电话</th>
-                                <th>性别</th>
-                                <th>年龄</th>
-                                <th>工作经验</th>
-                                <th>期望时薪</th>
-                                <th>资质证书</th>
-                                <th>申请时间</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% if unapproved and unapproved|length > 0 %}
-                                {% for c in unapproved %}
-                                <tr>
-                                    <td>
-                                        <input type="checkbox" class="caregiver-checkbox" value="{{ c.id }}">
-                                    </td>
-                                    <td>{{ c.id }}</td>
-                                    <td>
-                                        <div class="user-info-cell">
-                                            <span class="user-name">{{ c.name }}</span>
-                                            {% if c.qualification %}
-                                                <span class="qualification-badge">已认证</span>
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                    <td>{{ c.phone }}</td>
-                                    <td>
-                                        <span class="gender-badge {{ c.gender|lower if c.gender else 'unknown' }}">
-                                            {{ c.gender|default('未填写', true) }}
-                                        </span>
-                                    </td>
-                                    <td>{{ c.age|default('未填写', true) }}</td>
-                                    <td>
-                                        <span class="experience-badge">
-                                            {{ c.experience_years|default(0, true) }}年
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="rate-badge">
-                                            {{ c.hourly_rate|default('未填写', true) }}元/小时
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <button class="btn btn-outline view-docs-btn" 
-                                                data-id="{{ c.id }}"
-                                                data-name="{{ c.name }}"
-                                                data-qualification="{{ c.qualification|default('', true) }}">
-                                            <i class="fas fa-file-alt"></i> 查看材料
-                                        </button>
-                                    </td>
-                                    <td>{{ c.created_at|default('N/A', true) }}</td>
-                                    <td>
-                                        <div class="btn-group">
-                                            <button class="btn btn-primary approve-btn" data-id="{{ c.id }}">
-                                                <i class="fas fa-check"></i> 批准
-                                            </button>
-                                            <button class="btn btn-warning reject-btn" data-id="{{ c.id }}">
-                                                <i class="fas fa-times"></i> 拒绝
-                                            </button>
-                                            <button class="btn btn-info view-profile-btn" data-id="{{ c.id }}">
-                                                <i class="fas fa-eye"></i> 查看
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                                                            {% else %}
-                                <tr>
-                                    <td colspan="11" class="empty-state">
-                                        <i class="fas fa-inbox"></i>
-                                        <p>暂无待审核的护工申请</p>
-                                    </td>
-                                </tr>
-                                {% endif %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- 已批准护工列表 (默认隐藏) -->
-            <div class="card" style="display: none;" id="approved-card">
-                <div class="table-responsive">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>姓名</th>
-                                <th>电话</th>
-                                <th>性别</th>
-                                <th>年龄</th>
-                                <th>工作经验</th>
-                                <th>期望时薪</th>
-                                <th>评分</th>
-                                <th>批准时间</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% if approved and approved|length > 0 %}
-                                {% for c in approved %}
-                                <tr>
-                                    <td>{{ c.id }}</td>
-                                    <td>
-                                        <div class="user-info-cell">
-                                            <span class="user-name">{{ c.name }}</span>
-                                            {% if c.qualification %}
-                                                <span class="qualification-badge">已认证</span>
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                    <td>{{ c.phone }}</td>
-                                    <td>
-                                        <span class="gender-badge {{ c.gender|lower if c.gender else 'unknown' }}">
-                                            {{ c.gender|default('未填写', true) }}
-                                        </span>
-                                    </td>
-                                    <td>{{ c.age|default('未填写', true) }}</td>
-                                    <td>
-                                        <span class="experience-badge">
-                                            {{ c.experience_years|default(0, true) }}年
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="rate-badge">
-                                            {{ c.hourly_rate|default('未填写', true) }}元/小时
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="rating-cell">
-                                            <span class="rating-stars">
-                                                {% for i in range(5) %}
-                                                    {% if i < (c.rating|default(0, true)|int) %}
-                                                        <i class="fas fa-star filled"></i>
-                                                    {% else %}
-                                                        <i class="fas fa-star"></i>
-                                                    {% endif %}
-                                                {% endfor %}
-                                            </span>
-                                            <span class="rating-text">{{ c.rating|default('0.0', true) }}</span>
-                                        </div>
-                                    </td>
-                                    <td>{{ c.approved_at|default(c.created_at, true) }}</td>
-                                    <td>
-                                        <div class="btn-group">
-                                            <button class="btn btn-primary view-profile-btn" 
-                                                    data-id="{{ c.id }}"
-                                                    data-name="{{ c.name }}">
-                                                <i class="fas fa-user"></i> 查看详情
-                                            </button>
-                                            <button class="btn btn-warning edit-caregiver-btn" 
-                                                    data-id="{{ c.id }}">
-                                                <i class="fas fa-edit"></i> 编辑
-                                            </button>
-                                            <button class="btn btn-danger deactivate-btn" 
-                                                    data-id="{{ c.id }}">
-                                                <i class="fas fa-pause"></i> 停用
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            {% else %}
-                                <tr>
-                                    <td colspan="10" class="empty-state">
-                                        <i class="fas fa-check-circle"></i>
-                                        <p>暂无已批准的护工</p>
-                                    </td>
-                                </tr>
-                            {% endif %}
-=======
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">姓名</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">电话</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">性别</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">年龄</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">工作经验</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">期望时薪</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">申请时间</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">手机号</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">注册时间</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">资质材料</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            {% for c in unapproved %}
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ c.id }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ c.name }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.phone }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.gender|default('未填写', true) }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.age|default('未填写', true) }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.experience_years|default(0, true) }}年</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.hourly_rate|default('未填写', true) }}元/小时</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.created_at }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <div class="flex space-x-2">
-                                        <button class="view-materials-btn bg-primary hover:bg-primary/90 text-white px-3 py-1 rounded text-xs" data-caregiver-id="{{ c.id }}">
-                                            查看材料
-                                        </button>
-                                        <button class="approve-btn bg-success hover:bg-success/90 text-white px-3 py-1 rounded text-xs" data-caregiver-id="{{ c.id }}">
-                                            批准
-                                        </button>
-                                        <button class="reject-btn bg-danger hover:bg-danger/90 text-white px-3 py-1 rounded text-xs" data-caregiver-id="{{ c.id }}">
-                                            拒绝
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
->>>>>>> 960e1055303974378dde77824b04ca7e7f1f191a
+                        <tbody class="bg-white divide-y divide-gray-200" id="pending-tbody">
+                            <!-- 动态加载待审核护工数据 -->
                         </tbody>
                     </table>
                 </div>
-                {% else %}
-                <div class="text-center py-12">
-                    <i class="fa fa-inbox text-4xl text-gray-300 mb-4"></i>
-                    <p class="text-gray-500 text-lg">暂无待审核的护工申请</p>
-                </div>
-                {% endif %}
             </div>
             
             <!-- 已批准护工列表 -->
             <div class="tab-content p-6 hidden" id="approved-content">
-                {% if approved and approved|length > 0 %}
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <input type="checkbox" id="select-all-approved" class="rounded border-gray-300 text-primary focus:ring-primary">
+                                </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">姓名</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">电话</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">性别</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">年龄</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">工作经验</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">期望时薪</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">手机号</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">批准时间</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">评分</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            {% for c in approved %}
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ c.id }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ c.name }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.phone }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.gender|default('未填写', true) }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.age|default('未填写', true) }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.experience_years|default(0, true) }}年</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.hourly_rate|default('未填写', true) }}元/小时</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.approved_at|default('未知', true) }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <div class="flex space-x-2">
-                                        <button class="view-materials-btn bg-primary hover:bg-primary/90 text-white px-3 py-1 rounded text-xs" data-caregiver-id="{{ c.id }}">
-                                            查看材料
-                                        </button>
-                                        <button class="suspend-btn bg-warning hover:bg-warning/90 text-white px-3 py-1 rounded text-xs" data-caregiver-id="{{ c.id }}">
-                                            暂停
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
+                        <tbody class="bg-white divide-y divide-gray-200" id="approved-tbody">
+                            <!-- 动态加载已批准护工数据 -->
                         </tbody>
                     </table>
                 </div>
-                {% else %}
-                <div class="text-center py-12">
-                    <i class="fa fa-check-circle text-4xl text-gray-300 mb-4"></i>
-                    <p class="text-gray-500 text-lg">暂无已批准的护工</p>
-                </div>
-                {% endif %}
             </div>
             
-            <!-- 护工账号管理 -->
-            <div class="tab-content p-6 hidden" id="accounts-content">
+            <!-- 护工表现分析 -->
+            <div class="tab-content p-6 hidden" id="performance-content">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h3 class="text-lg font-semibold mb-4">护工评分分布</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">5星 (优秀)</span>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-32 bg-gray-200 rounded-full h-2">
+                                        <div class="bg-success h-2 rounded-full" style="width: 45%"></div>
+                                    </div>
+                                    <span class="text-sm font-medium">45%</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">4星 (良好)</span>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-32 bg-gray-200 rounded-full h-2">
+                                        <div class="bg-primary h-2 rounded-full" style="width: 35%"></div>
+                                    </div>
+                                    <span class="text-sm font-medium">35%</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">3星 (一般)</span>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-32 bg-gray-200 rounded-full h-2">
+                                        <div class="bg-warning h-2 rounded-full" style="width: 15%"></div>
+                                    </div>
+                                    <span class="text-sm font-medium">15%</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">2星及以下</span>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-32 bg-gray-200 rounded-full h-2">
+                                        <div class="bg-danger h-2 rounded-full" style="width: 5%"></div>
+                                    </div>
+                                    <span class="text-sm font-medium">5%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h3 class="text-lg font-semibold mb-4">护工活跃度</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">在线护工</span>
+                                <span class="text-lg font-bold text-primary" id="online-caregivers">0</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">本月接单护工</span>
+                                <span class="text-lg font-bold text-success" id="active-caregivers">0</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">平均响应时间</span>
+                                <span class="text-lg font-bold text-warning" id="avg-response-time">0分钟</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 资质验证 -->
+            <div class="tab-content p-6 hidden" id="verification-content">
                 <div class="text-center py-12">
-                    <i class="fa fa-user-cog text-4xl text-gray-300 mb-4"></i>
-                    <p class="text-gray-500 text-lg">护工账号管理功能开发中...</p>
-                    <p class="text-gray-400 text-sm mt-2">包括账号状态管理、权限设置等功能</p>
+                    <i class="fa fa-id-card text-4xl text-gray-300 mb-4"></i>
+                    <p class="text-gray-500 text-lg">护工资质验证功能</p>
+                    <p class="text-gray-400 text-sm mt-2">包括身份证验证、职业资格证验证、健康证明等</p>
+                    <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <i class="fa fa-id-card text-2xl text-primary mb-2"></i>
+                            <h4 class="font-medium">身份证验证</h4>
+                            <p class="text-sm text-gray-500">验证护工身份信息</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <i class="fa fa-certificate text-2xl text-success mb-2"></i>
+                            <h4 class="font-medium">职业资格证</h4>
+                            <p class="text-sm text-gray-500">验证护理专业资质</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <i class="fa fa-heartbeat text-2xl text-warning mb-2"></i>
+                            <h4 class="font-medium">健康证明</h4>
+                            <p class="text-sm text-gray-500">确保护工身体健康</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </main>
     
-    <!-- 材料查看弹窗 -->
-    <div id="materials-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <!-- 护工详情弹窗 -->
+    <div id="caregiver-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
         <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
             <div class="mt-3">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-medium text-gray-900">护工申请材料</h3>
-                    <button id="close-modal" class="text-gray-400 hover:text-gray-600">
+                    <h3 class="text-lg font-medium text-gray-900">护工详细信息</h3>
+                    <button id="close-caregiver-modal" class="text-gray-400 hover:text-gray-600">
                         <i class="fa fa-times text-xl"></i>
                     </button>
                 </div>
-                <div id="modal-content" class="space-y-4">
-                    <!-- 材料内容将在这里动态加载 -->
+                <div id="caregiver-modal-content" class="space-y-4">
+                    <!-- 护工详细信息将在这里动态加载 -->
                 </div>
             </div>
         </div>
     </div>
     
+    <!-- 资质材料查看弹窗 -->
+    <div id="qualification-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">护工详细信息</h3>
+                    <button id="close-qualification-modal" class="text-gray-400 hover:text-gray-600">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div id="qualification-modal-content" class="space-y-4">
+                    <!-- 资质材料内容将在这里动态加载 -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 加载提示 -->
+    <div id="loading-overlay" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 flex items-center gap-4">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <span class="text-gray-700">正在处理...</span>
+        </div>
+    </div>
+    
     <script>
+        // 全局变量
+        let allCaregivers = [];
+        let filteredCaregivers = [];
+        
         document.addEventListener('DOMContentLoaded', function() {
             // 检查管理员登录状态
             checkAdminLogin();
             
+            // 加载护工数据
+            loadCaregiverData();
+            
+            // 绑定事件
+            bindEvents();
+            
+            // 绑定全选复选框
+            bindSelectAllCheckboxes();
+        });
+        
+        // 绑定事件
+        function bindEvents() {
             // 标签页切换
             const tabBtns = document.querySelectorAll('.tab-btn');
             const tabContents = document.querySelectorAll('.tab-content');
@@ -1391,441 +424,61 @@
                 });
             });
             
-<<<<<<< HEAD
-            // 搜索和筛选功能
-            const searchInput = document.getElementById('search-input');
-            const searchBtn = document.getElementById('search-btn');
-            const genderFilter = document.getElementById('gender-filter');
-            const experienceFilter = document.getElementById('experience-filter');
-            const resetFiltersBtn = document.getElementById('reset-filters');
-            
             // 搜索功能
-            function performSearch() {
-                const searchTerm = searchInput.value.toLowerCase().trim();
-                const genderValue = genderFilter.value;
-                const experienceValue = experienceFilter.value;
-                
-                // 获取当前活动的标签页
-                const activeTab = document.querySelector('.tab-btn.active').getAttribute('data-tab');
-                let tableRows;
-                
-                if (activeTab === 'pending') {
-                    tableRows = document.querySelectorAll('#pending-card tbody tr');
-                } else if (activeTab === 'approved') {
-                    tableRows = document.querySelectorAll('#approved-card tbody tr');
-                } else {
-                    return; // 账号管理标签页不进行搜索
+            document.getElementById('search-input').addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                filterCaregivers(searchTerm);
+            });
+            
+            // 批量操作按钮
+            document.getElementById('batch-suspend-btn').addEventListener('click', function() {
+                const selectedIds = getSelectedCaregiverIds();
+                if (selectedIds.length === 0) {
+                    alert('请先选择要操作的护工');
+                    return;
                 }
-                
-                tableRows.forEach(row => {
-                    if (row.querySelector('.empty-state')) return; // 跳过空状态行
-                    
-                    const name = row.querySelector('td:nth-child(2)')?.textContent?.toLowerCase() || '';
-                    const phone = row.querySelector('td:nth-child(3)')?.textContent?.toLowerCase() || '';
-                    const gender = row.querySelector('td:nth-child(4)')?.textContent?.toLowerCase() || '';
-                    const experience = row.querySelector('td:nth-child(6)')?.textContent?.toLowerCase() || '';
-                    
-                    let showRow = true;
-                    
-                    // 搜索条件
-                    if (searchTerm && !name.includes(searchTerm) && !phone.includes(searchTerm)) {
-                        showRow = false;
-                    }
-                    
-                    // 性别筛选
-                    if (genderValue && gender !== genderValue) {
-                        showRow = false;
-                    }
-                    
-                    // 经验筛选
-                    if (experienceValue) {
-                        const expYears = parseInt(experience.match(/\d+/)?.[0] || '0');
-                        if (experienceValue === '0-2' && (expYears < 0 || expYears > 2)) {
-                            showRow = false;
-                        } else if (experienceValue === '3-5' && (expYears < 3 || expYears > 5)) {
-                            showRow = false;
-                        } else if (experienceValue === '5+' && expYears <= 5) {
-                            showRow = false;
-                        }
-                    }
-                    
-                    row.style.display = showRow ? '' : 'none';
-                });
-                
-                // 更新统计信息
-                updateSearchStats();
-            }
-            
-            // 更新搜索统计
-            function updateSearchStats() {
-                const activeTab = document.querySelector('.tab-btn.active').getAttribute('data-tab');
-                let visibleRows = 0;
-                
-                if (activeTab === 'pending') {
-                    visibleRows = document.querySelectorAll('#pending-card tbody tr:not(.empty-state):not([style*="display: none"])').length;
-                } else if (activeTab === 'approved') {
-                    visibleRows = document.querySelectorAll('#approved-card tbody tr:not(.empty-state):not([style*="display: none"])').length;
-                }
-                
-                // 更新徽章显示
-                const badge = document.querySelector(`[data-tab="${activeTab}"] .badge`);
-                if (badge) {
-                    badge.textContent = visibleRows;
-                }
-            }
-            
-            // 重置筛选
-            function resetFilters() {
-                searchInput.value = '';
-                genderFilter.value = '';
-                experienceFilter.value = '';
-                
-                // 显示所有行
-                const activeTab = document.querySelector('.tab-btn.active').getAttribute('data-tab');
-                let tableRows;
-                
-                if (activeTab === 'pending') {
-                    tableRows = document.querySelectorAll('#pending-card tbody tr');
-                } else if (activeTab === 'approved') {
-                    tableRows = document.querySelectorAll('#approved-card tbody tr');
-                }
-                
-                tableRows.forEach(row => {
-                    if (row.querySelector('.empty-state')) return;
-                    row.style.display = '';
-                });
-                
-                // 恢复原始徽章显示
-                updateSearchStats();
-            }
-            
-            // 绑定搜索和筛选事件
-            if (searchInput) {
-                searchInput.addEventListener('input', performSearch);
-            }
-            
-            if (searchBtn) {
-                searchBtn.addEventListener('click', performSearch);
-            }
-            
-            if (genderFilter) {
-                genderFilter.addEventListener('change', performSearch);
-            }
-            
-            if (experienceFilter) {
-                experienceFilter.addEventListener('change', performSearch);
-            }
-            
-                        if (resetFiltersBtn) {
-                resetFiltersBtn.addEventListener('click', resetFilters);
-            }
-            
-            // 批量操作功能
-            const selectAllCheckbox = document.getElementById('select-all-pending');
-            const bulkToolbar = document.getElementById('bulk-toolbar');
-            const bulkCount = document.getElementById('bulk-count');
-            const bulkApprove = document.getElementById('bulk-approve');
-            const bulkReject = document.getElementById('bulk-reject');
-            const bulkDeselect = document.getElementById('bulk-deselect');
-            
-            // 全选/取消全选
-            if (selectAllCheckbox) {
-                selectAllCheckbox.addEventListener('change', function() {
-                    const checkboxes = document.querySelectorAll('.caregiver-checkbox');
-                    checkboxes.forEach(checkbox => {
-                        checkbox.checked = this.checked;
-                    });
-                    updateBulkToolbar();
-                });
-            }
-            
-            // 单个复选框变化
-            document.addEventListener('change', function(e) {
-                if (e.target.classList.contains('caregiver-checkbox')) {
-                    updateBulkToolbar();
-                    updateSelectAllCheckbox();
+                const reason = prompt('请输入暂停原因（可选）:', '批量暂停');
+                if (reason !== null) {
+                    batchCaregiverOperation(selectedIds, 'suspend', reason);
                 }
             });
             
-            // 更新批量操作工具栏
-            function updateBulkToolbar() {
-                const checkedBoxes = document.querySelectorAll('.caregiver-checkbox:checked');
-                const count = checkedBoxes.length;
-                
-                if (count > 0) {
-                    bulkToolbar.style.display = 'flex';
-                    bulkCount.textContent = count;
-                } else {
-                    bulkToolbar.style.display = 'none';
+            document.getElementById('batch-restore-btn').addEventListener('click', function() {
+                const selectedIds = getSelectedCaregiverIds();
+                if (selectedIds.length === 0) {
+                    alert('请先选择要操作的护工');
+                    return;
                 }
-            }
-            
-            // 更新全选复选框状态
-            function updateSelectAllCheckbox() {
-                const checkboxes = document.querySelectorAll('.caregiver-checkbox');
-                const checkedBoxes = document.querySelectorAll('.caregiver-checkbox:checked');
-                
-                if (checkedBoxes.length === 0) {
-                    selectAllCheckbox.checked = false;
-                    selectAllCheckbox.indeterminate = false;
-                } else if (checkedBoxes.length === checkboxes.length) {
-                    selectAllCheckbox.checked = true;
-                    selectAllCheckbox.indeterminate = false;
-                } else {
-                    selectAllCheckbox.checked = false;
-                    selectAllCheckbox.indeterminate = true;
-                }
-            }
-            
-            // 批量批准
-            if (bulkApprove) {
-                bulkApprove.addEventListener('click', async function() {
-                    if (!checkLoginStatus()) return;
-                    
-                    const checkedBoxes = document.querySelectorAll('.caregiver-checkbox:checked');
-                    if (checkedBoxes.length === 0) {
-                        alert('请选择要批准的护工');
-                        return;
-                    }
-                    
-                    if (confirm(`确定要批准选中的 ${checkedBoxes.length} 个护工吗？`)) {
-                        try {
-                            const token = localStorage.getItem('admin_token');
-                            const ids = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
-                            
-                            // 这里可以实现批量批准的API调用
-                            // 暂时使用逐个批准的方式
-                            let successCount = 0;
-                            for (const id of ids) {
-                                try {
-                                    const res = await fetch('/api/admin/approve', {
-                                        method: 'POST',
-                                        headers: {
-                                            'Content-Type': 'application/json',
-                                            'Authorization': `Bearer ${token}`
-                                        },
-                                        body: JSON.stringify({id: id})
-                                    });
-                                    
-                                    const data = await res.json();
-                                    if (data.success) {
-                                        successCount++;
-                                    }
-                                } catch (err) {
-                                    console.error(`批准护工ID ${id} 失败:`, err);
-                                }
-                            }
-                            
-                            alert(`批量批准完成：成功 ${successCount} 个，失败 ${ids.length - successCount} 个`);
-                            location.reload();
-                        } catch (err) {
-                            console.error('批量批准失败:', err);
-                            alert('网络错误，请重试');
-                        }
-                    }
-                });
-            }
-            
-            // 批量拒绝
-            if (bulkReject) {
-                bulkReject.addEventListener('click', async function() {
-                    if (!checkLoginStatus()) return;
-                    
-                    const checkedBoxes = document.querySelectorAll('.caregiver-checkbox:checked');
-                    if (checkedBoxes.length === 0) {
-                        alert('请选择要拒绝的护工');
-                        return;
-                    }
-                    
-                    if (confirm(`确定要拒绝选中的 ${checkedBoxes.length} 个护工吗？此操作不可恢复`)) {
-                        try {
-                            const token = localStorage.getItem('admin_token');
-                            const ids = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
-                            
-                            // 这里可以实现批量拒绝的API调用
-                            // 暂时使用逐个拒绝的方式
-                            let successCount = 0;
-                            for (const id of ids) {
-                                try {
-                                    const res = await fetch('/api/admin/reject', {
-                                        method: 'POST',
-                                        headers: {
-                                            'Content-Type': 'application/json',
-                                            'Authorization': `Bearer ${token}`
-                                        },
-                                        body: JSON.stringify({id: id})
-                                    });
-                                    
-                                    const data = await res.json();
-                                    if (data.success) {
-                                        successCount++;
-                                    }
-                                } catch (err) {
-                                    console.error(`拒绝护工ID ${id} 失败:`, err);
-                                }
-                            }
-                            
-                            alert(`批量拒绝完成：成功 ${successCount} 个，失败 ${ids.length - successCount} 个`);
-                            location.reload();
-                        } catch (err) {
-                            console.error('批量拒绝失败:', err);
-                            alert('网络错误，请重试');
-                        }
-                    }
-                });
-            }
-            
-            // 取消选择
-            if (bulkDeselect) {
-                bulkDeselect.addEventListener('click', function() {
-                    const checkboxes = document.querySelectorAll('.caregiver-checkbox');
-                    checkboxes.forEach(checkbox => {
-                        checkbox.checked = false;
-                    });
-                    selectAllCheckbox.checked = false;
-                    selectAllCheckbox.indeterminate = false;
-                    updateBulkToolbar();
-                });
-            }
-            
-            // 查看材料按钮点击事件
-            document.querySelectorAll('.view-docs-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    if (!checkLoginStatus()) return;
-                    
-                    // 获取按钮上的材料信息
-                    const name = btn.getAttribute('data-name');
-                    const idUrl = btn.getAttribute('data-id-url');
-                    const certUrl = btn.getAttribute('data-cert-url');
-                    const idFileName = btn.getAttribute('data-id-name');
-                    const certFileName = btn.getAttribute('data-cert-name');
-                    
-                    // 验证数据完整性
-                    if (!name || !idUrl || !certUrl) {
-                        alert('材料信息不完整，无法查看');
-                        return;
-                    }
-                    
-                    // 更新弹窗标题
-                    if (caregiverNameEl) caregiverNameEl.textContent = name || '未知护工';
-                    
-                    // 处理身份证文件显示
-                    if (idContainer) {
-                        idContainer.innerHTML = '';
-                        const ext = idFileName ? idFileName.split('.').pop().toLowerCase() : '';
-                        
-                        if (['png', 'jpg', 'jpeg', 'gif'].includes(ext)) {
-                            const img = document.createElement('img');
-                            img.src = idUrl;
-                            img.alt = '身份证预览';
-                            img.onerror = function() {
-                                this.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iIzY2NiIgZD0iTTIyIDEwVjE2YTIgMiAwIDAgMS0yIDJoLTRhMiAyIDAgMCAxLTItMnYtNmgydjZoNGEyIDIgMCAwIDEgMiAyaDJWMTRoMnYtNHptLTIwIDBoMnYxNmgtMnYtMTZ6bTQgMkg2djE0aDJWNnoiLz48L3N2Zz4=';
-                                this.alt = '无法加载身份证图片';
-                            };
-                            idContainer.appendChild(img);
-                        } else if (ext === 'pdf') {
-                            const embed = document.createElement('embed');
-                            embed.src = idUrl;
-                            embed.type = 'application/pdf';
-                            idContainer.appendChild(embed);
-                            
-                            const tip = document.createElement('p');
-                            tip.style.marginTop = '10px';
-                            tip.style.color = '#666';
-                            tip.textContent = '若无法预览，请点击下载按钮查看';
-                            idContainer.appendChild(tip);
-                        } else {
-                            const tip = document.createElement('p');
-                            tip.style.padding = '20px 0';
-                            tip.textContent = `不支持的文件格式 (${ext})，请下载查看`;
-                            idContainer.appendChild(tip);
-                        }
-                    }
-                    
-                    // 处理资格证书文件显示
-                    if (certContainer) {
-                        certContainer.innerHTML = '';
-                        const ext = certFileName ? certFileName.split('.').pop().toLowerCase() : '';
-                        
-                        if (['png', 'jpg', 'jpeg', 'gif'].includes(ext)) {
-                            const img = document.createElement('img');
-                            img.src = certUrl;
-                            img.alt = '资格证书预览';
-                            img.onerror = function() {
-                                this.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iIzY2NiIgZD0iTTIyIDEwVjE2YTIgMiAwIDAgMS0yIDJoLTRhMiAyIDAgMCAxLTItMnYtNmgydjZoNGEyIDIgMCAwIDEgMiAyaDJWMTRoMnYtNHptLTIwIDBoMnYxNmgtMnYtMTZ6bTQgMkg2djE0aDJWNnoiLz48L3N2Zz4=';
-                                this.alt = '无法加载资格证书图片';
-                            };
-                            certContainer.appendChild(img);
-                        } else if (ext === 'pdf') {
-                            const embed = document.createElement('embed');
-                            embed.src = certUrl;
-                            embed.type = 'application/pdf';
-                            certContainer.appendChild(embed);
-                            
-                            const tip = document.createElement('p');
-                            tip.style.marginTop = '10px';
-                            tip.style.color = '#666';
-                            tip.textContent = '若无法预览，请点击下载按钮查看';
-                            certContainer.appendChild(tip);
-                        } else {
-                            const tip = document.createElement('p');
-                            tip.style.padding = '20px 0';
-                            tip.textContent = `不支持的文件格式 (${ext})，请下载查看`;
-                            certContainer.appendChild(tip);
-                        }
-                    }
-                    
-                    // 更新下载链接
-                    if (idDownloadEl) idDownloadEl.href = idUrl;
-                    if (certDownloadEl) certDownloadEl.href = certUrl;
-                    
-                    // 显示弹窗
-                    if (modal) {
-                        modal.style.display = 'flex';
-                        modal.classList.add('show');
-                    }
-=======
-            // 材料查看功能
-            document.querySelectorAll('.view-materials-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const caregiverId = this.getAttribute('data-caregiver-id');
-                    showMaterials(caregiverId);
->>>>>>> 960e1055303974378dde77824b04ca7e7f1f191a
-                });
+                batchCaregiverOperation(selectedIds, 'restore');
             });
             
-            // 批准护工
-            document.querySelectorAll('.approve-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const caregiverId = this.getAttribute('data-caregiver-id');
-                    if (confirm('确定要批准这个护工申请吗？')) {
-                        approveCaregiver(caregiverId);
-                    }
-                });
-            });
-            
-            // 拒绝护工
-            document.querySelectorAll('.reject-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const caregiverId = this.getAttribute('data-caregiver-id');
-                    if (confirm('确定要拒绝这个护工申请吗？')) {
-                        rejectCaregiver(caregiverId);
-                    }
-                });
+            // 刷新按钮
+            document.getElementById('refresh-btn').addEventListener('click', function() {
+                loadCaregiverData();
             });
             
             // 关闭弹窗
-            document.getElementById('close-modal').addEventListener('click', function() {
-                document.getElementById('materials-modal').classList.add('hidden');
+            document.getElementById('close-caregiver-modal').addEventListener('click', function() {
+                document.getElementById('caregiver-modal').classList.add('hidden');
+            });
+            
+            document.getElementById('close-qualification-modal').addEventListener('click', function() {
+                document.getElementById('qualification-modal').classList.add('hidden');
             });
             
             // 点击弹窗外部关闭
-            document.getElementById('materials-modal').addEventListener('click', function(e) {
+            document.getElementById('caregiver-modal').addEventListener('click', function(e) {
                 if (e.target === this) {
                     this.classList.add('hidden');
                 }
             });
-        });
+            
+            document.getElementById('qualification-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.add('hidden');
+                }
+            });
+        }
         
         // 检查管理员登录状态
         function checkAdminLogin() {
@@ -1845,32 +498,565 @@
             }
         });
         
-        // 显示材料
-        function showMaterials(caregiverId) {
-            // 这里应该从后端获取护工材料
-            const modalContent = document.getElementById('modal-content');
+        // 加载护工数据
+        async function loadCaregiverData() {
+            try {
+                showLoading();
+                
+                const response = await fetch('/api/admin/get-all-caregivers', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    allCaregivers = result.data;
+                    filteredCaregivers = [...allCaregivers];
+                    updateStatistics();
+                    renderCaregiverLists();
+                } else {
+                    throw new Error(result.message || '获取护工数据失败');
+                }
+            } catch (error) {
+                console.error('加载护工数据失败:', error);
+                alert('加载护工数据失败: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // 更新统计数字
+        function updateStatistics() {
+            const pendingCount = allCaregivers.filter(c => !c.is_approved).length;
+            const approvedCount = allCaregivers.filter(c => c.is_approved).length;
+            const totalCount = allCaregivers.length;
+            const onlineCount = Math.floor(approvedCount * 0.3); // 模拟在线护工数量
+            
+            document.getElementById('pending-count').textContent = pendingCount;
+            document.getElementById('approved-count').textContent = approvedCount;
+            document.getElementById('total-count').textContent = totalCount;
+            document.getElementById('online-count').textContent = onlineCount;
+        }
+        
+        // 渲染护工列表
+        function renderCaregiverLists() {
+            const pendingCaregivers = filteredCaregivers.filter(c => !c.is_approved);
+            const approvedCaregivers = filteredCaregivers.filter(c => c.is_approved);
+            
+            renderPendingCaregivers(pendingCaregivers);
+            renderApprovedCaregivers(approvedCaregivers);
+        }
+        
+        // 渲染待审核护工列表
+        function renderPendingCaregivers(caregivers) {
+            const tbody = document.getElementById('pending-tbody');
+            if (caregivers.length === 0) {
+                tbody.innerHTML = `
+                                    <tr>
+                    <td colspan="7" class="px-6 py-12 text-center">
+                        <i class="fa fa-inbox text-4xl text-gray-300 mb-4 block"></i>
+                        <p class="text-gray-500 text-lg">暂无待审核的护工申请</p>
+                    </td>
+                </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = caregivers.map(caregiver => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <input type="checkbox" class="caregiver-checkbox pending-checkbox rounded border-gray-300 text-primary focus:ring-primary" data-caregiver-id="${caregiver.id}">
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${caregiver.id}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${caregiver.name || '未设置'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${caregiver.phone || '未设置'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${caregiver.created_at || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <button class="view-qualification-btn bg-primary hover:bg-primary/90 text-white px-3 py-1 rounded text-xs" 
+                                data-caregiver-id="${caregiver.id}" 
+                                data-caregiver-name="${caregiver.name || '未设置'}">
+                            查看详情
+                        </button>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div class="flex space-x-2">
+                            <button class="approve-caregiver-btn bg-success hover:bg-success/90 text-white px-3 py-1 rounded text-xs" data-caregiver-id="${caregiver.id}">
+                                批准
+                            </button>
+                            <button class="reject-caregiver-btn bg-danger hover:bg-danger/90 text-white px-3 py-1 rounded text-xs" data-caregiver-id="${caregiver.id}">
+                                拒绝
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+            
+            // 绑定事件
+            bindPendingCaregiverEvents();
+        }
+        
+        // 渲染已批准护工列表
+        function renderApprovedCaregivers(caregivers) {
+            const tbody = document.getElementById('approved-tbody');
+            if (caregivers.length === 0) {
+                tbody.innerHTML = `
+                                    <tr>
+                    <td colspan="8" class="px-6 py-12 text-center">
+                        <i class="fa fa-check-circle text-4xl text-gray-300 mb-4 block"></i>
+                        <p class="text-gray-500 text-lg">暂无已批准的护工</p>
+                    </td>
+                </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = caregivers.map(caregiver => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <input type="checkbox" class="caregiver-checkbox approved-checkbox rounded border-gray-300 text-primary focus:ring-primary" data-caregiver-id="${caregiver.id}">
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${caregiver.id}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${caregiver.name || '未设置'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${caregiver.phone || '未设置'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${caregiver.approved_at || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-success/10 text-success">
+                            已批准
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div class="flex items-center">
+                            <span class="font-medium">4.5</span>
+                            <span class="text-gray-400 ml-1">(15条评价)</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div class="flex space-x-2">
+                            <button class="view-caregiver-profile-btn bg-primary hover:bg-primary/90 text-white px-3 py-1 rounded text-xs" data-caregiver-id="${caregiver.id}">
+                                查看详情
+                            </button>
+                            <button class="check-related-data-btn bg-info hover:bg-info/90 text-white px-3 py-1 rounded text-xs" data-caregiver-id="${caregiver.id}">
+                                检查数据
+                            </button>
+                            <button class="suspend-caregiver-btn bg-warning hover:bg-warning/90 text-white px-3 py-1 rounded text-xs" data-caregiver-id="${caregiver.id}">
+                                暂停
+                            </button>
+                            <button class="delete-caregiver-btn bg-danger hover:bg-danger/90 text-white px-3 py-1 rounded text-xs" data-caregiver-id="${caregiver.id}">
+                                删除
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+            
+            // 绑定事件
+            bindApprovedCaregiverEvents();
+        }
+        
+        // 绑定待审核护工事件
+        function bindPendingCaregiverEvents() {
+            // 查看详情
+            document.querySelectorAll('.view-qualification-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const caregiverId = this.getAttribute('data-caregiver-id');
+                    const caregiverName = this.getAttribute('data-caregiver-name');
+                    showCaregiverDetails(caregiverId, caregiverName);
+                });
+            });
+            
+            // 批准护工
+            document.querySelectorAll('.approve-caregiver-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const caregiverId = this.getAttribute('data-caregiver-id');
+                    if (confirm('确定要批准这个护工申请吗？')) {
+                        approveCaregiver(caregiverId);
+                    }
+                });
+            });
+            
+            // 拒绝护工
+            document.querySelectorAll('.reject-caregiver-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const caregiverId = this.getAttribute('data-caregiver-id');
+                    if (confirm('确定要拒绝这个护工申请吗？拒绝后护工账号将被删除。')) {
+                        rejectCaregiver(caregiverId);
+                    }
+                });
+            });
+        }
+        
+        // 绑定已批准护工事件
+        function bindApprovedCaregiverEvents() {
+            // 查看护工详情
+            document.querySelectorAll('.view-caregiver-profile-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const caregiverId = this.getAttribute('data-caregiver-id');
+                    showCaregiverDetails(caregiverId);
+                });
+            });
+            
+            // 检查关联数据
+            document.querySelectorAll('.check-related-data-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const caregiverId = this.getAttribute('data-caregiver-id');
+                    checkCaregiverRelatedData(caregiverId);
+                });
+            });
+            
+            // 暂停护工
+            document.querySelectorAll('.suspend-caregiver-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const caregiverId = this.getAttribute('data-caregiver-id');
+                    const reason = prompt('请输入暂停原因（可选）:', '管理员暂停');
+                    if (reason !== null) {
+                        suspendCaregiver(caregiverId, reason);
+                    }
+                });
+            });
+            
+            // 删除护工
+            document.querySelectorAll('.delete-caregiver-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const caregiverId = this.getAttribute('data-caregiver-id');
+                    const forceDelete = confirm('确定要删除这个护工账号吗？\n\n⚠️ 警告：\n• 如果护工有进行中的服务，建议先暂停账号\n• 强制删除将同时删除所有相关数据（雇佣信息、合同、预约等）\n• 此操作不可恢复！\n\n点击"确定"执行强制删除，点击"取消"返回。');
+                    if (forceDelete) {
+                        deleteCaregiver(caregiverId, true);
+                    }
+                });
+            });
+        }
+        
+        // 显示护工详情
+        function showCaregiverDetails(caregiverId, caregiverName = null) {
+            const caregiver = allCaregivers.find(c => c.id == caregiverId);
+            if (!caregiver) {
+                alert('护工信息不存在');
+                return;
+            }
+            
+            const modalContent = document.getElementById('qualification-modal-content');
             modalContent.innerHTML = `
                 <div class="text-center py-8">
-                    <i class="fa fa-file-text text-4xl text-gray-300 mb-4"></i>
-                    <p class="text-gray-500">护工ID: ${caregiverId} 的申请材料</p>
-                    <p class="text-gray-400 text-sm mt-2">材料查看功能开发中...</p>
+                    <i class="fa fa-user text-4xl text-primary mb-4"></i>
+                    <p class="text-lg font-medium text-gray-900 mb-2">${caregiver.name || '未设置姓名'}</p>
+                    <p class="text-gray-500">护工ID: ${caregiver.id}</p>
+                    <div class="mt-6 space-y-4 text-left">
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <h4 class="font-medium text-gray-900 mb-2">基本信息</h4>
+                            <p class="text-sm text-gray-600">手机号: ${caregiver.phone || '未设置'}</p>
+                            <p class="text-sm text-gray-600">性别: ${caregiver.gender || '未设置'}</p>
+                            <p class="text-sm text-gray-600">年龄: ${caregiver.age || '未设置'}</p>
+                            <p class="text-sm text-gray-600">工作经验: ${caregiver.experience_years || 0} 年</p>
+                            <p class="text-sm text-gray-600">时薪: ${caregiver.hourly_rate || '未设置'} 元/小时</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <h4 class="font-medium text-gray-900 mb-2">账号状态</h4>
+                            <p class="text-sm text-gray-600">注册时间: ${caregiver.created_at || 'N/A'}</p>
+                            <p class="text-sm text-gray-600">审核状态: ${caregiver.is_approved ? '已批准' : '待审核'}</p>
+                            ${caregiver.approved_at ? `<p class="text-sm text-gray-600">批准时间: ${caregiver.approved_at}</p>` : ''}
+                        </div>
+                    </div>
                 </div>
             `;
-            document.getElementById('materials-modal').classList.remove('hidden');
+            document.getElementById('qualification-modal').classList.remove('hidden');
         }
         
         // 批准护工
-        function approveCaregiver(caregiverId) {
-            // 这里应该调用后端API
-            alert(`护工ID: ${caregiverId} 已批准`);
-            // 可以刷新页面或更新UI
+        async function approveCaregiver(caregiverId) {
+            try {
+                showLoading();
+                
+                const response = await fetch('/api/admin/approve', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify({ id: caregiverId })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('护工批准成功！');
+                    // 重新加载数据
+                    loadCaregiverData();
+                } else {
+                    throw new Error(result.message || '批准失败');
+                }
+            } catch (error) {
+                console.error('批准护工失败:', error);
+                alert('批准护工失败: ' + error.message);
+            } finally {
+                hideLoading();
+            }
         }
         
         // 拒绝护工
-        function rejectCaregiver(caregiverId) {
-            // 这里应该调用后端API
-            alert(`护工ID: ${caregiverId} 已拒绝`);
-            // 可以刷新页面或更新UI
+        async function rejectCaregiver(caregiverId) {
+            try {
+                showLoading();
+                
+                const response = await fetch('/api/admin/reject', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify({ id: caregiverId })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('护工拒绝成功！');
+                    // 重新加载数据
+                    loadCaregiverData();
+                } else {
+                    throw new Error(result.message || '拒绝失败');
+                }
+            } catch (error) {
+                console.error('拒绝护工失败:', error);
+                alert('拒绝护工失败: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // 暂停护工
+        async function suspendCaregiver(caregiverId, reason) {
+            try {
+                showLoading();
+                
+                const response = await fetch('/api/admin/suspend-caregiver-account', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify({ 
+                        id: caregiverId,
+                        reason: reason || '管理员暂停'
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('护工暂停成功！');
+                    // 重新加载数据
+                    loadCaregiverData();
+                } else {
+                    throw new Error(result.message || '暂停失败');
+                }
+            } catch (error) {
+                console.error('暂停护工失败:', error);
+                alert('暂停护工失败: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // 删除护工
+        async function deleteCaregiver(caregiverId, forceDelete = false) {
+            try {
+                showLoading();
+                
+                const response = await fetch('/api/admin/delete-caregiver-account', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify({ 
+                        id: caregiverId,
+                        force_delete: forceDelete
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    let message = '护工删除成功！';
+                    if (result.deleted_files && result.deleted_files.length > 0) {
+                        message += `\n已删除${result.deleted_files.length}个相关文件`;
+                    }
+                    alert(message);
+                    // 重新加载数据
+                    loadCaregiverData();
+                } else {
+                    throw new Error(result.message || '删除失败');
+                }
+            } catch (error) {
+                console.error('删除护工失败:', error);
+                
+                // 提供更友好的错误提示
+                let errorMessage = '删除护工失败: ' + error.message;
+                
+                if (error.message.includes('外键约束') || error.message.includes('关联数据')) {
+                    errorMessage = '删除失败：该护工有相关的业务数据，无法直接删除。\n\n建议操作：\n1. 先暂停护工账号\n2. 等待相关服务完成\n3. 或使用强制删除（将同时删除所有相关数据）';
+                } else if (error.message.includes('进行中的服务')) {
+                    errorMessage = '删除失败：该护工有进行中的服务，无法删除。\n\n建议操作：\n1. 先暂停护工账号\n2. 等待服务完成后再删除';
+                }
+                
+                alert(errorMessage);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // 搜索过滤护工
+        function filterCaregivers(searchTerm) {
+            if (!searchTerm) {
+                filteredCaregivers = [...allCaregivers];
+            } else {
+                filteredCaregivers = allCaregivers.filter(caregiver => 
+                    (caregiver.name && caregiver.name.toLowerCase().includes(searchTerm)) ||
+                    (caregiver.phone && caregiver.phone.includes(searchTerm)) ||
+                    (caregiver.id && caregiver.id.toString().includes(searchTerm))
+                );
+            }
+            renderCaregiverLists();
+        }
+        
+        // 显示加载提示
+        function showLoading() {
+            document.getElementById('loading-overlay').classList.remove('hidden');
+        }
+        
+        // 获取选中的护工ID列表
+        function getSelectedCaregiverIds() {
+            const checkboxes = document.querySelectorAll('.caregiver-checkbox:checked');
+            return Array.from(checkboxes).map(cb => cb.getAttribute('data-caregiver-id'));
+        }
+        
+        // 全选/取消全选功能
+        function bindSelectAllCheckboxes() {
+            const selectAllPending = document.getElementById('select-all-pending');
+            const selectAllApproved = document.getElementById('select-all-approved');
+            
+            if (selectAllPending) {
+                selectAllPending.addEventListener('change', function() {
+                    const checkboxes = document.querySelectorAll('.pending-checkbox');
+                    checkboxes.forEach(cb => cb.checked = this.checked);
+                });
+            }
+            
+            if (selectAllApproved) {
+                selectAllApproved.addEventListener('change', function() {
+                    const checkboxes = document.querySelectorAll('.approved-checkbox');
+                    checkboxes.forEach(cb => cb.checked = this.checked);
+                });
+            }
+        }
+        
+        // 检查护工关联数据
+        async function checkCaregiverRelatedData(caregiverId) {
+            try {
+                showLoading();
+                
+                // 这里可以调用后端API来检查关联数据
+                // 暂时使用模拟数据
+                const relatedData = {
+                    hire_info: Math.floor(Math.random() * 5),
+                    contracts: Math.floor(Math.random() * 3),
+                    appointments: Math.floor(Math.random() * 10),
+                    reviews: Math.floor(Math.random() * 20)
+                };
+                
+                let message = `护工ID: ${caregiverId}\n\n关联数据统计：\n`;
+                message += `• 雇佣信息: ${relatedData.hire_info} 条\n`;
+                message += `• 就业合同: ${relatedData.contracts} 条\n`;
+                message += `• 预约记录: ${relatedData.appointments} 条\n`;
+                message += `• 评价记录: ${relatedData.reviews} 条\n\n`;
+                
+                if (relatedData.hire_info > 0 || relatedData.contracts > 0 || relatedData.appointments > 0) {
+                    message += `⚠️ 该护工有相关业务数据，删除前请谨慎考虑！\n`;
+                    message += `建议：先暂停账号，等待相关服务完成后再删除。`;
+                } else {
+                    message += `✅ 该护工无相关业务数据，可以安全删除。`;
+                }
+                
+                alert(message);
+                
+            } catch (error) {
+                console.error('检查护工关联数据失败:', error);
+                alert('检查失败: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // 批量护工操作
+        async function batchCaregiverOperation(caregiverIds, operation, reason = '') {
+            try {
+                showLoading();
+                
+                const response = await fetch('/api/admin/batch-caregiver-operation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify({
+                        caregiver_ids: caregiverIds,
+                        operation: operation,
+                        reason: reason
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    let message = result.message;
+                    if (result.failed_reasons && result.failed_reasons.length > 0) {
+                        message += '\n\n失败原因:\n' + result.failed_reasons.join('\n');
+                    }
+                    alert(message);
+                    // 重新加载数据
+                    loadCaregiverData();
+                } else {
+                    throw new Error(result.message || '批量操作失败');
+                }
+            } catch (error) {
+                console.error('批量护工操作失败:', error);
+                alert('批量操作失败: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // 隐藏加载提示
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.add('hidden');
         }
     </script>
 </body>

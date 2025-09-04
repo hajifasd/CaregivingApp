@@ -35,20 +35,77 @@ def init_socketio(app):
         """处理客户端断开连接"""
         logger.info(f"客户端断开连接: {request.sid}")
 
+    @socketio.on('join')
+    def handle_join(data):
+        """处理用户加入房间"""
+        try:
+            user_id = data.get('user_id')
+            user_type = data.get('user_type')  # 'user' 或 'caregiver'
+            
+            if not user_id or not user_type:
+                emit('error', {'message': '缺少用户ID或类型'})
+                return
+            
+            # 加入用户特定的房间
+            room_name = f"{user_type}_{user_id}"
+            join_room(room_name)
+            logger.info(f"用户 {user_type}_{user_id} 加入房间: {room_name}")
+            
+            emit('joined_room', {
+                'room': room_name,
+                'user_id': user_id,
+                'user_type': user_type
+            })
+            
+        except Exception as e:
+            logger.error(f"处理加入房间失败: {str(e)}")
+            emit('error', {'message': '加入房间失败'})
+
     @socketio.on('send_message')
     def handle_send_message(data):
         """处理发送消息"""
         try:
             logger.info(f"收到消息: {data}")
             
+            # 支持两种字段格式（前端可能使用不同的命名）
+            sender_id = data.get('sender_id') or data.get('senderId')
+            recipient_id = data.get('recipient_id') or data.get('receiverId')
+            content = data.get('content')
+            sender_type = data.get('sender_type') or data.get('senderType', 'user')
+            recipient_type = data.get('recipient_type') or data.get('receiverType', 'caregiver')
+            sender_name = data.get('sender_name') or data.get('senderName', '用户')
+            
+            # 验证必要字段
+            if not sender_id or not recipient_id or not content:
+                emit('error', {'message': '缺少必要字段: sender_id, recipient_id, content'})
+                return
+            
+            # 标准化消息数据
+            normalized_data = {
+                'sender_id': sender_id,
+                'sender_name': sender_name,
+                'sender_type': sender_type,
+                'recipient_id': recipient_id,
+                'recipient_type': recipient_type,
+                'content': content,
+                'type': data.get('type', 'text'),
+                'timestamp': data.get('timestamp')
+            }
+            
             # 保存消息到消息服务
             from services.message_service import message_service
-            saved_message = message_service.save_message(data)
+            saved_message = message_service.save_message(normalized_data)
             
             if saved_message:
-                # 广播消息给所有连接的客户端
-                emit('message_received', saved_message, broadcast=True)
-                logger.info(f"消息保存并广播成功: ID={saved_message['id']}")
+                # 发送给接收者房间
+                recipient_room = f"{recipient_type}_{recipient_id}"
+                emit('message_received', saved_message, room=recipient_room)
+                
+                # 发送给发送者房间（确认消息已发送）
+                sender_room = f"{sender_type}_{sender_id}"
+                emit('message_sent', saved_message, room=sender_room)
+                
+                logger.info(f"消息发送成功: {sender_id} -> {recipient_id}, 房间: {recipient_room}")
             else:
                 emit('error', {'message': '消息保存失败'})
             
@@ -115,8 +172,10 @@ def handle_authentication(data):
 def get_chat_history(contact_id):
     """获取与指定联系人的聊天历史"""
     try:
-        # 从请求参数获取用户ID
+        # 从请求参数获取用户ID和类型
         user_id = request.args.get('user_id')
+        user_type = request.args.get('user_type', 'user')  # user 或 caregiver
+        
         if not user_id:
             return jsonify({
                 'success': False,
@@ -145,12 +204,56 @@ def get_chat_history(contact_id):
             'message': f'获取聊天历史失败: {str(e)}'
         }), 500
 
+@chat_bp.route('/api/chat/send', methods=['POST'])
+def send_message():
+    """发送消息接口"""
+    try:
+        data = request.get_json()
+        
+        # 验证必要字段
+        required_fields = ['sender_id', 'sender_type', 'sender_name', 'recipient_id', 'recipient_type', 'content']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({
+                    'success': False,
+                    'message': f'缺少必要字段: {field}'
+                }), 400
+        
+        # 保存消息到数据库
+        from services.message_service import message_service
+        saved_message = message_service.save_message(data)
+        
+        if saved_message:
+            # 通过WebSocket广播消息
+            if socketio:
+                socketio.emit('message_received', saved_message, broadcast=True)
+            
+            return jsonify({
+                'success': True,
+                'data': saved_message,
+                'message': '消息发送成功'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': '消息保存失败'
+            }), 500
+            
+    except Exception as e:
+        logger.error(f"发送消息失败: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'发送消息失败: {str(e)}'
+        }), 500
+
 @chat_bp.route('/api/chat/conversations', methods=['GET'])
 def get_user_conversations():
     """获取用户的所有对话列表"""
     try:
-        # 从请求参数获取用户ID
+        # 从请求参数获取用户ID和类型
         user_id = request.args.get('user_id')
+        user_type = request.args.get('user_type', 'user')
+        
         if not user_id:
             return jsonify({
                 'success': False,
@@ -159,7 +262,7 @@ def get_user_conversations():
         
         # 获取对话列表
         from services.message_service import message_service
-        conversations = message_service.get_user_conversations(user_id)
+        conversations = message_service.get_user_conversations(user_id, user_type)
         
         return jsonify({
             'success': True,
@@ -216,8 +319,10 @@ def mark_messages_read():
 def get_unread_count():
     """获取用户未读消息数量"""
     try:
-        # 从请求参数获取用户ID
+        # 从请求参数获取用户ID和类型
         user_id = request.args.get('user_id')
+        user_type = request.args.get('user_type', 'user')
+        
         if not user_id:
             return jsonify({
                 'success': False,
@@ -226,7 +331,7 @@ def get_unread_count():
         
         # 获取未读消息数量
         from services.message_service import message_service
-        unread_count = message_service.get_unread_count(user_id)
+        unread_count = message_service.get_unread_count(user_id, user_type)
         
         return jsonify({
             'success': True,
@@ -248,6 +353,7 @@ def search_messages():
     try:
         # 从请求参数获取搜索条件
         user_id = request.args.get('user_id')
+        user_type = request.args.get('user_type', 'user')
         keyword = request.args.get('keyword')
         limit = request.args.get('limit', 20, type=int)
         
@@ -257,13 +363,15 @@ def search_messages():
                 'message': '缺少必要参数'
             }), 400
         
-        # 搜索消息（暂时返回空结果，后续可以扩展）
-        # 这里可以实现基于数据库的全文搜索
+        # 搜索消息
+        from services.message_service import message_service
+        messages = message_service.search_messages(user_id, user_type, keyword, limit)
+        
         return jsonify({
             'success': True,
             'data': {
-                'messages': [],
-                'total': 0,
+                'messages': messages,
+                'total': len(messages),
                 'keyword': keyword
             }
         })

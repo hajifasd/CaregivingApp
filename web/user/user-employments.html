@@ -9,6 +9,9 @@
     <!-- 引入Font Awesome -->
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     
+    <!-- 引入用户登出功能 -->
+    <script src="/js/user-logout.js"></script>
+    
     <!-- 配置Tailwind自定义主题 -->
     <script>
         tailwind.config = {
@@ -95,6 +98,9 @@
             <a href="/user/employments" class="py-4 px-2 text-primary border-b-2 border-primary">
                 我的聘用
             </a>
+            <button id="refresh-employments" class="ml-4 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg transition-colors text-sm">
+                <i class="fa fa-refresh mr-2"></i>刷新
+            </button>
             <a href="/user/messages" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
                 消息中心
             </a>
@@ -126,14 +132,14 @@
                     <i class="fa fa-play-circle text-success text-xl"></i>
                 </div>
                 <h3 class="text-2xl font-bold text-success mb-1">1</h3>
-                <p class="text-sm text-gray-600">进行中</p>
+                <p class="text-sm text-gray-600">已接受</p>
             </div>
             <div class="bg-white rounded-xl p-6 card-shadow text-center">
                 <div class="w-12 h-12 rounded-lg bg-warning/10 flex items-center justify-center mx-auto mb-3">
                     <i class="fa fa-clock-o text-warning text-xl"></i>
                 </div>
                 <h3 class="text-2xl font-bold text-warning mb-1">1</h3>
-                <p class="text-sm text-gray-600">待开始</p>
+                <p class="text-sm text-gray-600">待回复</p>
             </div>
             <div class="bg-white rounded-xl p-6 card-shadow text-center">
                 <div class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center mx-auto mb-3">
@@ -149,8 +155,8 @@
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div class="flex flex-wrap gap-4">
                     <button class="px-4 py-2 bg-primary text-white rounded-lg text-sm">全部</button>
-                    <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">进行中</button>
-                    <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">待开始</button>
+                    <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">已接受</button>
+                    <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">待回复</button>
                     <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">已完成</button>
                     <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">已终止</button>
                 </div>
@@ -187,131 +193,275 @@
     
     <script>
         // 页面数据
-        const employmentsData = [
-            {
-                id: 1,
-                caregiver: {
-                    name: '李敏',
-                    avatar: 'https://picsum.photos/id/26/400/200',
-                    id: 'CG20230567',
-                    rating: 4.8
-                },
-                serviceType: '长期老年护理',
-                startDate: '2023-09-01',
-                endDate: '2024-03-01',
-                schedule: '每周一、三、五上午',
-                duration: '6个月',
-                status: 'active',
-                price: 180,
-                totalAmount: 12960,
-                description: '为张阿姨提供长期老年护理服务，包括日常照料、康复辅助等。'
-            },
-            {
-                id: 2,
-                caregiver: {
-                    name: '王芳',
-                    avatar: 'https://picsum.photos/id/91/400/200',
-                    id: 'CG20230421',
-                    rating: 4.9
-                },
-                serviceType: '母婴护理服务',
-                startDate: '2023-10-15',
-                endDate: '2024-01-15',
-                schedule: '每周二、四、六全天',
-                duration: '3个月',
-                status: 'pending',
-                price: 220,
-                totalAmount: 7920,
-                description: '为新生儿和产妇提供专业母婴护理服务，包括新生儿照料、产后恢复指导等。'
-            },
-            {
-                id: 3,
-                caregiver: {
-                    name: '张伟',
-                    avatar: 'https://picsum.photos/id/177/400/200',
-                    id: 'CG20230678',
-                    rating: 4.7
-                },
-                serviceType: '术后康复护理',
-                startDate: '2023-08-01',
-                endDate: '2023-11-01',
-                schedule: '每周一至周五上午',
-                duration: '3个月',
-                status: 'completed',
-                price: 260,
-                totalAmount: 15600,
-                description: '为术后患者提供专业康复护理服务，包括康复训练、医疗辅助等。'
-            }
-        ];
+        // 聘用数据（从后端API获取）
+        let employmentsData = [];
         
         // 页面初始化
         document.addEventListener('DOMContentLoaded', function() {
-            // 生成聘用列表
-            generateEmploymentsList();
+            // 检查登录状态
+            checkAuth();
+            
+            // 从后端加载聘用数据
+            loadEmploymentsData();
             
             // 绑定返回顶部按钮
             bindBackToTop();
             
             // 绑定筛选按钮事件
             bindFilterEvents();
+            
+            // 绑定刷新按钮事件
+            bindRefreshButton();
         });
         
+        // 检查认证状态
+        function checkAuth() {
+            const token = localStorage.getItem('user_token') || getCookie('user_token');
+            if (!token) {
+                window.location.href = '/index.html';
+                return;
+            }
+
+            // 直接解析token获取用户信息，不调用验证API
+            try {
+                const payload = token.split('.')[1];
+                if (payload) {
+                    const decoded = JSON.parse(decodeURIComponent(escape(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))));
+                    console.log('解析的token载荷:', decoded);
+                    
+                    if (decoded.user_id && decoded.user_type === 'user') {
+                        // 更新用户信息显示
+                        updateUserInfo({
+                            id: decoded.user_id,
+                            name: decoded.name || '用户'
+                        });
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.error('解析token失败:', e);
+            }
+
+            // 如果token无效，清除并跳转
+            localStorage.removeItem('user_token');
+            document.cookie = 'user_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            window.location.href = '/index.html';
+        }
+
+        // 获取cookie
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        // 获取当前用户ID（从token中解析）
+        function getCurrentUserId() {
+            const token = localStorage.getItem('user_token') || getCookie('user_token');
+            if (!token) {
+                console.error('未找到用户token');
+                return null;
+            }
+            
+            try {
+                // 解析JWT token
+                const payload = token.split('.')[1];
+                if (payload) {
+                    // 使用更兼容的base64解码方法
+                    const decoded = JSON.parse(decodeURIComponent(escape(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))));
+                    console.log('解析的token载荷:', decoded);
+                    
+                    // 检查用户类型
+                    if (decoded.user_id && decoded.user_type === 'user') {
+                        return decoded.user_id;
+                    }
+                }
+            } catch (e) {
+                console.error('解析token失败:', e);
+            }
+            
+            // 如果解析失败，尝试从localStorage中获取用户信息
+            try {
+                const userInfo = localStorage.getItem('user_info');
+                if (userInfo) {
+                    const info = JSON.parse(userInfo);
+                    return info.id;
+                }
+            } catch (e) {
+                console.error('解析用户信息失败:', e);
+            }
+            
+            console.error('无法获取用户ID');
+            return null;
+        }
+
+        // 更新用户信息显示
+        function updateUserInfo(user) {
+            const userNameElement = document.querySelector('p.text-sm.font-medium');
+            if (userNameElement) {
+                userNameElement.textContent = user.name || '用户';
+            }
+        }
+
+        // 从后端加载聘用数据
+        async function loadEmploymentsData() {
+            try {
+                const token = localStorage.getItem('user_token') || getCookie('user_token');
+                if (!token) {
+                    console.error('未找到用户token');
+                    return;
+                }
+
+                // 从token中获取用户ID
+                const userId = getCurrentUserId();
+                if (!userId) {
+                    console.error('无法获取用户ID');
+                    return;
+                }
+
+                const response = await fetch(`/api/employment/applications/user/${userId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('API响应数据:', data);
+                    if (data.success) {
+                        employmentsData = data.data || [];
+                        console.log('聘用数据:', employmentsData);
+                        generateEmploymentsList();
+                    } else {
+                        console.error('加载聘用数据失败:', data.message);
+                        showEmptyState();
+                    }
+                } else {
+                    console.error('API请求失败:', response.status);
+                    showEmptyState();
+                }
+            } catch (error) {
+                console.error('加载聘用数据失败:', error);
+                showEmptyState();
+            }
+        }
+
+        // 更新统计卡片
+        function updateStatisticsCards() {
+            if (!employmentsData || employmentsData.length === 0) {
+                return;
+            }
+            
+            // 计算各种状态的聘用数量
+            const total = employmentsData.length;
+            const pending = employmentsData.filter(e => e.status === 'pending').length;
+            const accepted = employmentsData.filter(e => e.status === 'accepted').length;
+            const active = employmentsData.filter(e => e.status === 'active').length;
+            const completed = employmentsData.filter(e => e.status === 'completed').length;
+            const rejected = employmentsData.filter(e => e.status === 'rejected').length;
+            
+            // 更新统计卡片显示
+            const totalElement = document.querySelector('h3.text-2xl.font-bold.text-primary');
+            const activeElement = document.querySelector('h3.text-2xl.font-bold.text-success');
+            const pendingElement = document.querySelector('h3.text-2xl.font-bold.text-warning');
+            const completedElement = document.querySelector('h3.text-2xl.font-bold.text-gray-600');
+            
+            if (totalElement) totalElement.textContent = total;
+            // "进行中"卡片显示已接受的申请数量
+            if (activeElement) activeElement.textContent = accepted;
+            // "待开始"卡片显示待回复的申请数量
+            if (pendingElement) pendingElement.textContent = pending;
+            if (completedElement) completedElement.textContent = completed;
+            
+            console.log('统计卡片更新:', {
+                total,
+                pending,
+                accepted,
+                active,
+                completed,
+                rejected
+            });
+        }
+
+        // 显示空状态
+        function showEmptyState() {
+            const container = document.getElementById('employments-container');
+            container.innerHTML = `
+                <div class="text-center py-16">
+                    <i class="fa fa-inbox text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-600 mb-2">暂无聘用记录</h3>
+                    <p class="text-gray-500 mb-6">您还没有聘用过护工，快去寻找合适的护工吧！</p>
+                    <a href="/user/caregivers" class="inline-block bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-lg transition-colors">
+                        <i class="fa fa-search mr-2"></i>寻找护工
+                    </a>
+                </div>
+            `;
+        }
+
         // 生成聘用列表
         function generateEmploymentsList() {
             const container = document.getElementById('employments-container');
             
+            if (!employmentsData || employmentsData.length === 0) {
+                showEmptyState();
+                return;
+            }
+            
+            // 更新统计卡片
+            updateStatisticsCards();
+            
             container.innerHTML = employmentsData.map(employment => `
                 <div class="bg-white rounded-xl overflow-hidden card-shadow">
                     <div class="relative">
-                        <img src="${employment.caregiver.avatar}" alt="${employment.caregiver.name}工作照" class="w-full h-48 object-cover">
+                        <img src="${employment.caregiver_avatar || 'https://picsum.photos/id/26/400/200'}" alt="${employment.caregiver_name}工作照" class="w-full h-48 object-cover">
                         <div class="absolute top-3 right-3 ${getStatusBadgeClass(employment.status)} text-white text-xs px-2 py-1 rounded-full">
                             ${getStatusText(employment.status)}
                         </div>
                         <div class="absolute top-3 left-3 bg-white/90 text-gray-800 text-xs px-2 py-1 rounded-full">
-                            <i class="fa fa-calendar mr-1"></i>${employment.duration}
+                            <i class="fa fa-calendar mr-1"></i>${formatDuration(employment.proposed_start_date, employment.proposed_end_date)}
                         </div>
                     </div>
                     <div class="p-6">
                         <div class="flex items-center justify-between mb-4">
                             <div>
-                                <h4 class="font-bold text-lg">${employment.caregiver.name} 护工</h4>
-                                <p class="text-sm text-gray-500">ID: ${employment.caregiver.id}</p>
+                                <h4 class="font-bold text-lg">${employment.caregiver_name} 护工</h4>
+                                <p class="text-sm text-gray-500">ID: ${employment.caregiver_id}</p>
                             </div>
                             <div class="flex items-center">
                                 <i class="fa fa-star text-warning mr-1"></i>
-                                <span class="text-sm font-medium">${employment.caregiver.rating}</span>
+                                <span class="text-sm font-medium">${employment.caregiver_rating || '4.5'}</span>
                             </div>
                         </div>
                         
                         <div class="space-y-3 mb-4">
                             <div class="flex items-center gap-2">
                                 <i class="fa fa-tag text-primary w-4"></i>
-                                <span class="text-sm">${employment.serviceType}</span>
+                                <span class="text-sm">${employment.service_type || '护理服务'}</span>
                             </div>
                             <div class="flex items-center gap-2">
                                 <i class="fa fa-calendar text-primary w-4"></i>
-                                <span class="text-sm">${employment.startDate} 至 ${employment.endDate}</span>
+                                <span class="text-sm">${formatDate(employment.proposed_start_date)} 至 ${employment.proposed_end_date ? formatDate(employment.proposed_end_date) : '待定'}</span>
                             </div>
                             <div class="flex items-center gap-2">
                                 <i class="fa fa-clock-o text-primary w-4"></i>
-                                <span class="text-sm">${employment.schedule}</span>
+                                <span class="text-sm">${employment.proposed_hours ? `${employment.proposed_hours}小时` : '待定'}</span>
                             </div>
                             <div class="flex items-center gap-2">
                                 <i class="fa fa-money text-primary w-4"></i>
-                                <span class="text-sm">¥${employment.price}/小时</span>
+                                <span class="text-sm">¥${employment.proposed_rate || '待定'}/小时</span>
                             </div>
                         </div>
                         
-                        <p class="text-gray-600 text-sm mb-4 line-clamp-2">${employment.description}</p>
+                        <p class="text-gray-600 text-sm mb-4 line-clamp-2">${employment.application_message || '用户申请聘用护工服务'}</p>
                         
                         <div class="flex items-center justify-between mb-4">
                             <div class="text-center">
-                                <p class="text-xs text-gray-500">总金额</p>
-                                <p class="text-lg font-bold text-primary">¥${employment.totalAmount}</p>
+                                <p class="text-xs text-gray-500">申请时间</p>
+                                <p class="text-lg font-bold text-primary">${formatDate(employment.created_at)}</p>
                             </div>
                             <div class="text-center">
-                                <p class="text-xs text-gray-500">服务时长</p>
-                                <p class="text-lg font-bold text-secondary">${employment.duration}</p>
+                                <p class="text-xs text-gray-500">状态</p>
+                                <p class="text-lg font-bold text-secondary">${getStatusText(employment.status)}</p>
                             </div>
                         </div>
                         
@@ -329,8 +479,10 @@
         // 获取状态徽章样式类
         function getStatusBadgeClass(status) {
             const statusMap = {
-                'active': 'bg-success',
                 'pending': 'bg-warning',
+                'accepted': 'bg-success',
+                'rejected': 'bg-danger',
+                'active': 'bg-success',
                 'completed': 'bg-gray-500',
                 'terminated': 'bg-danger'
             };
@@ -340,21 +492,50 @@
         // 获取状态文本
         function getStatusText(status) {
             const statusMap = {
+                'pending': '待回复',
+                'accepted': '已接受',
+                'rejected': '已拒绝',
                 'active': '进行中',
-                'pending': '待开始',
                 'completed': '已完成',
                 'terminated': '已终止'
             };
             return statusMap[status] || status;
         }
+
+        // 格式化日期
+        function formatDate(dateString) {
+            if (!dateString) return '待定';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('zh-CN');
+        }
+
+        // 格式化持续时间
+        function formatDuration(startDate, endDate) {
+            if (!startDate) return '待定';
+            if (!endDate) return '长期';
+            
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            const diffTime = Math.abs(end - start);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays <= 7) return `${diffDays}天`;
+            if (diffDays <= 30) return `${Math.ceil(diffDays / 7)}周`;
+            if (diffDays <= 365) return `${Math.ceil(diffDays / 30)}个月`;
+            return `${Math.ceil(diffDays / 365)}年`;
+        }
         
         // 获取操作按钮
         function getActionButton(status, id) {
             switch (status) {
+                case 'pending':
+                    return `<button class="flex-1 bg-warning hover:bg-warning/90 text-white px-4 py-2 rounded-lg transition-colors text-sm" onclick="cancelApplication(${id})">取消申请</button>`;
+                case 'accepted':
+                    return `<button class="flex-1 bg-success hover:bg-success/90 text-white px-4 py-2 rounded-lg transition-colors text-sm" onclick="startEmployment(${id})">开始服务</button>`;
+                case 'rejected':
+                    return `<button class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors text-sm" disabled>已拒绝</button>`;
                 case 'active':
                     return `<button class="flex-1 bg-success hover:bg-success/90 text-white px-4 py-2 rounded-lg transition-colors text-sm" onclick="completeEmployment(${id})">完成服务</button>`;
-                case 'pending':
-                    return `<button class="flex-1 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg transition-colors text-sm" onclick="startEmployment(${id})">开始服务</button>`;
                 case 'completed':
                     return `<button class="flex-1 bg-warning hover:bg-warning/90 text-white px-4 py-2 rounded-lg transition-colors text-sm" onclick="writeReview(${id})">写评价</button>`;
                 default:
@@ -362,6 +543,22 @@
             }
         }
         
+        // 绑定刷新按钮事件
+        function bindRefreshButton() {
+            const refreshBtn = document.getElementById('refresh-employments');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', function() {
+                    this.disabled = true;
+                    this.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>刷新中...';
+                    
+                    loadEmploymentsData().finally(() => {
+                        this.disabled = false;
+                        this.innerHTML = '<i class="fa fa-refresh mr-2"></i>刷新';
+                    });
+                });
+            }
+        }
+
         // 绑定筛选按钮事件
         function bindFilterEvents() {
             const filterButtons = document.querySelectorAll('.bg-gray-100');
@@ -387,6 +584,37 @@
         // 查看聘用详情
         function viewEmploymentDetail(id) {
             window.location.href = `/user/employments?id=${id}&view=detail`;
+        }
+
+        // 取消申请
+        function cancelApplication(id) {
+            if (confirm('确定要取消这个聘用申请吗？取消后无法恢复。')) {
+                const token = localStorage.getItem('user_token') || getCookie('user_token');
+                
+                fetch('/api/employment/cancel', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        application_id: id
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('申请已取消');
+                        loadEmploymentsData(); // 重新加载数据
+                    } else {
+                        alert(data.message || '取消失败');
+                    }
+                })
+                .catch(error => {
+                    console.error('取消申请失败:', error);
+                    alert('网络错误，请稍后重试');
+                });
+            }
         }
         
         // 开始聘用服务
@@ -430,6 +658,8 @@
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
         }
+        
+
     </script>
 </body>
 </html>

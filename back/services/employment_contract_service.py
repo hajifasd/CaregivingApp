@@ -322,13 +322,55 @@ class EmploymentContractService:
             if not self.db:
                 return {"success": False, "message": "数据库连接未初始化"}
             
+            # 获取申请列表，同时关联护工信息
             applications = self.application_model.query.filter_by(
                 user_id=user_id
             ).order_by(self.application_model.created_at.desc()).all()
             
+            # 获取护工模型
+            try:
+                from models.caregiver import CaregiverModel
+                caregiver_model = CaregiverModel.get_model(self.db)
+            except Exception as e:
+                print(f"导入护工模型失败: {e}")
+                # 如果导入失败，返回基本数据
+                return {
+                    "success": True,
+                    "data": [app.to_dict() for app in applications]
+                }
+            
+            # 为每个申请添加护工详细信息
+            enriched_applications = []
+            for app in applications:
+                app_dict = app.to_dict()
+                
+                # 获取护工信息
+                caregiver = caregiver_model.query.get(app.caregiver_id)
+                if caregiver:
+                    app_dict.update({
+                        'caregiver_name': caregiver.name,
+                        'caregiver_avatar': caregiver.avatar_url,
+                        'caregiver_rating': caregiver.rating,
+                        'caregiver_phone': caregiver.phone,
+                        'caregiver_location': getattr(caregiver, 'location', ''),
+                        'caregiver_experience': getattr(caregiver, 'experience_years', 0)
+                    })
+                else:
+                    # 如果护工不存在，提供默认值
+                    app_dict.update({
+                        'caregiver_name': '未知护工',
+                        'caregiver_avatar': None,
+                        'caregiver_rating': 0,
+                        'caregiver_phone': '',
+                        'caregiver_location': '',
+                        'caregiver_experience': 0
+                    })
+                
+                enriched_applications.append(app_dict)
+            
             return {
                 "success": True,
-                "data": [app.to_dict() for app in applications]
+                "data": enriched_applications
             }
             
         except Exception as e:
@@ -340,17 +382,120 @@ class EmploymentContractService:
             if not self.db:
                 return {"success": False, "message": "数据库连接未初始化"}
             
+            # 获取申请列表，同时关联用户信息
             applications = self.application_model.query.filter_by(
                 caregiver_id=caregiver_id
             ).order_by(self.application_model.created_at.desc()).all()
             
+            # 获取用户模型
+            try:
+                from models.user import UserModel
+                user_model = UserModel.get_model(self.db)
+            except Exception as e:
+                print(f"导入用户模型失败: {e}")
+                # 如果导入失败，返回基本数据
+                return {
+                    "success": True,
+                    "data": [app.to_dict() for app in applications]
+                }
+            
+            # 为每个申请添加用户详细信息
+            enriched_applications = []
+            for app in applications:
+                app_dict = app.to_dict()
+                
+                # 获取用户信息
+                user = user_model.query.get(app.user_id)
+                if user:
+                    app_dict.update({
+                        'user_name': user.name,
+                        'user_avatar': getattr(user, 'avatar_url', None),
+                        'user_phone': user.phone,
+                        'user_address': getattr(user, 'address', '')
+                    })
+                else:
+                    # 如果用户不存在，提供默认值
+                    app_dict.update({
+                        'user_name': '未知用户',
+                        'user_avatar': None,
+                        'user_phone': '',
+                        'user_address': ''
+                    })
+                
+                enriched_applications.append(app_dict)
+            
             return {
                 "success": True,
-                "data": [app.to_dict() for app in applications]
+                "data": enriched_applications
             }
             
         except Exception as e:
             return {"success": False, "message": f"获取申请列表失败: {str(e)}"}
+
+    def get_user_hired_caregivers(self, user_id: int) -> Dict[str, Any]:
+        """获取用户已经聘用的护工列表（用于消息页面的新建对话）"""
+        try:
+            if not self.db:
+                return {"success": False, "message": "数据库连接未初始化"}
+            
+            # 获取状态为'accepted'的申请，表示护工已同意聘用
+            accepted_applications = self.application_model.query.filter_by(
+                user_id=user_id,
+                status='accepted'
+            ).order_by(self.application_model.created_at.desc()).all()
+            
+            # 获取护工模型
+            try:
+                from models.caregiver import CaregiverModel
+                caregiver_model = CaregiverModel.get_model(self.db)
+            except Exception as e:
+                print(f"导入护工模型失败: {e}")
+                # 如果导入失败，返回基本数据
+                return {
+                    "success": True,
+                    "data": [app.to_dict() for app in accepted_applications]
+                }
+            
+            # 为每个已接受的申请添加护工详细信息
+            hired_caregivers = []
+            for app in accepted_applications:
+                app_dict = app.to_dict()
+                
+                # 获取护工信息
+                caregiver = caregiver_model.query.get(app.caregiver_id)
+                if caregiver:
+                    app_dict.update({
+                        'caregiver_name': caregiver.name,
+                        'caregiver_avatar': caregiver.avatar_url or 'https://picsum.photos/id/64/400/300',
+                        'caregiver_rating': caregiver.rating or '5.0',
+                        'caregiver_phone': caregiver.phone,
+                        'caregiver_location': getattr(caregiver, 'location', ''),
+                        'caregiver_experience': getattr(caregiver, 'experience_years', 0),
+                        'caregiver_qualification': getattr(caregiver, 'qualification', ''),
+                        'caregiver_introduction': getattr(caregiver, 'introduction', '')
+                    })
+                else:
+                    # 如果护工不存在，提供默认值
+                    app_dict.update({
+                        'caregiver_name': '未知护工',
+                        'caregiver_avatar': 'https://picsum.photos/id/64/400/300',
+                        'caregiver_rating': '5.0',
+                        'caregiver_phone': '',
+                        'caregiver_location': '',
+                        'caregiver_experience': 0,
+                        'caregiver_qualification': '',
+                        'caregiver_introduction': ''
+                    })
+                
+                hired_caregivers.append(app_dict)
+            
+            return {
+                "success": True,
+                "data": hired_caregivers
+            }
+            
+        except Exception as e:
+            return {"success": False, "message": f"获取已聘用护工列表失败: {str(e)}"}
 
 # 创建全局服务实例
 employment_contract_service = EmploymentContractService()

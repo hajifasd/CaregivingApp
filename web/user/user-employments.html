@@ -11,6 +11,8 @@
     
     <!-- 引入用户登出功能 -->
     <script src="/js/user-logout.js"></script>
+    <!-- 引入用户信息加载器 -->
+    <script src="/js/user-info-loader.js"></script>
     
     <!-- 配置Tailwind自定义主题 -->
     <script>
@@ -72,8 +74,8 @@
             <div class="flex items-center gap-3">
                 <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-9 h-9 rounded-full object-cover border-2 border-primary/20">
                 <div class="hidden md:block">
-                    <p class="text-sm font-medium">张阿姨</p>
-                    <p class="text-xs text-gray-500">普通用户</p>
+                    <p class="text-sm font-medium" id="user-name">用户</p>
+                    <p class="text-xs text-gray-500" id="user-role">普通用户</p>
                 </div>
                 <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-primary">登出</button>
             </div>
@@ -198,6 +200,13 @@
         
         // 页面初始化
         document.addEventListener('DOMContentLoaded', function() {
+            // 首先初始化用户信息加载器
+            if (window.userInfoLoader) {
+                window.userInfoLoader.init().then(() => {
+                    console.log('用户信息加载器初始化完成');
+                });
+            }
+            
             // 检查登录状态
             checkAuth();
             
@@ -222,7 +231,7 @@
                 return;
             }
 
-            // 直接解析token获取用户信息，不调用验证API
+            // 检查token是否有效（基本验证）
             try {
                 const payload = token.split('.')[1];
                 if (payload) {
@@ -230,11 +239,8 @@
                     console.log('解析的token载荷:', decoded);
                     
                     if (decoded.user_id && decoded.user_type === 'user') {
-                        // 更新用户信息显示
-                        updateUserInfo({
-                            id: decoded.user_id,
-                            name: decoded.name || '用户'
-                        });
+                        // token有效，用户信息由用户信息加载器处理
+                        console.log('用户认证通过，用户ID:', decoded.user_id);
                         return;
                     }
                 }
@@ -297,9 +303,21 @@
 
         // 更新用户信息显示
         function updateUserInfo(user) {
-            const userNameElement = document.querySelector('p.text-sm.font-medium');
-            if (userNameElement) {
-                userNameElement.textContent = user.name || '用户';
+            // 使用用户信息加载器来更新显示
+            if (window.userInfoLoader) {
+                window.userInfoLoader.userInfo = user;
+                window.userInfoLoader.updateUserDisplay();
+            } else {
+                // 备用方案：直接更新元素
+                const userNameElement = document.getElementById('user-name');
+                const userRoleElement = document.getElementById('user-role');
+                
+                if (userNameElement) {
+                    userNameElement.textContent = user.name || user.fullname || '用户';
+                }
+                if (userRoleElement) {
+                    userRoleElement.textContent = user.role || '普通用户';
+                }
             }
         }
 

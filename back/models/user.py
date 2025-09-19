@@ -49,6 +49,14 @@ class User:
             special_needs = db.Column(db.Text)
             avatar_url = db.Column(db.String(200))
             is_verified = db.Column(db.Boolean, default=False)
+            
+            # 状态管理字段
+            status = db.Column(db.String(20), default="pending")
+            available = db.Column(db.Boolean, default=True)
+            
+            # 暂停相关字段
+            suspended_at = db.Column(db.DateTime, index=True)
+            suspension_reason = db.Column(db.String(500))
 
             def to_dict(self) -> Dict[str, Any]:
                 """转换为字典格式"""
@@ -70,7 +78,11 @@ class User:
                     "emergency_contact_phone": self.emergency_contact_phone,
                     "special_needs": self.special_needs,
                     "avatar_url": self.avatar_url,
-                    "is_verified": self.is_verified
+                    "is_verified": self.is_verified,
+                    "status": self.status,
+                    "available": self.available,
+                    "suspended_at": self.suspended_at.strftime("%Y-%m-%d %H:%M") if self.suspended_at else None,
+                    "suspension_reason": self.suspension_reason
                 }
 
             def set_password(self, password: str):

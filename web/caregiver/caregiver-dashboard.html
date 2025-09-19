@@ -1214,6 +1214,15 @@
                             user_type: 'caregiver'
                         });
                         console.log(`🔗 护工 ${caregiverId} 正在加入房间: caregiver_${caregiverId}`);
+                        
+                        // 延迟加入房间，确保连接稳定
+                        setTimeout(() => {
+                            socket.emit('join', {
+                                user_id: caregiverId,
+                                user_type: 'caregiver'
+                            });
+                            console.log(`🔄 护工 ${caregiverId} 重新加入房间`);
+                        }, 1000);
                     } else {
                         console.warn('⚠️ 无法获取护工ID，无法加入房间');
                     }
@@ -1242,6 +1251,12 @@
                 socket.on('joined_room', (data) => {
                     console.log(`✅ 护工已加入房间: ${data.room}`);
                     console.log(`🔗 护工房间信息:`, data);
+                    
+                    // 测试WebSocket连接
+                    socket.emit('test_message', {
+                        message: '护工端WebSocket连接测试',
+                        caregiver_id: getCurrentCaregiverId()
+                    });
                 });
                 
                 socket.on('message_sent', (data) => {
@@ -1308,13 +1323,97 @@
 
                 if (data.success) {
                     const contracts = data.data.contracts || [];
-                    displayChatList(contracts);
+                    console.log(`📋 护工 ${caregiverId} 的合同数量: ${contracts.length}`);
+                    
+                    // 如果没有合同，尝试从聊天记录中获取联系人
+                    if (contracts.length === 0) {
+                        console.log('📝 没有聘用合同，尝试从聊天记录获取联系人...');
+                        await loadChatListFromMessages(caregiverId);
+                    } else {
+                        displayChatList(contracts);
+                    }
                 } else {
                     console.error('加载聊天列表失败:', data.message);
+                    // 即使合同加载失败，也尝试从聊天记录获取
+                    await loadChatListFromMessages(caregiverId);
                 }
             } catch (error) {
                 console.error('加载聊天列表失败:', error);
+                // 即使出错，也尝试从聊天记录获取
+                const caregiverId = getCurrentCaregiverId();
+                if (caregiverId) {
+                    await loadChatListFromMessages(caregiverId);
+                }
             }
+        }
+        
+        // 从聊天记录中加载联系人列表
+        async function loadChatListFromMessages(caregiverId) {
+            try {
+                // 获取护工的所有对话
+                const response = await fetch(`/api/chat/conversations?user_id=${caregiverId}&user_type=caregiver`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const conversations = data.data.conversations || [];
+                    console.log(`💬 从聊天记录找到 ${conversations.length} 个对话`);
+                    
+                    if (conversations.length > 0) {
+                        displayChatListFromConversations(conversations);
+                    } else {
+                        // 显示空状态
+                        const chatList = document.getElementById('chat-list');
+                        chatList.innerHTML = '<p class="text-gray-500 text-center py-8">暂无聊天记录</p>';
+                    }
+                } else {
+                    console.error('获取对话列表失败:', data.message);
+                    const chatList = document.getElementById('chat-list');
+                    chatList.innerHTML = '<p class="text-gray-500 text-center py-8">暂无聊天记录</p>';
+                }
+            } catch (error) {
+                console.error('从聊天记录加载联系人失败:', error);
+                const chatList = document.getElementById('chat-list');
+                chatList.innerHTML = '<p class="text-gray-500 text-center py-8">暂无聊天记录</p>';
+            }
+        }
+
+        // 从对话记录显示聊天列表
+        function displayChatListFromConversations(conversations) {
+            const chatList = document.getElementById('chat-list');
+            
+            if (conversations.length === 0) {
+                chatList.innerHTML = '<p class="text-gray-500 text-center py-8">暂无聊天记录</p>';
+                return;
+            }
+
+            const chatItems = conversations.map(conversation => {
+                const userId = conversation.user_id;
+                const userName = `用户${userId}`; // 暂时使用用户ID，后续可以从用户信息获取
+                const lastMessage = conversation.last_message_content || '暂无消息';
+                const lastMessageTime = conversation.last_message_time ? new Date(conversation.last_message_time).toLocaleString('zh-CN') : '';
+                const unreadCount = conversation.unread_count || 0;
+                
+                return `
+                    <div class="chat-item p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors" 
+                         data-user-id="${userId}" data-user-name="${userName}" onclick="openChat('${userId}', '${userName}')">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                                <i class="fa fa-user text-white"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="font-medium text-gray-800">${userName}</h4>
+                                    ${unreadCount > 0 ? `<span class="bg-red-500 text-white text-xs px-2 py-1 rounded-full">${unreadCount}</span>` : ''}
+                                </div>
+                                <p class="text-sm text-gray-600 truncate">${lastMessage}</p>
+                                <p class="text-xs text-gray-500">${lastMessageTime}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            chatList.innerHTML = chatItems;
         }
 
         // 显示聊天列表
@@ -1528,7 +1627,7 @@
             updateChatListMessage(data);
             
             // 如果消息中心页面是可见的，自动刷新聊天列表
-            if (document.getElementById('messages-content').classList.contains('hidden') === false) {
+            if (document.getElementById('messages-content') && !document.getElementById('messages-content').classList.contains('hidden')) {
                 setTimeout(() => {
                     loadChatList();
                 }, 1000);
@@ -1544,7 +1643,36 @@
                 console.log('消息发送者ID:', data.sender_id);
                 console.log('消息接收者ID:', data.recipient_id);
                 console.log('当前护工ID:', getCurrentCaregiverId());
+                
+                // 显示全局消息通知
+                showGlobalMessageNotification(data);
             }
+        }
+        
+        // 显示全局消息通知
+        function showGlobalMessageNotification(message) {
+            // 在页面顶部显示消息通知
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-blue-500 text-white p-4 rounded-lg shadow-lg z-50 max-w-sm';
+            notification.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <i class="fa fa-message"></i>
+                    <span class="font-medium">新消息</span>
+                </div>
+                <p class="text-sm mt-1">${message.sender_name || '用户'}: ${message.content}</p>
+                <button onclick="this.parentElement.remove()" class="absolute top-2 right-2 text-white hover:text-gray-200">
+                    <i class="fa fa-times"></i>
+                </button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // 5秒后自动移除
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 5000);
         }
         
         // 显示消息通知

@@ -50,6 +50,10 @@ class Caregiver:
             review_count = db.Column(db.Integer, default=0)
             status = db.Column(db.String(20), default="pending")
             available = db.Column(db.Boolean, default=True)
+            
+            # 暂停相关字段
+            suspended_at = db.Column(db.DateTime, index=True)
+            suspension_reason = db.Column(db.String(500))
 
             def to_dict(self) -> Dict[str, Any]:
                 """转换为字典格式"""
@@ -71,7 +75,9 @@ class Caregiver:
                     "rating": self.rating,
                     "review_count": self.review_count,
                     "status": self.status,
-                    "available": self.available
+                    "available": self.available,
+                    "suspended_at": self.suspended_at.strftime("%Y-%m-%d %H:%M") if self.suspended_at else None,
+                    "suspension_reason": self.suspension_reason
                 }
 
             def set_password(self, password: str):

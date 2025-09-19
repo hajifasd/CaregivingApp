@@ -24,9 +24,16 @@ def require_caregiver_auth(f):
         payload = verify_token(token)
         
         if not payload or payload.get('user_type') != 'caregiver':
-            return jsonify({'success': False, 'message': '无效的认证令牌'}), 401
+            return jsonify({'success': False, 'message': '无效的认证令牌或用户类型不匹配'}), 401
         
-        request.caregiver_id = payload.get('user_id')
+        caregiver_id = payload.get('user_id')
+        
+        # 验证护工是否存在且已审核通过
+        caregiver = CaregiverService.get_caregiver_by_id(caregiver_id)
+        if not caregiver or not caregiver.get('is_approved'):
+            return jsonify({'success': False, 'message': '护工不存在或未通过审核'}), 403
+        
+        request.caregiver_id = caregiver_id
         return f(*args, **kwargs)
     
     return decorated_function
@@ -45,7 +52,7 @@ def caregiver_login():
     caregiver = CaregiverService.verify_caregiver(phone, password)
     
     if caregiver:
-        token = generate_token(caregiver['id'], 'caregiver')
+        token = generate_token(caregiver['id'], 'caregiver', caregiver.get('name'))
         return jsonify({
             'success': True,
             'data': {'token': token, 'caregiver': caregiver},

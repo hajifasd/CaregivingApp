@@ -113,19 +113,7 @@ def init_socketio(app):
             logger.error(f"处理消息失败: {str(e)}")
             emit('error', {'message': '消息处理失败'})
 
-    @socketio.on('test_message')
-    def handle_test_message(data):
-        """处理测试消息"""
-        try:
-            logger.info(f"收到测试消息: {data}")
-            from datetime import datetime
-            emit('message_received', {
-                'content': f'测试回复: {data.get("message", "测试消息")}',
-                'timestamp': datetime.now().isoformat()
-            })
-        except Exception as e:
-            logger.error(f"处理测试消息失败: {str(e)}")
-            emit('error', {'message': '测试消息处理失败'})
+# 测试消息功能已移除
     
     return socketio
 
@@ -226,7 +214,7 @@ def send_message():
         if saved_message:
             # 通过WebSocket广播消息
             if socketio:
-                socketio.emit('message_received', saved_message, broadcast=True)
+                socketio.emit('message_received', saved_message)
             
             return jsonify({
                 'success': True,

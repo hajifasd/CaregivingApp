@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户信息显示测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/user-info-loader.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-6">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">用户信息显示测试</h1>
+        
+        <div class="space-y-4">
+            <div class="flex items-center gap-4">
+                <span class="font-medium text-gray-700">导航栏用户名:</span>
+                <span id="user-name" class="text-blue-600 font-semibold">用户</span>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <span class="font-medium text-gray-700">用户角色:</span>
+                <span id="user-role" class="text-gray-600">普通用户</span>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <span class="font-medium text-gray-700">欢迎标题:</span>
+                <span class="text-lg">欢迎回来，<span id="welcome-user-name" class="text-green-600 font-semibold">用户</span></span>
+            </div>
+            
+            <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                <h3 class="font-medium text-gray-700 mb-2">调试信息:</h3>
+                <div id="debug-info" class="text-sm text-gray-600">
+                    正在加载用户信息...
+                </div>
+            </div>
+            
+            <div class="mt-6 flex gap-4">
+                <button onclick="testUserInfo()" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                    重新加载用户信息
+                </button>
+                <button onclick="clearUserInfo()" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
+                    清除用户信息
+                </button>
+                <button onclick="showLocalStorage()" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+                    显示LocalStorage
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 测试用户信息加载
+        function testUserInfo() {
+            document.getElementById('debug-info').textContent = '正在重新加载用户信息...';
+            
+            if (window.userInfoLoader) {
+                window.userInfoLoader.init().then(() => {
+                    const userInfo = window.userInfoLoader.getUserInfo();
+                    if (userInfo) {
+                        document.getElementById('debug-info').textContent = 
+                            `用户信息加载成功: ${JSON.stringify(userInfo, null, 2)}`;
+                    } else {
+                        document.getElementById('debug-info').textContent = '未找到用户信息';
+                    }
+                });
+            } else {
+                document.getElementById('debug-info').textContent = '用户信息加载器未初始化';
+            }
+        }
+        
+        // 清除用户信息
+        function clearUserInfo() {
+            localStorage.removeItem('user_info');
+            localStorage.removeItem('userInfo');
+            localStorage.removeItem('user_token');
+            document.getElementById('user-name').textContent = '用户';
+            document.getElementById('user-role').textContent = '普通用户';
+            document.getElementById('welcome-user-name').textContent = '用户';
+            document.getElementById('debug-info').textContent = '用户信息已清除';
+        }
+        
+        // 显示LocalStorage内容
+        function showLocalStorage() {
+            const userInfo = localStorage.getItem('user_info');
+            const userInfoOld = localStorage.getItem('userInfo');
+            const userToken = localStorage.getItem('user_token');
+            
+            let info = 'LocalStorage内容:\n';
+            info += `user_info: ${userInfo || 'null'}\n`;
+            info += `userInfo: ${userInfoOld || 'null'}\n`;
+            info += `user_token: ${userToken ? userToken.substring(0, 50) + '...' : 'null'}`;
+            
+            document.getElementById('debug-info').textContent = info;
+        }
+        
+        // 页面加载完成后显示调试信息
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                showLocalStorage();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

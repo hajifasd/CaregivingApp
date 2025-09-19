@@ -242,14 +242,14 @@ class ChatManager {
             }
         }
         
-        // 创建消息对象 - 包含完整的字段信息
+        // 创建消息对象 - 使用后端期望的字段格式
         const messageData = {
             id: Date.now(),
-            senderId: userId,
-            senderName: this.userName || '用户',
-            senderType: 'user', // 明确指定发送者类型
-            receiverId: numericContactId,
-            receiverType: receiverType, // 明确指定接收者类型
+            sender_id: userId,
+            sender_name: this.userName || '用户',
+            sender_type: 'user', // 明确指定发送者类型
+            recipient_id: numericContactId,
+            recipient_type: receiverType, // 明确指定接收者类型
             content: message,
             timestamp: new Date().toISOString(),
             type: 'text'
@@ -572,10 +572,7 @@ class ChatManager {
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-2">选择护工</label>
                         <select id="caregiver-select" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
-                            <option value="">请选择护工...</option>
-                            <option value="caregiver_001">李敏 - 老年护理专家</option>
-                            <option value="caregiver_002">王芳 - 母婴护理专家</option>
-                            <option value="caregiver_003">张伟 - 康复护理专家</option>
+                            <option value="">正在加载护工列表...</option>
                         </select>
                     </div>
                     <div class="mb-4">
@@ -604,6 +601,9 @@ class ChatManager {
             }
         });
         
+        // 加载护工列表
+        this.loadCaregiversForSelect(modal);
+        
         // 聚焦选择框
         setTimeout(() => {
             const select = modal.querySelector('#caregiver-select');
@@ -611,6 +611,37 @@ class ChatManager {
                 select.focus();
             }
         }, 100);
+    }
+    
+    // 加载护工列表到选择框
+    async loadCaregiversForSelect(modal) {
+        try {
+            const response = await fetch('/api/caregivers/hire-info');
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success) {
+                    const select = modal.querySelector('#caregiver-select');
+                    select.innerHTML = '<option value="">请选择护工...</option>';
+                    
+                    result.data.forEach(caregiver => {
+                        const option = document.createElement('option');
+                        option.value = caregiver.caregiver_id;
+                        option.textContent = `${caregiver.name} - ${caregiver.service_type || '护理服务'}`;
+                        select.appendChild(option);
+                    });
+                } else {
+                    const select = modal.querySelector('#caregiver-select');
+                    select.innerHTML = '<option value="">加载护工列表失败</option>';
+                }
+            } else {
+                const select = modal.querySelector('#caregiver-select');
+                select.innerHTML = '<option value="">网络错误，请稍后重试</option>';
+            }
+        } catch (error) {
+            console.error('加载护工列表失败:', error);
+            const select = modal.querySelector('#caregiver-select');
+            select.innerHTML = '<option value="">加载护工列表失败</option>';
+        }
     }
     
     // 开始新聊天
@@ -624,31 +655,49 @@ class ChatManager {
             return;
         }
         
-        // 根据选择找到护工信息
-        const caregivers = [
-            { id: 'caregiver_001', name: '李敏', avatar: 'https://picsum.photos/id/26/50/50' },
-            { id: 'caregiver_002', name: '王芳', avatar: 'https://picsum.photos/id/91/50/50' },
-            { id: 'caregiver_003', name: '张伟', avatar: 'https://picsum.photos/id/177/50/50' }
-        ];
-        
-        const caregiver = caregivers.find(c => c.id === selectedValue);
-        if (caregiver) {
-            // 打开聊天窗口
-            this.openChat(caregiver.id, caregiver.name, caregiver.avatar);
-            
-            // 如果有初始消息，发送它
-            if (initialMessage.value.trim()) {
-                setTimeout(() => {
-                    const input = document.getElementById(`input-${caregiver.id}`);
-                    if (input) {
-                        input.value = initialMessage.value.trim();
-                        this.sendMessage(caregiver.id);
+        // 从后端API获取护工信息
+        this.loadCaregiversForNewChat(selectedValue, initialMessage);
+    }
+    
+    // 从后端加载护工信息
+    async loadCaregiversForNewChat(selectedValue, initialMessage) {
+        try {
+            const response = await fetch('/api/caregivers/hire-info');
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success) {
+                    const caregivers = result.data;
+                    const caregiver = caregivers.find(c => c.caregiver_id.toString() === selectedValue);
+                    
+                    if (caregiver) {
+                        // 打开聊天窗口
+                        this.openChat(`caregiver_${caregiver.caregiver_id}`, caregiver.name, caregiver.avatar);
+                        
+                        // 如果有初始消息，发送它
+                        if (initialMessage.value.trim()) {
+                            setTimeout(() => {
+                                const input = document.getElementById(`input-caregiver_${caregiver.caregiver_id}`);
+                                if (input) {
+                                    input.value = initialMessage.value.trim();
+                                    this.sendMessage(`caregiver_${caregiver.caregiver_id}`);
+                                }
+                            }, 500);
+                        }
+                        
+                        // 关闭模态框
+                        document.querySelector('.fixed').remove();
+                    } else {
+                        this.showNotification('未找到选中的护工', 'error');
                     }
-                }, 500);
+                } else {
+                    this.showNotification('加载护工信息失败', 'error');
+                }
+            } else {
+                this.showNotification('网络错误，请稍后重试', 'error');
             }
-            
-            // 关闭模态框
-            document.querySelector('.fixed').remove();
+        } catch (error) {
+            console.error('加载护工信息失败:', error);
+            this.showNotification('加载护工信息失败', 'error');
         }
     }
     

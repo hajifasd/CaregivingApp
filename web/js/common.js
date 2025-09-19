@@ -425,14 +425,240 @@ function bindGlobalEvents() {
         searchInput.addEventListener('input', Utils.debounce((e) => {
             const query = e.target.value.trim();
             if (query.length > 0) {
-                // 这里可以实现实时搜索功能
-                console.log('Searching for:', query);
+                performSearch(query);
+            } else {
+                clearSearchResults();
             }
         }, 300));
     }
+}
+
+// 搜索功能实现
+async function performSearch(query) {
+    try {
+        console.log('正在搜索:', query);
+        
+        // 根据当前页面类型执行不同的搜索
+        const currentPath = window.location.pathname;
+        
+        if (currentPath.includes('/user/caregivers') || currentPath.includes('/caregiver')) {
+            await searchCaregivers(query);
+        } else if (currentPath.includes('/user/messages')) {
+            await searchMessages(query);
+        } else if (currentPath.includes('/admin')) {
+            await searchAdminData(query);
+        } else {
+            // 通用搜索
+            await performGeneralSearch(query);
+        }
+    } catch (error) {
+        console.error('搜索失败:', error);
+        showSearchError('搜索失败，请稍后重试');
+    }
+}
+
+// 搜索护工
+async function searchCaregivers(query) {
+    try {
+        const response = await fetch(`/api/caregiver/search?keyword=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            displaySearchResults(data.data, 'caregiver');
+        } else {
+            showSearchError(data.message || '搜索失败');
+        }
+    } catch (error) {
+        console.error('护工搜索失败:', error);
+        showSearchError('护工搜索失败');
+    }
+}
+
+// 搜索消息
+async function searchMessages(query) {
+    try {
+        const token = localStorage.getItem('user_token') || getCookie('user_token');
+        if (!token) {
+            showSearchError('请先登录');
+            return;
+        }
+        
+        const response = await fetch(`/api/chat/search?keyword=${encodeURIComponent(query)}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            displaySearchResults(data.data, 'message');
+        } else {
+            showSearchError(data.message || '消息搜索失败');
+        }
+    } catch (error) {
+        console.error('消息搜索失败:', error);
+        showSearchError('消息搜索失败');
+    }
+}
+
+// 管理员数据搜索
+async function searchAdminData(query) {
+    try {
+        const token = localStorage.getItem('admin_token') || getCookie('admin_token');
+        if (!token) {
+            showSearchError('请先登录管理员账户');
+            return;
+        }
+        
+        const response = await fetch(`/api/admin/search?keyword=${encodeURIComponent(query)}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            displaySearchResults(data.data, 'admin');
+        } else {
+            showSearchError(data.message || '搜索失败');
+        }
+    } catch (error) {
+        console.error('管理员搜索失败:', error);
+        showSearchError('搜索失败');
+    }
+}
+
+// 通用搜索
+async function performGeneralSearch(query) {
+    try {
+        const response = await fetch(`/api/search?keyword=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            displaySearchResults(data.data, 'general');
+        } else {
+            showSearchError(data.message || '搜索失败');
+        }
+    } catch (error) {
+        console.error('通用搜索失败:', error);
+        showSearchError('搜索失败');
+    }
+}
+
+// 显示搜索结果
+function displaySearchResults(results, type) {
+    // 移除现有的搜索结果
+    clearSearchResults();
+    
+    if (!results || results.length === 0) {
+        showSearchMessage('未找到相关结果');
+        return;
+    }
+    
+    // 创建搜索结果容器
+    const searchContainer = document.createElement('div');
+    searchContainer.id = 'search-results';
+    searchContainer.className = 'search-results-container';
+    
+    // 根据类型显示不同的结果
+    switch (type) {
+        case 'caregiver':
+            searchContainer.innerHTML = results.map(caregiver => `
+                <div class="search-result-item caregiver-result">
+                    <div class="result-avatar">
+                        <img src="${caregiver.avatar_url || 'https://picsum.photos/id/64/50/50'}" alt="${caregiver.name}">
+                    </div>
+                    <div class="result-info">
+                        <h4>${caregiver.name}</h4>
+                        <p>${caregiver.phone}</p>
+                        <p>${caregiver.experience_years}年经验</p>
+                        <span class="result-rating">评分: ${caregiver.rating || '5.0'}</span>
+                    </div>
+                    <div class="result-actions">
+                        <button onclick="viewCaregiver(${caregiver.id})" class="btn-primary">查看详情</button>
+                    </div>
+                </div>
+            `).join('');
+            break;
+            
+        case 'message':
+            searchContainer.innerHTML = results.map(message => `
+                <div class="search-result-item message-result">
+                    <div class="result-info">
+                        <h4>${message.sender_name}</h4>
+                        <p>${message.content}</p>
+                        <span class="result-time">${formatTime(message.created_at)}</span>
+                    </div>
+                </div>
+            `).join('');
+            break;
+            
+        default:
+            searchContainer.innerHTML = results.map(item => `
+                <div class="search-result-item general-result">
+                    <div class="result-info">
+                        <h4>${item.title || item.name || '搜索结果'}</h4>
+                        <p>${item.description || item.content || ''}</p>
+                    </div>
+                </div>
+            `).join('');
+    }
+    
+    // 插入到页面中
+    const searchInput = document.querySelector('input[placeholder*="搜索"]');
+    if (searchInput) {
+        searchInput.parentNode.appendChild(searchContainer);
+    }
+}
+
+// 清除搜索结果
+function clearSearchResults() {
+    const existingResults = document.getElementById('search-results');
+    if (existingResults) {
+        existingResults.remove();
+    }
+}
+
+// 显示搜索消息
+function showSearchMessage(message) {
+    clearSearchResults();
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.id = 'search-results';
+    messageDiv.className = 'search-results-container';
+    messageDiv.innerHTML = `
+        <div class="search-message">
+            <p>${message}</p>
+        </div>
+    `;
+    
+    const searchInput = document.querySelector('input[placeholder*="搜索"]');
+    if (searchInput) {
+        searchInput.parentNode.appendChild(messageDiv);
+    }
+}
+
+// 显示搜索错误
+function showSearchError(message) {
+    showSearchMessage(`<span class="error">${message}</span>`);
+}
+
+// 格式化时间
+function formatTime(timestamp) {
+    const date = new Date(timestamp);
+    return date.toLocaleString('zh-CN');
+}
+
+// 获取cookie值
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
 }
 
 // 导出到全局
 window.Utils = Utils;
 window.Storage = Storage;
 window.Http = Http;
+window.performSearch = performSearch;
+window.clearSearchResults = clearSearchResults;

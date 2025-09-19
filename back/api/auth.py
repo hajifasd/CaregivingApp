@@ -26,7 +26,7 @@ def user_login():
     user = UserService.verify_user(account, password)
     
     if user:
-        token = generate_token(user.id, 'user')
+        token = generate_token(user.id, 'user', user.fullname)
         return jsonify({
             'success': True,
             'data': {'token': token, 'user': user.to_dict()},
@@ -79,8 +79,14 @@ def admin_login():
     username = data.get('username')
     password = data.get('password')
 
-    # 简单的管理员验证（实际项目中应该更安全）
-    if username == "admin" and password == "admin123":
+    if not username or not password:
+        return jsonify({'success': False, 'message': '请输入用户名和密码'}), 400
+
+    # 从配置文件获取管理员凭据
+    from config.settings import ADMIN_USERNAME, ADMIN_PASSWORD
+    
+    # 验证管理员凭据
+    if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
         token = generate_token(0, 'admin')
         return jsonify({
             'success': True,

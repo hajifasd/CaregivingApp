@@ -332,9 +332,11 @@
                     const data = await response.json();
                     if (data.success) {
                         localStorage.setItem('user_token', data.data.token);
+                        // 保存用户信息
+                        localStorage.setItem('user_info', JSON.stringify(data.data.user));
                         // 同时存储到cookie，确保页面跳转时能携带token
                         document.cookie = `user_token=${data.data.token}; path=/; max-age=7200`; // 2小时过期
-                        window.location.href = '/user-dashboard.html';
+                        window.location.href = '/user/user-dashboard.html';
                     } else {
                         alert(data.message || '登录失败');
                     }

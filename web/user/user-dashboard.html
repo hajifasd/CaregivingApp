@@ -11,6 +11,8 @@
     
     <!-- 引入用户登出功能 -->
     <script src="/js/user-logout.js"></script>
+    <!-- 引入用户信息管理 -->
+    <script src="/js/user-info.js"></script>
     
     <!-- 配置Tailwind自定义主题 -->
     <script>
@@ -72,7 +74,7 @@
                 <div class="flex items-center gap-3">
                     <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-9 h-9 rounded-full object-cover border-2 border-primary/20">
                     <div class="hidden md:block">
-                        <p class="text-sm font-medium">张阿姨</p>
+                        <p class="text-sm font-medium" id="user-name">用户</p>
                         <p class="text-xs text-gray-500">普通用户</p>
                     </div>
                         <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-primary">登出</button>
@@ -213,20 +215,7 @@
         </main>
     
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // 检查用户登录状态
-            checkUserLogin();
-        });
-        
-        // 检查用户登录状态
-        function checkUserLogin() {
-            const token = localStorage.getItem('user_token');
-            if (!token) {
-                alert('请先登录');
-                window.location.href = '/';
-                return;
-            }
-        }
+        // 用户信息管理已移至 /js/user-info.js
         
 
 
@@ -240,8 +229,14 @@
 
         // 加载通知
         function loadNotifications() {
-            // 这里应该从JWT token中解析用户ID
-            const userId = 1; // 示例ID
+            // 从localStorage或JWT token中获取用户ID
+            const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            const userId = userInfo.id;
+            
+            if (!userId) {
+                console.warn('用户未登录，无法加载通知');
+                return;
+            }
             
             fetch(`/api/notifications?user_id=${userId}&user_type=user`)
             .then(response => response.json())
@@ -306,7 +301,13 @@
 
         // 标记通知为已读
         function markNotificationRead(notificationId) {
-            const userId = 1; // 示例ID
+            const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            const userId = userInfo.id;
+            
+            if (!userId) {
+                console.warn('用户未登录，无法标记通知已读');
+                return;
+            }
             
             fetch(`/api/notifications/${notificationId}/read`, {
                 method: 'POST',
@@ -333,7 +334,13 @@
 
         // 全部标记已读
         document.getElementById('mark-all-read').addEventListener('click', function() {
-            const userId = 1; // 示例ID
+            const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            const userId = userInfo.id;
+            
+            if (!userId) {
+                console.warn('用户未登录，无法标记通知已读');
+                return;
+            }
             
             fetch('/api/notifications/read-all', {
                 method: 'POST',

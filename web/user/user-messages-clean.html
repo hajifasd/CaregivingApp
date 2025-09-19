@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>消息中心 - 护理助手</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- 引入用户登出功能 -->
+    <script src="/js/user-logout.js"></script>
+    <!-- 引入用户信息管理 -->
+    <script src="/js/user-info.js"></script>
+    <!-- 引入Socket.IO客户端 -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <!-- 引入聊天管理器 -->
+    <script src="/js/chat-manager.js"></script>
+    <!-- 引入增强聊天管理器 -->
+    <script src="/js/enhanced-chat-manager.js"></script>
+    
+    <!-- 配置Tailwind自定义主题 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#64748b',
+                        accent: '#f59e0b',
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        danger: '#ef4444',
+                        info: '#06b6d4'
+                    },
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .card-shadow {
+                @apply shadow-sm hover:shadow-md transition-shadow duration-300;
+            }
+        }
+        
+        /* 连接状态样式 */
+        .connection-status {
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .connection-status.connected {
+            background-color: #10b981;
+            color: white;
+        }
+        
+        .connection-status.disconnected {
+            background-color: #ef4444;
+            color: white;
+        }
+        
+        .connection-status.connecting {
+            background-color: #f59e0b;
+            color: white;
+        }
+        
+        /* 聊天消息样式 */
+        .message {
+            margin-bottom: 1rem;
+            display: flex;
+        }
+        
+        .message.own {
+            justify-content: flex-end;
+        }
+        
+        .message.other {
+            justify-content: flex-start;
+        }
+        
+        .message-content {
+            max-width: 70%;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            position: relative;
+        }
+        
+        .message.own .message-content {
+            background-color: #3b82f6;
+            color: white;
+            border-bottom-right-radius: 0.25rem;
+        }
+        
+        .message.other .message-content {
+            background-color: #f3f4f6;
+            color: #374151;
+            border-bottom-left-radius: 0.25rem;
+        }
+        
+        .message-text {
+            word-wrap: break-word;
+            line-height: 1.4;
+        }
+        
+        .message-time {
+            font-size: 0.75rem;
+            opacity: 0.7;
+            margin-top: 0.25rem;
+        }
+        
+        /* 输入指示器样式 */
+        #typing-indicator {
+            padding: 0.5rem 1rem;
+            font-style: italic;
+            color: #6b7280;
+            font-size: 0.875rem;
+            display: none;
+        }
+    </style>
+</head>
+<body class="font-inter bg-gray-50 text-gray-800">
+    <!-- 顶部导航栏 -->
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                    <i class="fa fa-heartbeat text-white text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-primary">护理助手</h1>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3">
+                <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-9 h-9 rounded-full object-cover border-2 border-primary/20">
+                <div class="hidden md:block">
+                    <p class="text-sm font-medium" id="user-name">用户</p>
+                    <p class="text-xs text-gray-500" id="user-role">普通用户</p>
+                </div>
+            </div>
+            <button onclick="logout()" class="text-gray-500 hover:text-gray-700 transition-colors">
+                <i class="fa fa-sign-out-alt text-lg"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- 主要内容区域 -->
+    <main class="container mx-auto px-6 py-8">
+        <!-- 页面标题 -->
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">消息中心</h2>
+            <p class="text-gray-600">与护工沟通，查看系统通知</p>
+        </div>
+        
+        <!-- 统计卡片 -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl p-6 card-shadow text-center">
+                <div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                    <i class="fa fa-envelope text-primary text-xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-primary mb-1" id="total-messages">0</h3>
+                <p class="text-sm text-gray-600">总消息数</p>
+            </div>
+            <div class="bg-white rounded-xl p-6 card-shadow text-center">
+                <div class="w-12 h-12 rounded-lg bg-warning/10 flex items-center justify-center mx-auto mb-3">
+                    <i class="fa fa-bell text-warning text-xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-warning mb-1" id="unread-messages">0</h3>
+                <p class="text-sm text-gray-600">未读消息</p>
+            </div>
+            <div class="bg-white rounded-xl p-6 card-shadow text-center">
+                <div class="w-12 h-12 rounded-lg bg-success/10 flex items-center justify-center mx-auto mb-3">
+                    <i class="fa fa-bullhorn text-success text-xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-success mb-1" id="system-notifications">0</h3>
+                <p class="text-sm text-gray-600">系统通知</p>
+            </div>
+            <div class="bg-white rounded-xl p-6 card-shadow text-center">
+                <div class="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center mx-auto mb-3">
+                    <i class="fa fa-users text-accent text-xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-accent mb-1" id="caregiver-conversations">0</h3>
+                <p class="text-sm text-gray-600">护工对话</p>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- 消息列表 -->
+            <div class="lg:col-span-2 bg-white rounded-xl card-shadow">
+                <div class="p-6 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <h3 class="text-lg font-bold text-gray-800">消息列表</h3>
+                            <div id="connection-status" class="connection-status disconnected text-xs px-2 py-1 rounded-full">
+                                连接中...
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="px-3 py-1 text-sm bg-primary text-white rounded-lg">全部</button>
+                            <button class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">未读</button>
+                            <button class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">已读</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="divide-y divide-gray-200" id="messages-container">
+                    <!-- 消息列表将通过JavaScript动态生成 -->
+                </div>
+                
+                <!-- 空状态提示 -->
+                <div id="empty-state" class="hidden p-8 text-center text-gray-500">
+                    <i class="fa fa-comments text-4xl mb-4"></i>
+                    <p class="text-lg">暂无消息</p>
+                    <p class="text-sm">开始与护工聊天吧</p>
+                </div>
+            </div>
+            
+            <!-- 右侧边栏 -->
+            <div class="space-y-6">
+                <!-- 已聘用护工列表 -->
+                <div class="bg-white rounded-xl card-shadow">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-bold text-gray-800">已聘用护工</h3>
+                    </div>
+                    <div class="p-6" id="hired-caregivers-list">
+                        <!-- 护工列表将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+                
+                <!-- 快速操作 -->
+                <div class="bg-white rounded-xl card-shadow">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-bold text-gray-800">快速操作</h3>
+                    </div>
+                    <div class="p-6 space-y-3">
+                        <button onclick="openNewChat()" class="w-full py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                            <i class="fa fa-plus mr-2"></i>新建对话
+                        </button>
+                        <button onclick="markAllAsRead()" class="w-full py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                            <i class="fa fa-check-double mr-2"></i>全部标记为已读
+                        </button>
+                        <button onclick="clearAllMessages()" class="w-full py-3 bg-danger/10 text-danger rounded-lg hover:bg-danger/20 transition-colors">
+                            <i class="fa fa-trash mr-2"></i>清空消息
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- 返回顶部按钮 -->
+    <button id="back-to-top" class="fixed bottom-6 right-6 w-12 h-12 bg-primary text-white rounded-full shadow-lg hover:bg-primary/90 transition-all duration-300 hidden">
+        <i class="fa fa-arrow-up"></i>
+    </button>
+    
+    <script>
+        // 页面数据 - 从后端API动态加载
+        let messagesData = [];
+        let hiredCaregiversData = [];
+        let chatRecords = new Map();
+        let messageCounter = 1;
+        
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 用户消息页面初始化...');
+            
+            // 加载用户信息
+            loadUserInfo();
+            
+            // 加载已聘用护工数据
+            loadHiredCaregivers();
+            
+            // 加载消息数据
+            loadMessages();
+            
+            // 绑定返回顶部按钮
+            bindBackToTop();
+            
+            // 绑定筛选按钮事件
+            bindFilterEvents();
+            
+            // 初始化增强聊天管理器
+            if (window.EnhancedChatManager) {
+                console.log('✅ 增强聊天管理器已加载');
+            }
+        });
+        
+        // 加载用户信息
+        function loadUserInfo() {
+            try {
+                const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                if (userInfo.name) {
+                    document.getElementById('user-name').textContent = userInfo.name;
+                }
+                if (userInfo.role) {
+                    document.getElementById('user-role').textContent = userInfo.role;
+                }
+            } catch (error) {
+                console.error('加载用户信息失败:', error);
+            }
+        }
+        
+        // 加载已聘用护工数据
+        async function loadHiredCaregivers() {
+            try {
+                const token = localStorage.getItem('user_token') || getCookie('user_token');
+                if (!token) {
+                    console.error('未找到用户token');
+                    throw new Error('未找到用户token');
+                }
+
+                // 从token中获取用户ID
+                const userId = getCurrentUserId();
+                if (!userId) {
+                    console.error('无法获取用户ID');
+                    throw new Error('无法获取用户ID');
+                }
+
+                console.log('正在加载用户ID:', userId, '的已聘用护工列表...');
+
+                const response = await fetch(`/api/employment/hired-caregivers/user/${userId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('已聘用护工API响应:', data);
+                    if (data.success) {
+                        hiredCaregiversData = data.data || [];
+                        console.log('已聘用护工数据:', hiredCaregiversData);
+                        console.log('护工数量:', hiredCaregiversData.length);
+                        
+                        // 显示加载成功提示
+                        if (hiredCaregiversData.length > 0) {
+                            showNotification(`成功加载 ${hiredCaregiversData.length} 位已聘用护工`, 'success');
+                        } else {
+                            showNotification('您还没有已聘用的护工，请先聘用护工', 'info');
+                        }
+                    } else {
+                        console.error('加载已聘用护工失败:', data.message);
+                        hiredCaregiversData = [];
+                        showNotification(`加载护工列表失败: ${data.message}`, 'error');
+                    }
+                } else {
+                    console.error('API请求失败:', response.status);
+                    hiredCaregiversData = [];
+                    showNotification(`API请求失败: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                console.error('加载已聘用护工失败:', error);
+                hiredCaregiversData = [];
+                showNotification(`加载失败: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        // 获取当前用户ID
+        function getCurrentUserId() {
+            try {
+                const token = localStorage.getItem('user_token') || getCookie('user_token');
+                if (!token) {
+                    console.error('未找到用户token');
+                    return null;
+                }
+
+                // 解析JWT token
+                const payload = token.split('.')[1];
+                if (payload) {
+                    const decoded = JSON.parse(decodeURIComponent(escape(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))));
+                    console.log('解析的token载荷:', decoded);
+                    
+                    if (decoded.user_id) {
+                        return decoded.user_id;
+                    }
+                }
+            } catch (e) {
+                console.error('解析用户信息失败:', e);
+            }
+            
+            console.error('无法获取用户ID');
+            return null;
+        }
+        
+        // 加载消息数据
+        async function loadMessages() {
+            try {
+                // 这里应该从后端API加载真实的消息数据
+                // 暂时使用空数组，等待后端API实现
+                messagesData = [];
+                generateMessagesList();
+                updateStatistics();
+            } catch (error) {
+                console.error('加载消息数据失败:', error);
+                showNotification('加载消息失败', 'error');
+            }
+        }
+        
+        // 生成消息列表
+        function generateMessagesList() {
+            const container = document.getElementById('messages-container');
+            const emptyState = document.getElementById('empty-state');
+            
+            // 合并系统消息和聊天记录
+            const allMessages = [...messagesData];
+            
+            // 添加聊天记录到消息列表
+            chatRecords.forEach((records, caregiverId) => {
+                if (records.length > 0) {
+                    const lastMessage = records[records.length - 1];
+                    const caregiver = getCaregiverInfo(caregiverId);
+                    
+                    if (caregiver) {
+                        allMessages.push({
+                            id: messageCounter++,
+                            contactId: caregiverId,
+                            type: 'caregiver',
+                            sender: caregiver.name,
+                            senderId: caregiverId,
+                            avatar: caregiver.avatar,
+                            content: lastMessage.content,
+                            time: formatTime(lastMessage.timestamp),
+                            date: formatDate(lastMessage.timestamp),
+                            unread: lastMessage.unread || false,
+                            status: 'online',
+                            timestamp: lastMessage.timestamp
+                        });
+                    }
+                }
+            });
+            
+            // 按时间排序，最新的消息在前面
+            allMessages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            if (allMessages.length === 0) {
+                container.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            container.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            
+            container.innerHTML = allMessages.map(message => `
+                <div class="p-6 hover:bg-gray-50 transition-colors cursor-pointer ${message.unread ? 'bg-blue-50' : ''}" 
+                     onclick="openMessage('${message.contactId}', '${message.sender}', '${message.avatar}')"
+                     data-contact-id="${message.contactId}">
+                    <div class="flex items-start gap-4">
+                        <div class="relative">
+                            <img src="${message.avatar}" alt="${message.sender}" class="w-12 h-12 rounded-full object-cover">
+                            ${message.type === 'caregiver' ? `
+                                <div class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full ${message.status === 'online' ? 'bg-success' : 'bg-gray-400'} border-2 border-white"></div>
+                            ` : ''}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-medium text-gray-900">${message.sender}</h4>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-gray-500">${message.date}</span>
+                                    <span class="text-xs text-gray-500">${message.time}</span>
+                                    ${message.unread ? '<span class="text-xs bg-primary text-white px-2 py-1 rounded-full">新</span>' : ''}
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-600 line-clamp-2">${message.content}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // 获取护工信息
+        function getCaregiverInfo(caregiverId) {
+            // 从已聘用的护工数据中查找
+            const caregiver = hiredCaregiversData.find(c => c.caregiver_id == caregiverId || c.id == caregiverId);
+            if (caregiver) {
+                return {
+                    name: caregiver.caregiver_name || caregiver.name || caregiver.caregiverName || '未知护工',
+                    avatar: caregiver.caregiver_avatar || caregiver.avatar || caregiver.caregiverAvatar || 'https://picsum.photos/id/64/40/40'
+                };
+            }
+            
+            // 从聊天记录中查找（用于搜索到的护工）
+            const records = chatRecords.get(caregiverId);
+            if (records && records.length > 0) {
+                const firstRecord = records[0];
+                return {
+                    name: firstRecord.caregiverName || '护工',
+                    avatar: firstRecord.caregiverAvatar || 'https://picsum.photos/id/64/40/40'
+                };
+            }
+            
+            return null;
+        }
+        
+        // 格式化时间
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) { // 1分钟内
+                return '刚刚';
+            } else if (diff < 3600000) { // 1小时内
+                return `${Math.floor(diff / 60000)}分钟前`;
+            } else if (diff < 86400000) { // 24小时内
+                return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            } else {
+                return date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' });
+            }
+        }
+        
+        // 格式化日期
+        function formatDate(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 86400000) { // 24小时内
+                return '今天';
+            } else if (diff < 172800000) { // 48小时内
+                return '昨天';
+            } else if (diff < 604800000) { // 7天内
+                return `${Math.floor(diff / 86400000)}天前`;
+            } else {
+                return date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' });
+            }
+        }
+        
+        // 更新统计信息
+        function updateStatistics() {
+            const totalMessages = messagesData.length;
+            const unreadMessages = messagesData.filter(m => m.unread).length;
+            const systemNotifications = messagesData.filter(m => m.type === 'system').length;
+            const caregiverConversations = hiredCaregiversData.length;
+            
+            document.getElementById('total-messages').textContent = totalMessages;
+            document.getElementById('unread-messages').textContent = unreadMessages;
+            document.getElementById('system-notifications').textContent = systemNotifications;
+            document.getElementById('caregiver-conversations').textContent = caregiverConversations;
+        }
+        
+        // 生成已聘用护工列表
+        function generateHiredCaregiversList() {
+            const container = document.getElementById('hired-caregivers-list');
+            
+            if (hiredCaregiversData.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-gray-500 py-8">
+                        <i class="fa fa-users text-3xl mb-3"></i>
+                        <p class="text-sm">暂无已聘用护工</p>
+                        <p class="text-xs text-gray-400 mt-1">请先聘用护工开始聊天</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = hiredCaregiversData.map(caregiver => {
+                const name = caregiver.caregiver_name || caregiver.name || caregiver.caregiverName || '未知护工';
+                const avatar = caregiver.caregiver_avatar || caregiver.avatar || caregiver.caregiverAvatar || 'https://picsum.photos/id/64/40/40';
+                const serviceType = caregiver.service_type || caregiver.serviceType || '护理服务';
+                const rating = caregiver.caregiver_rating || caregiver.rating || caregiver.caregiverRating || '5.0';
+                
+                return `
+                    <div class="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors" 
+                         onclick="openChat('${caregiver.id}', '${name}', '${avatar}')">
+                        <div class="relative">
+                            <img src="${avatar}" alt="${name}" class="w-10 h-10 rounded-full object-cover">
+                            <div class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-success border-2 border-white"></div>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h5 class="font-medium text-sm text-gray-900">${name}</h5>
+                            <p class="text-xs text-gray-500 line-clamp-1">${serviceType} - 评分: ${rating}</p>
+                        </div>
+                        <span class="text-xs text-gray-400">在线</span>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // 绑定筛选按钮事件
+        function bindFilterEvents() {
+            const filterButtons = document.querySelectorAll('.flex.gap-2 button');
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // 移除所有按钮的激活状态
+                    filterButtons.forEach(btn => {
+                        btn.className = 'px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200';
+                    });
+                    
+                    // 激活当前按钮
+                    this.className = 'px-3 py-1 text-sm bg-primary text-white rounded-lg';
+                    
+                    // 根据按钮文本筛选消息
+                    const filterType = this.textContent.trim();
+                    filterMessages(filterType);
+                });
+            });
+        }
+        
+        // 筛选消息
+        function filterMessages(filterType) {
+            // 这里实现消息筛选逻辑
+            console.log('筛选消息类型:', filterType);
+        }
+        
+        // 绑定返回顶部按钮
+        function bindBackToTop() {
+            const backToTopBtn = document.getElementById('back-to-top');
+            
+            window.addEventListener('scroll', function() {
+                if (window.pageYOffset > 300) {
+                    backToTopBtn.classList.remove('hidden');
+                } else {
+                    backToTopBtn.classList.add('hidden');
+                }
+            });
+            
+            backToTopBtn.addEventListener('click', function() {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+        }
+        
+        // 打开消息
+        function openMessage(contactId, senderName, avatar) {
+            console.log('打开消息:', contactId, senderName);
+            // 这里实现打开消息的逻辑
+        }
+        
+        // 打开聊天
+        function openChat(caregiverId, caregiverName, avatar) {
+            console.log('打开聊天:', caregiverId, caregiverName);
+            // 这里实现打开聊天的逻辑
+        }
+        
+        // 新建对话
+        function openNewChat() {
+            console.log('新建对话');
+            // 这里实现新建对话的逻辑
+        }
+        
+        // 标记全部为已读
+        function markAllAsRead() {
+            console.log('标记全部为已读');
+            // 这里实现标记全部为已读的逻辑
+        }
+        
+        // 清空消息
+        function clearAllMessages() {
+            if (confirm('确定要清空所有消息吗？此操作不可恢复。')) {
+                console.log('清空消息');
+                // 这里实现清空消息的逻辑
+            }
+        }
+        
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            // 使用现有的通知系统
+            if (window.showNotification) {
+                window.showNotification(message, type);
+            } else {
+                console.log(`📢 ${type.toUpperCase()}: ${message}`);
+            }
+        }
+        
+        // 获取Cookie
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }
+    </script>
+</body>
+</html>

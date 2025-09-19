@@ -29,7 +29,13 @@ def require_user_auth(f):
         token = token.split(' ')[1]
         user_id = require_auth(token, 'user')
         if not user_id:
-            return jsonify({'success': False, 'message': '无效的认证令牌'}), 401
+            return jsonify({'success': False, 'message': '无效的认证令牌或用户类型不匹配'}), 401
+        
+        # 验证用户是否存在且已审核通过
+        from services.user_service import UserService
+        user = UserService.get_user_by_id(user_id)
+        if not user or not user.is_approved:
+            return jsonify({'success': False, 'message': '用户不存在或未通过审核'}), 403
         
         request.user_id = user_id
         return f(*args, **kwargs)

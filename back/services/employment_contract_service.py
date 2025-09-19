@@ -446,8 +446,8 @@ class EmploymentContractService:
             
             # 获取护工模型
             try:
-                from models.caregiver import CaregiverModel
-                caregiver_model = CaregiverModel.get_model(self.db)
+                from models.caregiver import Caregiver
+                caregiver_model = Caregiver.get_model(self.db)
             except Exception as e:
                 print(f"导入护工模型失败: {e}")
                 # 如果导入失败，返回基本数据

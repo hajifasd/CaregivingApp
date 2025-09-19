@@ -71,6 +71,12 @@ class UserService:
         return UserModel.query.filter_by(is_approved=True).all()
     
     @staticmethod
+    def get_user_by_id(user_id: int):
+        """根据ID获取用户"""
+        UserModel = User.get_model(db)
+        return UserModel.query.get(user_id)
+    
+    @staticmethod
     def approve_user(user_id: int) -> bool:
         """审核通过用户"""
         UserModel = User.get_model(db)

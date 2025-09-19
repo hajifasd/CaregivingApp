@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 这是修改了的代码 -->
+<!-- 用户管理页面 -->
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -55,7 +55,7 @@
         
         <div class="flex items-center gap-6">
             <div class="relative">
-                <input type="text" placeholder="搜索用户..." 
+                <input type="text" id="search-input" placeholder="搜索用户..." 
                     class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 w-64">
                 <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
             </div>
@@ -104,18 +104,34 @@
     
     <!-- 页面内容 -->
     <main class="p-6 bg-gray-50">
-        <div class="mb-8">
-            <h2 class="text-3xl font-bold text-gray-800 mb-4">用户管理</h2>
-            <p class="text-gray-600 text-lg">审核用户身份并管理用户信息</p>
+        <div class="mb-8 flex justify-between items-center">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">用户管理</h2>
+                <p class="text-gray-600 text-lg">审核用户身份并管理用户信息</p>
+            </div>
+            <div class="flex gap-3">
+                <button id="batch-suspend-btn" class="bg-warning hover:bg-warning/90 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                    <i class="fa fa-pause"></i>
+                    批量暂停
+                </button>
+                <button id="batch-restore-btn" class="bg-success hover:bg-success/90 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                    <i class="fa fa-play"></i>
+                    批量恢复
+                </button>
+                <button id="refresh-btn" class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                    <i class="fa fa-refresh"></i>
+                    刷新数据
+                </button>
+            </div>
         </div>
         
         <!-- 统计卡片 -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div class="bg-white rounded-xl p-6 card-shadow">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-600 mb-1">待审核用户</p>
-                        <p class="text-2xl font-bold text-warning">{{ pending|length if pending else 0 }}</p>
+                        <p class="text-2xl font-bold text-warning" id="pending-count">0</p>
                     </div>
                     <div class="w-12 h-12 rounded-full bg-warning/10 flex items-center justify-center">
                         <i class="fa fa-clock-o text-warning text-xl"></i>
@@ -127,7 +143,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-600 mb-1">已批准用户</p>
-                        <p class="text-2xl font-bold text-success">{{ approved|length if approved else 0 }}</p>
+                        <p class="text-2xl font-bold text-success" id="approved-count">0</p>
                     </div>
                     <div class="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center">
                         <i class="fa fa-check-circle text-success text-xl"></i>
@@ -138,11 +154,23 @@
             <div class="bg-white rounded-xl p-6 card-shadow">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-gray-600 mb-1">总用户数量</p>
-                        <p class="text-2xl font-bold text-primary">{{ (pending|length if pending else 0) + (approved|length if approved else 0) }}</p>
+                        <p class="text-sm font-medium text-gray-600 mb-1">在线用户</p>
+                        <p class="text-2xl font-bold text-primary" id="online-count">0</p>
                     </div>
                     <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <i class="fa fa-users text-primary text-xl"></i>
+                        <i class="fa fa-circle text-primary text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl p-6 card-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 mb-1">总用户数量</p>
+                        <p class="text-2xl font-bold text-accent" id="total-count">0</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
+                        <i class="fa fa-users text-accent text-xl"></i>
                     </div>
                 </div>
             </div>
@@ -166,116 +194,100 @@
             
             <!-- 待审核用户列表 -->
             <div class="tab-content p-6" id="pending-content">
-                {% if pending and pending|length > 0 %}
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <input type="checkbox" id="select-all-pending" class="rounded border-gray-300 text-primary focus:ring-primary">
+                                </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">姓名</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">手机号</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">邮箱</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">注册时间</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">身份证材料</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            {% for user in pending %}
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ user.id }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ user.email }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.created_at }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    <button class="view-id-btn bg-primary hover:bg-primary/90 text-white px-3 py-1 rounded text-xs" 
-                                            data-user-id="{{ user.id }}" 
-                                            data-user-email="{{ user.email }}">
-                                        查看身份证
-                                    </button>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <div class="flex space-x-2">
-                                        <button class="approve-user-btn bg-success hover:bg-success/90 text-white px-3 py-1 rounded text-xs" data-user-id="{{ user.id }}">
-                                            批准
-                                        </button>
-                                        <button class="reject-user-btn bg-danger hover:bg-danger/90 text-white px-3 py-1 rounded text-xs" data-user-id="{{ user.id }}">
-                                            拒绝
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
+                        <tbody class="bg-white divide-y divide-gray-200" id="pending-tbody">
+                            <!-- 动态加载待审核用户数据 -->
                         </tbody>
                     </table>
                 </div>
-                {% else %}
-                <div class="text-center py-12">
-                    <i class="fa fa-inbox text-4xl text-gray-300 mb-4"></i>
-                    <p class="text-gray-500 text-lg">暂无待审核的用户申请</p>
-                </div>
-                {% endif %}
             </div>
             
             <!-- 已批准用户列表 -->
             <div class="tab-content p-6 hidden" id="approved-content">
-                {% if approved and approved|length > 0 %}
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <input type="checkbox" id="select-all-approved" class="rounded border-gray-300 text-primary focus:ring-primary">
+                                </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">姓名</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">手机号</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">邮箱</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">注册时间</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">批准时间</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            {% for user in approved %}
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ user.id }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ user.email }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.created_at }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.approved_at|default('未知', true) }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-success/10 text-success">
-                                        已批准
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <div class="flex space-x-2">
-                                        <button class="view-user-profile-btn bg-primary hover:bg-primary/90 text-white px-3 py-1 rounded text-xs" data-user-id="{{ user.id }}">
-                                            查看详情
-                                        </button>
-                                        <button class="suspend-user-btn bg-warning hover:bg-warning/90 text-white px-3 py-1 rounded text-xs" data-user-id="{{ user.id }}">
-                                            暂停
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
+                        <tbody class="bg-white divide-y divide-gray-200" id="approved-tbody">
+                            <!-- 动态加载已批准用户数据 -->
                         </tbody>
                     </table>
                 </div>
-                {% else %}
-                <div class="text-center py-12">
-                    <i class="fa fa-check-circle text-4xl text-gray-300 mb-4"></i>
-                    <p class="text-gray-500 text-lg">暂无已批准的用户</p>
-                </div>
-                {% endif %}
             </div>
             
             <!-- 用户账号管理 -->
             <div class="tab-content p-6 hidden" id="accounts-content">
                 <div class="text-center py-12">
                     <i class="fa fa-user-cog text-4xl text-gray-300 mb-4"></i>
-                    <p class="text-gray-500 text-lg">用户账号管理功能开发中...</p>
+                    <p class="text-gray-500 text-lg">用户账号管理功能</p>
                     <p class="text-gray-400 text-sm mt-2">包括账号状态管理、权限设置、密码重置等功能</p>
+                    <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <i class="fa fa-key text-2xl text-primary mb-2"></i>
+                            <h4 class="font-medium">密码重置</h4>
+                            <p class="text-sm text-gray-500">重置用户登录密码</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <i class="fa fa-shield text-2xl text-success mb-2"></i>
+                            <h4 class="font-medium">权限管理</h4>
+                            <p class="text-sm text-gray-500">设置用户访问权限</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <i class="fa fa-history text-2xl text-warning mb-2"></i>
+                            <h4 class="font-medium">操作日志</h4>
+                            <p class="text-sm text-gray-500">查看用户操作记录</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </main>
     
-    <!-- 身份证查看弹窗 -->
+    <!-- 用户详情弹窗 -->
+    <div id="user-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">用户详细信息</h3>
+                    <button id="close-user-modal" class="text-gray-400 hover:text-gray-600">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div id="user-modal-content" class="space-y-4">
+                    <!-- 用户详细信息将在这里动态加载 -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 身份证材料查看弹窗 -->
     <div id="id-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
         <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
             <div class="mt-3">
@@ -286,17 +298,41 @@
                     </button>
                 </div>
                 <div id="id-modal-content" class="space-y-4">
-                    <!-- 身份证内容将在这里动态加载 -->
+                    <!-- 身份证材料内容将在这里动态加载 -->
                 </div>
             </div>
         </div>
     </div>
     
+    <!-- 加载提示 -->
+    <div id="loading-overlay" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 flex items-center gap-4">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <span class="text-gray-700">正在处理...</span>
+        </div>
+    </div>
+    
     <script>
+        // 全局变量
+        let allUsers = [];
+        let filteredUsers = [];
+        
         document.addEventListener('DOMContentLoaded', function() {
             // 检查管理员登录状态
             checkAdminLogin();
             
+            // 加载用户数据
+            loadUserData();
+            
+            // 绑定事件
+            bindEvents();
+            
+            // 绑定全选复选框
+            bindSelectAllCheckboxes();
+        });
+        
+        // 绑定事件
+        function bindEvents() {
             // 标签页切换
             const tabBtns = document.querySelectorAll('.tab-btn');
             const tabContents = document.querySelectorAll('.tab-content');
@@ -321,7 +357,244 @@
                 });
             });
             
-            // 查看身份证功能
+            // 搜索功能
+            document.getElementById('search-input').addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                filterUsers(searchTerm);
+            });
+            
+            // 批量操作按钮
+            document.getElementById('batch-suspend-btn').addEventListener('click', function() {
+                const selectedIds = getSelectedUserIds();
+                if (selectedIds.length === 0) {
+                    alert('请先选择要操作的用户');
+                    return;
+                }
+                const reason = prompt('请输入暂停原因（可选）:', '批量暂停');
+                if (reason !== null) {
+                    batchUserOperation(selectedIds, 'suspend', reason);
+                }
+            });
+            
+            document.getElementById('batch-restore-btn').addEventListener('click', function() {
+                const selectedIds = getSelectedUserIds();
+                if (selectedIds.length === 0) {
+                    alert('请先选择要操作的用户');
+                    return;
+                }
+                batchUserOperation(selectedIds, 'restore');
+            });
+            
+            // 刷新按钮
+            document.getElementById('refresh-btn').addEventListener('click', function() {
+                loadUserData();
+            });
+            
+            // 关闭弹窗
+            document.getElementById('close-user-modal').addEventListener('click', function() {
+                document.getElementById('user-modal').classList.add('hidden');
+            });
+            
+            document.getElementById('close-id-modal').addEventListener('click', function() {
+                document.getElementById('id-modal').classList.add('hidden');
+            });
+            
+            // 点击弹窗外部关闭
+            document.getElementById('user-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.add('hidden');
+                }
+            });
+            
+            document.getElementById('id-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.add('hidden');
+                }
+            });
+        }
+        
+        // 检查管理员登录状态
+        function checkAdminLogin() {
+            const token = localStorage.getItem('admin_token');
+            if (!token) {
+                alert('请先登录管理员账户');
+                window.location.href = '/admin/admin-login.html';
+                return;
+            }
+        }
+        
+        // 登出功能
+        document.getElementById('logout-btn').addEventListener('click', function() {
+            if (confirm('确定要退出登录吗？')) {
+                localStorage.removeItem('admin_token');
+                window.location.href = '/admin/admin-login.html';
+            }
+        });
+        
+        // 加载用户数据
+        async function loadUserData() {
+            try {
+                showLoading();
+                
+                const response = await fetch('/api/admin/get-all-users', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    allUsers = result.data;
+                    filteredUsers = [...allUsers];
+                    updateStatistics();
+                    renderUserLists();
+                } else {
+                    throw new Error(result.message || '获取用户数据失败');
+                }
+            } catch (error) {
+                console.error('加载用户数据失败:', error);
+                alert('加载用户数据失败: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // 更新统计数字
+        function updateStatistics() {
+            const pendingCount = allUsers.filter(u => !u.is_approved).length;
+            const approvedCount = allUsers.filter(u => u.is_approved).length;
+            const totalCount = allUsers.length;
+            const onlineCount = Math.floor(approvedCount * 0.4); // 模拟在线用户数量
+            
+            document.getElementById('pending-count').textContent = pendingCount;
+            document.getElementById('approved-count').textContent = approvedCount;
+            document.getElementById('total-count').textContent = totalCount;
+            document.getElementById('online-count').textContent = onlineCount;
+        }
+        
+        // 渲染用户列表
+        function renderUserLists() {
+            const pendingUsers = filteredUsers.filter(u => !u.is_approved);
+            const approvedUsers = filteredUsers.filter(u => u.is_approved);
+            
+            renderPendingUsers(pendingUsers);
+            renderApprovedUsers(approvedUsers);
+        }
+        
+        // 渲染待审核用户列表
+        function renderPendingUsers(users) {
+            const tbody = document.getElementById('pending-tbody');
+            if (users.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="px-6 py-12 text-center">
+                            <i class="fa fa-inbox text-4xl text-gray-300 mb-4 block"></i>
+                            <p class="text-gray-500 text-lg">暂无待审核的用户申请</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = users.map(user => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <input type="checkbox" class="user-checkbox pending-checkbox rounded border-gray-300 text-primary focus:ring-primary" data-user-id="${user.id}">
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${user.id}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${user.name || '未设置'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.phone || '未设置'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.email || '未设置'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.created_at || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <button class="view-id-btn bg-primary hover:bg-primary/90 text-white px-3 py-1 rounded text-xs" 
+                                data-user-id="${user.id}" 
+                                data-user-email="${user.email || '未设置'}">
+                            查看身份证
+                        </button>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div class="flex space-x-2">
+                            <button class="approve-user-btn bg-success hover:bg-success/90 text-white px-3 py-1 rounded text-xs" data-user-id="${user.id}">
+                                批准
+                            </button>
+                            <button class="reject-user-btn bg-danger hover:bg-danger/90 text-white px-3 py-1 rounded text-xs" data-user-id="${user.id}">
+                                拒绝
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+            
+            // 绑定事件
+            bindPendingUserEvents();
+        }
+        
+        // 渲染已批准用户列表
+        function renderApprovedUsers(users) {
+            const tbody = document.getElementById('approved-tbody');
+            if (users.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="px-6 py-12 text-center">
+                            <i class="fa fa-check-circle text-4xl text-gray-300 mb-4 block"></i>
+                            <p class="text-gray-500 text-lg">暂无已批准的用户</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = users.map(user => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <input type="checkbox" class="user-checkbox approved-checkbox rounded border-gray-300 text-primary focus:ring-primary" data-user-id="${user.id}">
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${user.id}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${user.name || '未设置'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.phone || '未设置'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.email || '未设置'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.approved_at || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        ${user.status === 'suspended' ? 
+                            '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-warning/10 text-warning">已暂停</span>' :
+                            '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-success/10 text-success">已批准</span>'
+                        }
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div class="flex space-x-2">
+                            <button class="view-user-profile-btn bg-primary hover:bg-primary/90 text-white px-3 py-1 rounded text-xs" data-user-id="${user.id}">
+                                查看详情
+                            </button>
+                            <button class="reset-password-btn bg-info hover:bg-info/90 text-white px-3 py-1 rounded text-xs" data-user-id="${user.id}">
+                                重置密码
+                            </button>
+                            ${user.status === 'suspended' ? 
+                                '<button class="restore-user-btn bg-success hover:bg-success/90 text-white px-3 py-1 rounded text-xs" data-user-id="' + user.id + '">恢复</button>' :
+                                '<button class="suspend-user-btn bg-warning hover:bg-warning/90 text-white px-3 py-1 rounded text-xs" data-user-id="' + user.id + '">暂停</button>'
+                            }
+                            <button class="delete-user-btn bg-danger hover:bg-danger/90 text-white px-3 py-1 rounded text-xs" data-user-id="${user.id}">
+                                删除
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+            
+            // 绑定事件
+            bindApprovedUserEvents();
+        }
+        
+        // 绑定待审核用户事件
+        function bindPendingUserEvents() {
+            // 查看身份证
             document.querySelectorAll('.view-id-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const userId = this.getAttribute('data-user-id');
@@ -344,17 +617,30 @@
             document.querySelectorAll('.reject-user-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const userId = this.getAttribute('data-user-id');
-                    if (confirm('确定要拒绝这个用户申请吗？')) {
+                    if (confirm('确定要拒绝这个用户申请吗？拒绝后用户账号将被删除。')) {
                         rejectUser(userId);
                     }
                 });
             });
-            
+        }
+        
+        // 绑定已批准用户事件
+        function bindApprovedUserEvents() {
             // 查看用户详情
             document.querySelectorAll('.view-user-profile-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const userId = this.getAttribute('data-user-id');
-                    viewUserProfile(userId);
+                    showUserDetails(userId);
+                });
+            });
+            
+            // 重置密码
+            document.querySelectorAll('.reset-password-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-user-id');
+                    if (confirm('确定要重置这个用户的密码吗？')) {
+                        resetUserPassword(userId);
+                    }
                 });
             });
             
@@ -362,86 +648,413 @@
             document.querySelectorAll('.suspend-user-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const userId = this.getAttribute('data-user-id');
-                    if (confirm('确定要暂停这个用户吗？')) {
-                        suspendUser(userId);
+                    const reason = prompt('请输入暂停原因（可选）:', '管理员暂停');
+                    if (reason !== null) {
+                        suspendUser(userId, reason);
                     }
                 });
             });
             
-            // 关闭身份证弹窗
-            document.getElementById('close-id-modal').addEventListener('click', function() {
-                document.getElementById('id-modal').classList.add('hidden');
+            // 恢复用户
+            document.querySelectorAll('.restore-user-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-user-id');
+                    if (confirm('确定要恢复这个用户账号吗？')) {
+                        restoreUser(userId);
+                    }
+                });
             });
             
-            // 点击弹窗外部关闭
-            document.getElementById('id-modal').addEventListener('click', function(e) {
-                if (e.target === this) {
-                    this.classList.add('hidden');
-                }
+            // 删除用户
+            document.querySelectorAll('.delete-user-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-user-id');
+                    if (confirm('确定要删除这个用户账号吗？\n\n⚠️ 警告：\n• 如果用户有进行中的服务，建议先暂停账号\n• 删除将同时删除所有相关数据\n• 此操作不可恢复！\n\n点击"确定"执行删除，点击"取消"返回。')) {
+                        deleteUser(userId);
+                    }
+                });
             });
-        });
-        
-        // 检查管理员登录状态
-        function checkAdminLogin() {
-            const token = localStorage.getItem('admin_token');
-            if (!token) {
-                alert('请先登录管理员账户');
-                window.location.href = '/admin/admin-login.html';
-                return;
-            }
         }
-        
-        // 登出功能
-        document.getElementById('logout-btn').addEventListener('click', function() {
-            if (confirm('确定要退出登录吗？')) {
-                localStorage.removeItem('admin_token');
-                window.location.href = '/admin/admin-login.html';
-            }
-        });
         
         // 显示用户身份证
         function showUserID(userId, userEmail) {
-            // 这里应该从后端获取用户身份证材料
+            const user = allUsers.find(u => u.id == userId);
+            if (!user) {
+                alert('用户信息不存在');
+                return;
+            }
+            
             const modalContent = document.getElementById('id-modal-content');
             modalContent.innerHTML = `
                 <div class="text-center py-8">
-                    <i class="fa fa-id-card text-4xl text-gray-300 mb-4"></i>
-                    <p class="text-gray-500">用户ID: ${userId}</p>
-                    <p class="text-gray-500">邮箱: ${userEmail}</p>
-                    <p class="text-gray-400 text-sm mt-2">身份证查看功能开发中...</p>
-                    <div class="mt-4 p-4 bg-gray-50 rounded-lg">
-                        <p class="text-sm text-gray-600">这里将显示用户的身份证照片或扫描件</p>
+                    <i class="fa fa-id-card text-4xl text-primary mb-4"></i>
+                    <p class="text-lg font-medium text-gray-900 mb-2">${user.name || '未设置姓名'}</p>
+                    <p class="text-gray-500">用户ID: ${user.id}</p>
+                    <p class="text-gray-500">邮箱: ${user.email}</p>
+                    <div class="mt-6 space-y-4 text-left">
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <h4 class="font-medium text-gray-900 mb-2">身份证信息</h4>
+                            ${user.id_file ? 
+                                `<img src="/uploads/${user.id_file}" alt="身份证" class="w-full max-w-md mx-auto rounded-lg shadow-sm">` :
+                                '<p class="text-sm text-gray-600">未上传身份证</p>'
+                            }
+                        </div>
                     </div>
                 </div>
             `;
             document.getElementById('id-modal').classList.remove('hidden');
         }
         
+        // 显示用户详情
+        function showUserDetails(userId) {
+            const user = allUsers.find(u => u.id == userId);
+            if (!user) {
+                alert('用户信息不存在');
+                return;
+            }
+            
+            const modalContent = document.getElementById('user-modal-content');
+            modalContent.innerHTML = `
+                <div class="text-center py-8">
+                    <i class="fa fa-user text-4xl text-primary mb-4"></i>
+                    <p class="text-lg font-medium text-gray-900 mb-2">${user.name || '未设置姓名'}</p>
+                    <p class="text-gray-500">用户ID: ${user.id}</p>
+                    <div class="mt-6 space-y-4 text-left">
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <h4 class="font-medium text-gray-900 mb-2">基本信息</h4>
+                            <p class="text-sm text-gray-600">邮箱: ${user.email || '未设置'}</p>
+                            <p class="text-sm text-gray-600">手机号: ${user.phone || '未设置'}</p>
+                            <p class="text-sm text-gray-600">性别: ${user.gender || '未设置'}</p>
+                            <p class="text-sm text-gray-600">出生日期: ${user.birth_date || '未设置'}</p>
+                            <p class="text-sm text-gray-600">地址: ${user.address || '未设置'}</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <h4 class="font-medium text-gray-900 mb-2">紧急联系人</h4>
+                            <p class="text-sm text-gray-600">联系人: ${user.emergency_contact || '未设置'}</p>
+                            <p class="text-sm text-gray-600">联系电话: ${user.emergency_contact_phone || '未设置'}</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <h4 class="font-medium text-gray-900 mb-2">账号状态</h4>
+                            <p class="text-sm text-gray-600">注册时间: ${user.created_at || 'N/A'}</p>
+                            <p class="text-sm text-gray-600">审核状态: ${user.is_approved ? '已批准' : '待审核'}</p>
+                            ${user.approved_at ? `<p class="text-sm text-gray-600">批准时间: ${user.approved_at}</p>` : ''}
+                            <p class="text-sm text-gray-600">当前状态: ${user.status === 'suspended' ? '已暂停' : '正常'}</p>
+                            ${user.suspended_at ? `<p class="text-sm text-gray-600">暂停时间: ${user.suspended_at}</p>` : ''}
+                            ${user.suspension_reason ? `<p class="text-sm text-gray-600">暂停原因: ${user.suspension_reason}</p>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('user-modal').classList.remove('hidden');
+        }
+        
         // 批准用户
-        function approveUser(userId) {
-            // 这里应该调用后端API
-            alert(`用户ID: ${userId} 已批准`);
-            // 可以刷新页面或更新UI
+        async function approveUser(userId) {
+            try {
+                showLoading();
+                
+                const response = await fetch('/api/admin/approve-user', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify({ id: userId })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('用户批准成功！');
+                    // 重新加载数据
+                    loadUserData();
+                } else {
+                    throw new Error(result.message || '批准失败');
+                }
+            } catch (error) {
+                console.error('批准用户失败:', error);
+                alert('批准用户失败: ' + error.message);
+            } finally {
+                hideLoading();
+            }
         }
         
         // 拒绝用户
-        function rejectUser(userId) {
-            // 这里应该调用后端API
-            alert(`用户ID: ${userId} 已拒绝`);
-            // 可以刷新页面或更新UI
+        async function rejectUser(userId) {
+            try {
+                showLoading();
+                
+                const response = await fetch('/api/admin/delete-user', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify({ id: userId })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('用户拒绝成功！');
+                    // 重新加载数据
+                    loadUserData();
+                } else {
+                    throw new Error(result.message || '拒绝失败');
+                }
+            } catch (error) {
+                console.error('拒绝用户失败:', error);
+                alert('拒绝用户失败: ' + error.message);
+            } finally {
+                hideLoading();
+            }
         }
         
-        // 查看用户详情
-        function viewUserProfile(userId) {
-            // 这里应该跳转到用户详情页面或显示弹窗
-            alert(`查看用户ID: ${userId} 的详细信息`);
+        // 重置用户密码
+        async function resetUserPassword(userId) {
+            try {
+                showLoading();
+                
+                const response = await fetch('/api/admin/reset-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify({ id: userId })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`密码重置成功！新密码：${result.new_password}`);
+                } else {
+                    throw new Error(result.message || '重置失败');
+                }
+            } catch (error) {
+                console.error('重置密码失败:', error);
+                alert('重置密码失败: ' + error.message);
+            } finally {
+                hideLoading();
+            }
         }
         
         // 暂停用户
-        function suspendUser(userId) {
-            // 这里应该调用后端API
-            alert(`用户ID: ${userId} 已暂停`);
-            // 可以刷新页面或更新UI
+        async function suspendUser(userId, reason) {
+            try {
+                showLoading();
+                
+                const response = await fetch('/api/admin/suspend-user-account', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify({ 
+                        id: userId,
+                        reason: reason || '管理员暂停'
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('用户暂停成功！');
+                    // 重新加载数据
+                    loadUserData();
+                } else {
+                    throw new Error(result.message || '暂停失败');
+                }
+            } catch (error) {
+                console.error('暂停用户失败:', error);
+                alert('暂停用户失败: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // 恢复用户
+        async function restoreUser(userId) {
+            try {
+                showLoading();
+                
+                const response = await fetch('/api/admin/restore-user-account', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify({ 
+                        id: userId
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('用户恢复成功！');
+                    // 重新加载数据
+                    loadUserData();
+                } else {
+                    throw new Error(result.message || '恢复失败');
+                }
+            } catch (error) {
+                console.error('恢复用户失败:', error);
+                alert('恢复用户失败: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // 删除用户
+        async function deleteUser(userId) {
+            try {
+                showLoading();
+                
+                const response = await fetch('/api/admin/delete-account', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify({ 
+                        id: userId
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('用户删除成功！');
+                    // 重新加载数据
+                    loadUserData();
+                } else {
+                    throw new Error(result.message || '删除失败');
+                }
+            } catch (error) {
+                console.error('删除用户失败:', error);
+                alert('删除用户失败: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // 搜索过滤用户
+        function filterUsers(searchTerm) {
+            if (!searchTerm) {
+                filteredUsers = [...allUsers];
+            } else {
+                filteredUsers = allUsers.filter(user => 
+                    (user.name && user.name.toLowerCase().includes(searchTerm)) ||
+                    (user.email && user.email.toLowerCase().includes(searchTerm)) ||
+                    (user.phone && user.phone.includes(searchTerm)) ||
+                    (user.id && user.id.toString().includes(searchTerm))
+                );
+            }
+            renderUserLists();
+        }
+        
+        // 显示加载提示
+        function showLoading() {
+            document.getElementById('loading-overlay').classList.remove('hidden');
+        }
+        
+        // 获取选中的用户ID列表
+        function getSelectedUserIds() {
+            const checkboxes = document.querySelectorAll('.user-checkbox:checked');
+            return Array.from(checkboxes).map(cb => cb.getAttribute('data-user-id'));
+        }
+        
+        // 全选/取消全选功能
+        function bindSelectAllCheckboxes() {
+            const selectAllPending = document.getElementById('select-all-pending');
+            const selectAllApproved = document.getElementById('select-all-approved');
+            
+            if (selectAllPending) {
+                selectAllPending.addEventListener('change', function() {
+                    const checkboxes = document.querySelectorAll('.pending-checkbox');
+                    checkboxes.forEach(cb => cb.checked = this.checked);
+                });
+            }
+            
+            if (selectAllApproved) {
+                selectAllApproved.addEventListener('change', function() {
+                    const checkboxes = document.querySelectorAll('.approved-checkbox');
+                    checkboxes.forEach(cb => cb.checked = this.checked);
+                });
+            }
+        }
+        
+        // 批量用户操作
+        async function batchUserOperation(userIds, operation, reason = '') {
+            try {
+                showLoading();
+                
+                const response = await fetch('/api/admin/batch-user-operation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify({
+                        user_ids: userIds,
+                        operation: operation,
+                        reason: reason
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    let message = result.message;
+                    if (result.failed_reasons && result.failed_reasons.length > 0) {
+                        message += '\n\n失败原因:\n' + result.failed_reasons.join('\n');
+                    }
+                    alert(message);
+                    // 重新加载数据
+                    loadUserData();
+                } else {
+                    throw new Error(result.message || '批量操作失败');
+                }
+            } catch (error) {
+                console.error('批量用户操作失败:', error);
+                alert('批量操作失败: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // 隐藏加载提示
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.add('hidden');
         }
     </script>
 </body>

@@ -11,6 +11,8 @@
     
     <!-- 引入用户登出功能 -->
     <script src="/js/user-logout.js"></script>
+    <!-- 引入用户信息加载器 -->
+    <script src="/js/user-info-loader.js"></script>
     
     <!-- 配置Tailwind自定义主题 -->
     <script>
@@ -72,7 +74,7 @@
             <div class="flex items-center gap-3">
                 <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-9 h-9 rounded-full object-cover border-2 border-primary/20">
                 <div class="hidden md:block">
-                    <p class="text-sm font-medium">张阿姨</p>
+                    <p class="text-sm font-medium" id="user-name">用户</p>
                     <p class="text-xs text-gray-500">普通用户</p>
                 </div>
                 <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-primary">登出</button>

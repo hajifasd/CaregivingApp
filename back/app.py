@@ -38,6 +38,7 @@ from api.chat import chat_bp, init_socketio
 from api.employment_contract import employment_contract_bp
 from api.caregiver_hire_info import caregiver_hire_info_bp
 from api.notification import notification_bp
+from api.file_upload import file_upload_bp
 
 # ==================== 日志配置 ====================
 logging.basicConfig(level=logging.INFO)
@@ -66,6 +67,12 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = SQLALCHEMY_TRACK_MODIFICATIONS
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URI
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_size': 10,
+    'max_overflow': 20,
+    'pool_recycle': 3600,
+    'pool_pre_ping': True
+}
 
 # ==================== 扩展初始化 ====================
 db.init_app(app)
@@ -136,6 +143,7 @@ app.register_blueprint(chat_bp)
 app.register_blueprint(employment_contract_bp)
 app.register_blueprint(caregiver_hire_info_bp)
 app.register_blueprint(notification_bp)
+app.register_blueprint(file_upload_bp)
 
 # ==================== 初始化SocketIO ====================
 socketio = init_socketio(app)
@@ -466,17 +474,17 @@ if __name__ == '__main__':
     
     # 初始化数据库（MySQL 已迁移完成）
     try:
-        with app.app_context():
-            db.create_all()
-            print("数据库表创建完成")
-            
-            # 初始化所有数据模型和服务
-            init_models()
-            print("数据模型初始化完成")
-            
+        from extensions import init_database
+        init_database(app)
+        
+        # 初始化所有数据模型和服务
+        init_models()
+        print("数据模型初始化完成")
+        
         print("数据库初始化完成")
     except Exception as e:
         print(f"数据库初始化失败: {e}")
+        print("请检查数据库配置和连接")
         print("继续启动应用...")
     
     try:

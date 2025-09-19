@@ -89,6 +89,10 @@ def reject_caregiver():
         db.session.delete(caregiver)
         db.session.commit()
         
+        # 重新排序护工表ID
+        from utils.id_resequence import IDResequenceManager
+        IDResequenceManager.resequence_caregivers()
+        
         return jsonify({
             'success': True,
             'message': '护工拒绝成功'
@@ -152,25 +156,78 @@ def delete_user():
         if not user:
             return jsonify({'success': False, 'message': '用户不存在'}), 404
         
+        # 删除用户相关的所有记录
+        deleted_records = []
+        
+        # 使用SQL直接删除，避免外键约束问题
+        from sqlalchemy import text
+        
+        # 1. 删除服务记录
+        result = db.session.execute(text("DELETE FROM service_record WHERE contract_id IN (SELECT id FROM employment_contract WHERE user_id = :user_id)"), {"user_id": user_id})
+        if result.rowcount > 0:
+            deleted_records.append(f"服务记录 {result.rowcount} 条")
+        
+        # 2. 删除就业合同记录
+        result = db.session.execute(text("DELETE FROM employment_contract WHERE user_id = :user_id"), {"user_id": user_id})
+        if result.rowcount > 0:
+            deleted_records.append(f"就业合同 {result.rowcount} 条")
+        
+        # 3. 删除就业申请记录
+        result = db.session.execute(text("DELETE FROM contract_application WHERE user_id = :user_id"), {"user_id": user_id})
+        if result.rowcount > 0:
+            deleted_records.append(f"就业申请 {result.rowcount} 条")
+        
+        # 4. 删除预约记录
+        result = db.session.execute(text("DELETE FROM appointment WHERE user_id = :user_id"), {"user_id": user_id})
+        if result.rowcount > 0:
+            deleted_records.append(f"预约记录 {result.rowcount} 条")
+        
+        # 5. 删除消息记录
+        result = db.session.execute(text("DELETE FROM message WHERE sender_id = :user_id OR recipient_id = :user_id"), {"user_id": str(user_id)})
+        if result.rowcount > 0:
+            deleted_records.append(f"消息记录 {result.rowcount} 条")
+        
+        # 6. 删除聊天对话记录
+        result = db.session.execute(text("DELETE FROM chat_conversation WHERE user_id = :user_id"), {"user_id": user_id})
+        if result.rowcount > 0:
+            deleted_records.append(f"聊天对话 {result.rowcount} 条")
+        
+        # 7. 删除通知记录
+        result = db.session.execute(text("DELETE FROM notification WHERE recipient_id = :user_id OR sender_id = :user_id"), {"user_id": user_id})
+        if result.rowcount > 0:
+            deleted_records.append(f"通知记录 {result.rowcount} 条")
+        
+        # 8. 最后删除用户记录
+        result = db.session.execute(text("DELETE FROM user WHERE id = :user_id"), {"user_id": user_id})
+        if result.rowcount > 0:
+            deleted_records.append(f"用户记录 {user_id}")
+        
         # 删除用户文件
         from flask import current_app
-        upload_folder = current_app.config['UPLOAD_FOLDER']
+        upload_folder = current_app.config.get('UPLOAD_FOLDER', 'web/uploads')
         
         if user.id_file and user.id_file.strip():
             file_path = os.path.join(upload_folder, user.id_file)
             if os.path.exists(file_path):
                 try:
                     os.remove(file_path)
+                    deleted_records.append(f"用户文件 {user.id_file}")
                 except Exception as e:
                     logger.warning(f"删除用户文件 {user.id_file} 失败: {e}")
         
-        # 删除用户记录
-        db.session.delete(user)
+        # 提交所有删除操作
         db.session.commit()
+        
+        # 重新排序用户表ID
+        from utils.id_resequence import IDResequenceManager
+        IDResequenceManager.resequence_users()
+        
+        logger.info(f"用户 {user_id} 删除成功，共删除 {len(deleted_records)} 条相关记录")
         
         return jsonify({
             'success': True,
-            'message': '用户删除成功'
+            'message': f'用户删除成功，共删除 {len(deleted_records)} 条相关记录',
+            'deleted_records': deleted_records
         })
     except Exception as e:
         db.session.rollback()
@@ -197,10 +254,21 @@ def get_all_users():
                 "phone": user.phone,
                 "name": user.name or "未设置",
                 "created_at": user.created_at.strftime("%Y-%m-%d") if user.created_at else "N/A",
+                "approved_at": user.approved_at.strftime("%Y-%m-%d") if user.approved_at else "N/A",
                 "last_login": "N/A",  # 暂时设为N/A，后续可以添加last_login字段
-                "status": "正常" if user.is_approved else "待审核",
+                "status": getattr(user, 'status', 'active') if user.is_approved else "待审核",
                 "is_approved": user.is_approved,
-                "is_verified": user.is_verified
+                "is_verified": user.is_verified,
+                "available": getattr(user, 'available', True),
+                "suspended_at": user.suspended_at.strftime("%Y-%m-%d %H:%M") if hasattr(user, 'suspended_at') and user.suspended_at else None,
+                "suspension_reason": getattr(user, 'suspension_reason', None),
+                "gender": getattr(user, 'gender', None),
+                "birth_date": user.birth_date.strftime("%Y-%m-%d") if hasattr(user, 'birth_date') and user.birth_date else None,
+                "address": getattr(user, 'address', None),
+                "emergency_contact": getattr(user, 'emergency_contact', None),
+                "emergency_contact_phone": getattr(user, 'emergency_contact_phone', None),
+                "special_needs": getattr(user, 'special_needs', None),
+                "id_file": getattr(user, 'id_file', None)
             }
             user_list.append(user_info)
         
@@ -251,46 +319,9 @@ def reset_user_password():
 
 @admin_bp.route('/api/admin/delete-account', methods=['POST'])
 def delete_user_account():
-    """删除用户账号接口"""
-    try:
-        data = request.json
-        user_id = data.get('id')
-        
-        if not user_id:
-            return jsonify({'success': False, 'message': '缺少用户ID'}), 400
-        
-        # 获取模型
-        from models.user import User
-        UserModel = User.get_model(db)
-        
-        user = UserModel.query.get(user_id)
-        if not user:
-            return jsonify({'success': False, 'message': '用户不存在'}), 404
-        
-        # 删除用户文件
-        from flask import current_app
-        upload_folder = current_app.config['UPLOAD_FOLDER']
-        
-        if user.id_file and user.id_file.strip():
-            file_path = os.path.join(upload_folder, user.id_file)
-            if os.path.exists(file_path):
-                try:
-                    os.remove(file_path)
-                except Exception as e:
-                    logger.warning(f"删除用户文件 {user.id_file} 失败: {e}")
-        
-        # 删除用户记录
-        db.session.delete(user)
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': '账号删除成功'
-        })
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"删除账号失败: {e}")
-        return jsonify({'success': False, 'message': f'删除账号失败：{str(e)}'}), 500
+    """删除用户账号接口（与delete-user功能相同）"""
+    # 直接调用delete_user函数，避免代码重复
+    return delete_user()
 
 @admin_bp.route('/api/admin/activate-account', methods=['POST'])
 def activate_user_account():
@@ -347,8 +378,11 @@ def get_all_caregivers():
                 "name": caregiver.name if caregiver.name is not None else "未设置",
                 "created_at": caregiver.created_at.strftime("%Y-%m-%d") if caregiver.created_at is not None else "未知",
                 "approved_at": caregiver.approved_at.strftime("%Y-%m-%d") if caregiver.approved_at is not None else "N/A",
-                "status": "正常" if caregiver.is_approved is not None and caregiver.is_approved else "待审核",
+                "status": getattr(caregiver, 'status', 'active') if caregiver.is_approved else "待审核",
                 "is_approved": bool(caregiver.is_approved) if caregiver.is_approved is not None else False,
+                "available": getattr(caregiver, 'available', True),
+                "suspended_at": caregiver.suspended_at.strftime("%Y-%m-%d %H:%M") if hasattr(caregiver, 'suspended_at') and caregiver.suspended_at else None,
+                "suspension_reason": getattr(caregiver, 'suspension_reason', None),
                 "gender": caregiver.gender if caregiver.gender is not None else "未设置",
                 "age": caregiver.age if caregiver.age is not None else "未设置",
                 "experience_years": caregiver.experience_years if caregiver.experience_years is not None else 0,
@@ -432,7 +466,7 @@ def delete_caregiver_account():
         
         # 导入所需的模型（在函数开始就导入，避免作用域问题）
         from models.employment_contract import EmploymentContract, ContractApplication
-        from models.business import Appointment
+        from models.business import Appointment, Employment
         from models.caregiver_hire_info import CaregiverHireInfo
         from models.chat import ChatConversation
         
@@ -583,6 +617,17 @@ def delete_caregiver_account():
                 
                 logger.info(f"强制删除护工时，已删除{len(chat_records)}条聊天对话记录")
                 
+                # 删除就业记录
+                EmploymentModel = Employment.get_model(db)
+                employment_records = EmploymentModel.query.filter_by(
+                    caregiver_id=caregiver_id
+                ).all()
+                
+                for record in employment_records:
+                    db.session.delete(record)
+                
+                logger.info(f"强制删除护工时，已删除{len(employment_records)}条就业记录")
+                
             except Exception as e:
                 logger.warning(f"强制删除护工时清理关联数据失败: {e}")
                 # 继续执行删除操作
@@ -593,6 +638,10 @@ def delete_caregiver_account():
         # 删除护工记录
         db.session.delete(caregiver)
         db.session.commit()
+        
+        # 重新排序护工表ID
+        from utils.id_resequence import IDResequenceManager
+        IDResequenceManager.resequence_caregivers()
         
         # 构建响应消息
         message = '护工账号删除成功'
@@ -840,6 +889,11 @@ def batch_caregiver_operation():
         # 提交事务
         db.session.commit()
         
+        # 如果有删除操作，重新排序护工表ID
+        if operation == 'delete' and success_count > 0:
+            from utils.id_resequence import IDResequenceManager
+            IDResequenceManager.resequence_caregivers()
+        
         # 记录操作日志
         logger.info(f"批量护工操作: 操作={operation}, 成功={success_count}, 失败={failed_count}, 护工IDs={caregiver_ids}")
         
@@ -861,4 +915,220 @@ def batch_caregiver_operation():
     except Exception as e:
         db.session.rollback()
         logger.error(f"批量护工操作失败: {e}")
+        return jsonify({'success': False, 'message': f'批量操作失败：{str(e)}'}), 500
+
+@admin_bp.route('/api/admin/suspend-user-account', methods=['POST'])
+def suspend_user_account():
+    """暂停用户账号接口"""
+    try:
+        data = request.json
+        user_id = data.get('id')
+        reason = data.get('reason', '管理员暂停')
+        
+        if not user_id:
+            return jsonify({'success': False, 'message': '缺少用户ID'}), 400
+        
+        # 获取模型
+        from models.user import User
+        UserModel = User.get_model(db)
+        
+        user = UserModel.query.get(user_id)
+        if not user:
+            return jsonify({'success': False, 'message': '用户不存在'}), 404
+        
+        if not user.is_approved:
+            return jsonify({'success': False, 'message': '该用户尚未通过审核，无法暂停'}), 400
+        
+        # 暂停账号
+        user.available = False
+        user.status = 'suspended'
+        
+        # 记录暂停原因和时间
+        from datetime import datetime, timezone
+        user.suspended_at = datetime.now(timezone.utc)
+        user.suspension_reason = reason
+        
+        db.session.commit()
+        
+        logger.info(f"管理员暂停用户账号: ID={user_id}, 姓名={user.name}, 原因={reason}")
+        
+        return jsonify({
+            'success': True,
+            'message': '用户账号暂停成功',
+            'user_info': {
+                'id': user_id,
+                'name': user.name,
+                'email': user.email,
+                'status': 'suspended',
+                'suspended_at': user.suspended_at.strftime("%Y-%m-%d %H:%M"),
+                'reason': reason
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"暂停用户账号失败: {e}")
+        return jsonify({'success': False, 'message': f'暂停用户账号失败：{str(e)}'}), 500
+
+@admin_bp.route('/api/admin/restore-user-account', methods=['POST'])
+def restore_user_account():
+    """恢复用户账号接口"""
+    try:
+        data = request.json
+        user_id = data.get('id')
+        
+        if not user_id:
+            return jsonify({'success': False, 'message': '缺少用户ID'}), 400
+        
+        # 获取模型
+        from models.user import User
+        UserModel = User.get_model(db)
+        
+        user = UserModel.query.get(user_id)
+        if not user:
+            return jsonify({'success': False, 'message': '用户不存在'}), 404
+        
+        if user.status != 'suspended':
+            return jsonify({'success': False, 'message': '该用户账号未被暂停'}), 400
+        
+        # 恢复账号
+        user.available = True
+        user.status = 'active'
+        user.suspended_at = None
+        user.suspension_reason = None
+        
+        db.session.commit()
+        
+        logger.info(f"管理员恢复用户账号: ID={user_id}, 姓名={user.name}")
+        
+        return jsonify({
+            'success': True,
+            'message': '用户账号恢复成功',
+            'user_info': {
+                'id': user_id,
+                'name': user.name,
+                'email': user.email,
+                'status': 'active'
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"恢复用户账号失败: {e}")
+        return jsonify({'success': False, 'message': f'恢复用户账号失败：{str(e)}'}), 500
+
+@admin_bp.route('/api/admin/batch-user-operation', methods=['POST'])
+def batch_user_operation():
+    """批量用户操作接口"""
+    try:
+        data = request.json
+        user_ids = data.get('user_ids', [])
+        operation = data.get('operation')  # 'suspend', 'restore', 'delete'
+        reason = data.get('reason', '批量操作')
+        
+        if not user_ids:
+            return jsonify({'success': False, 'message': '缺少用户ID列表'}), 400
+        
+        if not operation:
+            return jsonify({'success': False, 'message': '缺少操作类型'}), 400
+        
+        if operation not in ['suspend', 'restore', 'delete']:
+            return jsonify({'success': False, 'message': '不支持的操作类型'}), 400
+        
+        # 获取模型
+        from models.user import User
+        UserModel = User.get_model(db)
+        
+        # 查询用户
+        users = UserModel.query.filter(UserModel.id.in_(user_ids)).all()
+        
+        if not users:
+            return jsonify({'success': False, 'message': '未找到指定的用户'}), 404
+        
+        success_count = 0
+        failed_count = 0
+        failed_reasons = []
+        
+        for user in users:
+            try:
+                if operation == 'suspend':
+                    if user.is_approved:
+                        user.available = False
+                        user.status = 'suspended'
+                        from datetime import datetime, timezone
+                        user.suspended_at = datetime.now(timezone.utc)
+                        user.suspension_reason = reason
+                        success_count += 1
+                    else:
+                        failed_count += 1
+                        failed_reasons.append(f"用户{user.name}(ID:{user.id})未通过审核，无法暂停")
+                        
+                elif operation == 'restore':
+                    if user.status == 'suspended':
+                        user.available = True
+                        user.status = 'active'
+                        user.suspended_at = None
+                        user.suspension_reason = None
+                        success_count += 1
+                    else:
+                        failed_count += 1
+                        failed_reasons.append(f"用户{user.name}(ID:{user.id})未被暂停，无法恢复")
+                        
+                elif operation == 'delete':
+                    # 检查是否可以删除
+                    if user.is_approved:
+                        failed_count += 1
+                        failed_reasons.append(f"用户{user.name}(ID:{user.id})已通过审核，建议先暂停")
+                        continue
+                    
+                    # 删除相关文件
+                    from flask import current_app
+                    upload_folder = current_app.config['UPLOAD_FOLDER']
+                    
+                    if user.id_file and user.id_file.strip():
+                        file_path = os.path.join(upload_folder, user.id_file)
+                        if os.path.exists(file_path):
+                            try:
+                                os.remove(file_path)
+                            except Exception as e:
+                                logger.warning(f"删除用户文件 {user.id_file} 失败: {e}")
+                    
+                    # 删除用户记录
+                    db.session.delete(user)
+                    success_count += 1
+                    
+            except Exception as e:
+                failed_count += 1
+                failed_reasons.append(f"用户{user.name}(ID:{user.id})操作失败: {str(e)}")
+                logger.error(f"批量操作用户失败: ID={user.id}, 操作={operation}, 错误={e}")
+        
+        # 提交事务
+        db.session.commit()
+        
+        # 如果有删除操作，重新排序用户表ID
+        if operation == 'delete' and success_count > 0:
+            from utils.id_resequence import IDResequenceManager
+            IDResequenceManager.resequence_users()
+        
+        # 记录操作日志
+        logger.info(f"批量用户操作: 操作={operation}, 成功={success_count}, 失败={failed_count}, 用户IDs={user_ids}")
+        
+        # 构建响应
+        response_data = {
+            'success': True,
+            'message': f'批量操作完成，成功{success_count}个，失败{failed_count}个',
+            'operation': operation,
+            'total_count': len(user_ids),
+            'success_count': success_count,
+            'failed_count': failed_count
+        }
+        
+        if failed_reasons:
+            response_data['failed_reasons'] = failed_reasons
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"批量用户操作失败: {e}")
         return jsonify({'success': False, 'message': f'批量操作失败：{str(e)}'}), 500

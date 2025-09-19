@@ -72,8 +72,8 @@
             <div class="flex items-center gap-3">
                 <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-9 h-9 rounded-full object-cover border-2 border-primary/20">
                 <div class="hidden md:block">
-                    <p class="text-sm font-medium">张阿姨</p>
-                    <p class="text-xs text-gray-500">普通用户</p>
+                    <p class="text-sm font-medium" id="user-name">用户</p>
+                    <p class="text-xs text-gray-500" id="user-role">普通用户</p>
                 </div>
                 <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-primary">登出</button>
             </div>
@@ -111,7 +111,7 @@
     <main class="p-6 bg-gray-50">
         <!-- 欢迎区域 -->
         <div class="text-center mb-8">
-            <h2 class="text-3xl font-bold text-gray-800 mb-4">欢迎回来，张阿姨</h2>
+            <h2 class="text-3xl font-bold text-gray-800 mb-4">欢迎回来，<span id="welcome-user-name">用户</span></h2>
             <p class="text-gray-600 text-lg">今天是 <span id="current-date"></span>，祝您生活愉快</p>
         </div>
         
@@ -180,73 +180,21 @@
                     }
                 }
             },
-            caregivers: [
-                {
-                    id: 1,
-                    name: '李敏',
-                    avatar: 'https://picsum.photos/id/26/400/200',
-                    rating: 4.8,
-                    skills: ['老年护理', '康复护理'],
-                    experience: '5年经验',
-                    description: '擅长老年日常护理、康复辅助，有耐心，责任心强，持有专业护理证书。',
-                    price: 180,
-                    status: 'available'
-                },
-                {
-                    id: 2,
-                    name: '王芳',
-                    avatar: 'https://picsum.photos/id/91/400/200',
-                    rating: 4.9,
-                    skills: ['母婴护理', '育儿嫂'],
-                    experience: '8年经验',
-                    description: '专业母婴护理师，擅长新生儿照料、产后恢复指导，服务细致周到。',
-                    price: 220,
-                    status: 'available'
-                },
-                {
-                    id: 3,
-                    name: '张伟',
-                    avatar: 'https://picsum.photos/id/177/400/200',
-                    rating: 4.7,
-                    skills: ['医疗护理', '术后护理'],
-                    experience: '10年经验',
-                    description: '原医院护士，擅长术后护理、医疗辅助，熟悉各种医疗设备使用。',
-                    price: 260,
-                    status: 'busy'
-                }
-            ],
-            appointments: [
-                {
-                    id: 1,
-                    caregiver: {
-                        name: '李敏',
-                        avatar: 'https://picsum.photos/id/26/50/50',
-                        id: '20230567'
-                    },
-                    serviceType: '老年日常护理',
-                    date: '2023-10-15',
-                    startTime: '09:00',
-                    endTime: '11:00',
-                    status: 'confirmed'
-                },
-                {
-                    id: 2,
-                    caregiver: {
-                        name: '王芳',
-                        avatar: 'https://picsum.photos/id/91/50/50',
-                        id: '20230421'
-                    },
-                    serviceType: '母婴护理咨询',
-                    date: '2023-10-18',
-                    startTime: '14:00',
-                    endTime: '16:00',
-                    status: 'pending'
-                }
-            ]
+            caregivers: [], // 从后端API动态加载
+            appointments: [] // 从后端API动态加载
         };
         
         // 页面初始化
         document.addEventListener('DOMContentLoaded', function() {
+            // 加载用户信息
+            loadUserInfo();
+            
+            // 加载护工数据
+            loadCaregiversData();
+            
+            // 加载预约数据
+            loadAppointmentsData();
+            
             // 初始化页面
             initializePage();
             
@@ -661,6 +609,185 @@
             backToTopBtn.addEventListener('click', () => {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
+        }
+        
+        // 加载用户信息
+        function loadUserInfo() {
+            try {
+                // 尝试从多个可能的localStorage键获取用户信息
+                let userInfo = null;
+                
+                // 首先尝试 user_info (用户信息管理模块的键)
+                const userInfoFromManager = localStorage.getItem('user_info');
+                if (userInfoFromManager) {
+                    userInfo = JSON.parse(userInfoFromManager);
+                } else {
+                    // 然后尝试 userInfo (旧版本的键)
+                    const userInfoOld = localStorage.getItem('userInfo');
+                    if (userInfoOld) {
+                        userInfo = JSON.parse(userInfoOld);
+                    }
+                }
+                
+                // 如果localStorage中没有用户信息，尝试从JWT token解析
+                if (!userInfo || !userInfo.name) {
+                    userInfo = getUserInfoFromToken();
+                    
+                    // 如果从token解析成功，保存到localStorage
+                    if (userInfo && userInfo.name) {
+                        localStorage.setItem('user_info', JSON.stringify(userInfo));
+                    }
+                }
+                
+                if (userInfo && userInfo.name) {
+                    // 更新导航栏用户信息
+                    const userNameElement = document.getElementById('user-name');
+                    const userRoleElement = document.getElementById('user-role');
+                    const welcomeUserNameElement = document.getElementById('welcome-user-name');
+                    
+                    if (userNameElement) userNameElement.textContent = userInfo.name;
+                    if (userRoleElement) userRoleElement.textContent = userInfo.role || '普通用户';
+                    if (welcomeUserNameElement) welcomeUserNameElement.textContent = userInfo.name;
+                    
+                    console.log('用户信息加载成功:', userInfo.name);
+                } else {
+                    console.warn('未找到用户信息，显示默认值');
+                    // 如果仍然没有用户信息，尝试从API获取
+                    fetchUserInfoFromAPI();
+                }
+            } catch (error) {
+                console.error('加载用户信息失败:', error);
+            }
+        }
+        
+        // 从API获取用户信息
+        async function fetchUserInfoFromAPI() {
+            try {
+                const token = localStorage.getItem('user_token') || getCookie('user_token');
+                if (!token) {
+                    console.warn('未找到用户token');
+                    return;
+                }
+                
+                const response = await fetch('/api/user/profile', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        const userInfo = result.data;
+                        // 保存用户信息到localStorage
+                        localStorage.setItem('user_info', JSON.stringify(userInfo));
+                        
+                        // 更新页面显示
+                        const userNameElement = document.getElementById('user-name');
+                        const userRoleElement = document.getElementById('user-role');
+                        const welcomeUserNameElement = document.getElementById('welcome-user-name');
+                        
+                        if (userNameElement) userNameElement.textContent = userInfo.name || userInfo.fullname || '用户';
+                        if (userRoleElement) userRoleElement.textContent = userInfo.role || '普通用户';
+                        if (welcomeUserNameElement) welcomeUserNameElement.textContent = userInfo.name || userInfo.fullname || '用户';
+                        
+                        console.log('从API获取用户信息成功:', userInfo.name || userInfo.fullname);
+                    }
+                }
+            } catch (error) {
+                console.error('从API获取用户信息失败:', error);
+            }
+        }
+        
+        // 从JWT token解析用户信息
+        function getUserInfoFromToken() {
+            try {
+                const token = localStorage.getItem('user_token') || getCookie('user_token');
+                if (!token) return null;
+                
+                const payload = token.split('.')[1];
+                if (payload) {
+                    const decoded = JSON.parse(decodeURIComponent(escape(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))));
+                    return {
+                        id: decoded.user_id,
+                        name: decoded.name || decoded.username || '用户',
+                        role: decoded.role || '普通用户'
+                    };
+                }
+            } catch (e) {
+                console.error('解析token失败:', e);
+            }
+            return null;
+        }
+        
+        // 加载护工数据
+        async function loadCaregiversData() {
+            try {
+                const response = await fetch('/api/caregivers/hire-info');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        pageData.caregivers = data.data || [];
+                        console.log('护工数据加载成功:', pageData.caregivers.length, '个护工');
+                    }
+                }
+            } catch (error) {
+                console.error('加载护工数据失败:', error);
+            }
+        }
+        
+        // 加载预约数据
+        async function loadAppointmentsData() {
+            try {
+                const token = localStorage.getItem('user_token') || getCookie('user_token');
+                if (!token) return;
+                
+                const userId = getCurrentUserId();
+                if (!userId) return;
+                
+                const response = await fetch(`/api/user/appointments/${userId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        pageData.appointments = data.data || [];
+                        console.log('预约数据加载成功:', pageData.appointments.length, '个预约');
+                    }
+                }
+            } catch (error) {
+                console.error('加载预约数据失败:', error);
+            }
+        }
+        
+        // 获取当前用户ID
+        function getCurrentUserId() {
+            try {
+                const token = localStorage.getItem('user_token') || getCookie('user_token');
+                if (!token) return null;
+                
+                const payload = token.split('.')[1];
+                if (payload) {
+                    const decoded = JSON.parse(decodeURIComponent(escape(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))));
+                    return decoded.user_id;
+                }
+            } catch (e) {
+                console.error('解析用户信息失败:', e);
+            }
+            return null;
+        }
+        
+        // 获取Cookie
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
         }
     </script>
 </body>

@@ -199,8 +199,15 @@ class MessageLoader {
                 throw new Error(data.message || '获取对话列表失败');
             }
             
-            // 确保返回的是数组
-            const conversations = data.data || [];
+            // 确保返回的是数组 - 处理不同的数据结构
+            let conversations = data.data;
+            if (conversations && conversations.conversations) {
+                // 如果数据结构是 { data: { conversations: [...] } }
+                conversations = conversations.conversations;
+            } else if (!conversations) {
+                // 如果直接是数组
+                conversations = data.conversations || [];
+            }
             return Array.isArray(conversations) ? conversations : [];
             
         } catch (error) {

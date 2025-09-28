@@ -426,18 +426,24 @@
                 // 使用统一的消息加载工具获取所有对话
                 if (window.messageLoader) {
                     try {
+                        console.log('🔍 开始加载对话列表，用户ID:', userId);
                         const conversations = await window.messageLoader.getConversations({
                             user_id: userId,
                             user_type: 'user'
                         });
                         
                         console.log('📊 获取到的对话列表:', conversations);
+                        console.log('📊 对话数量:', conversations ? conversations.length : 0);
+                        console.log('📊 对话类型:', typeof conversations);
+                        console.log('📊 是否为数组:', Array.isArray(conversations));
                         
                         if (conversations && conversations.length > 0) {
                             // 显示所有对话
+                            console.log('✅ 显示对话列表');
                             displayAllConversations(conversations);
                         } else {
                             // 如果没有对话，显示提示信息
+                            console.log('📭 没有对话，显示空状态');
                             showNoConversationsMessage();
                         }
                     } catch (error) {
@@ -1236,15 +1242,17 @@
             }
             
             container.innerHTML = conversations.map(conversation => {
-                const contactName = conversation.contact_name || conversation.name || '未知联系人';
-                const lastMessage = conversation.last_message || '暂无消息';
+                // 根据API返回的字段名调整
+                const contactId = conversation.caregiver_id || conversation.contact_id;
+                const contactName = `护工${contactId}`; // 暂时使用护工ID，后续可以从护工表获取姓名
+                const lastMessage = conversation.last_message_content || conversation.last_message || '暂无消息';
                 const lastMessageTime = conversation.last_message_time ? 
                     new Date(conversation.last_message_time).toLocaleString() : '';
                 const unreadCount = conversation.unread_count || 0;
                 
                 return `
                     <div class="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
-                         onclick="openChatFromConversation(${conversation.contact_id}, '${contactName}', '${conversation.contact_type || 'caregiver'}')">
+                         onclick="openChatFromConversation(${contactId}, '${contactName}', 'caregiver')">
                         <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
                             <span class="text-white text-lg font-medium">${contactName.charAt(0).toUpperCase()}</span>
                         </div>

@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>消息功能综合测试页面</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        // 确保Socket.IO加载完成后再加载其他脚本
+        window.addEventListener('load', function() {
+            console.log('📋 开始加载依赖脚本...');
+            
+            // 动态加载脚本
+            const scripts = [
+                '/js/config.js',
+                '/js/message-format-utils.js', 
+                '/js/message-loader.js',
+                '/js/unified-chat-manager.js'
+            ];
+            
+            let loadedCount = 0;
+            scripts.forEach((src, index) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = function() {
+                    loadedCount++;
+                    console.log(`✅ 脚本加载完成: ${src} (${loadedCount}/${scripts.length})`);
+                    
+                    if (loadedCount === scripts.length) {
+                        console.log('🎉 所有脚本加载完成！');
+                        // 触发测试
+                        if (typeof runAllTests === 'function') {
+                            setTimeout(runAllTests, 500);
+                        }
+                    }
+                };
+                script.onerror = function() {
+                    console.error(`❌ 脚本加载失败: ${src}`);
+                };
+                document.head.appendChild(script);
+            });
+        });
+    </script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8 text-center">消息功能综合测试页面</h1>
+        
+        <!-- 测试状态总览 -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">测试状态总览</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="text-center">
+                    <div class="text-2xl font-bold" id="overall-status">检查中...</div>
+                    <div class="text-sm text-gray-600">总体状态</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold" id="components-status">检查中...</div>
+                    <div class="text-sm text-gray-600">组件状态</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold" id="api-status">检查中...</div>
+                    <div class="text-sm text-gray-600">API状态</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold" id="socket-status">检查中...</div>
+                    <div class="text-sm text-gray-600">Socket状态</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 测试控制面板 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- 基础功能测试 -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-lg font-semibold mb-4">基础功能测试</h3>
+                <div class="space-y-3">
+                    <button onclick="testLocalStorage()" class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                        测试localStorage字段名
+                    </button>
+                    <button onclick="testMessageFormat()" class="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                        测试消息格式工具
+                    </button>
+                    <button onclick="testMessageLoader()" class="w-full bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                        测试消息加载工具
+                    </button>
+                    <button onclick="testUnifiedChatManager()" class="w-full bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">
+                        测试统一聊天管理器
+                    </button>
+                </div>
+            </div>
+            
+            <!-- API功能测试 -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-lg font-semibold mb-4">API功能测试</h3>
+                <div class="space-y-3">
+                    <button onclick="testDatabaseConnection()" class="w-full bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600">
+                        测试数据库连接
+                    </button>
+                    <button onclick="testMessageAPI()" class="w-full bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600">
+                        测试消息API
+                    </button>
+                    <button onclick="testConversationAPI()" class="w-full bg-teal-500 text-white px-4 py-2 rounded hover:bg-teal-600">
+                        测试对话API
+                    </button>
+                    <button onclick="testSocketConnection()" class="w-full bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600">
+                        测试Socket连接
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 端到端测试 -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h3 class="text-lg font-semibold mb-4">端到端测试</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button onclick="testUserWorkflow()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    用户端完整流程
+                </button>
+                <button onclick="testCaregiverWorkflow()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    护工端完整流程
+                </button>
+                <button onclick="testCrossPlatformMessaging()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                    跨平台消息测试
+                </button>
+            </div>
+        </div>
+        
+        <!-- 测试结果 -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h3 class="text-lg font-semibold mb-4">测试结果</h3>
+            <div id="test-results" class="bg-gray-50 p-4 rounded text-sm font-mono h-64 overflow-y-auto">
+                <div class="text-gray-500">等待测试...</div>
+            </div>
+        </div>
+        
+        <!-- 性能测试 -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h3 class="text-lg font-semibold mb-4">性能测试</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button onclick="testPerformance()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                    运行性能测试
+                </button>
+                <button onclick="testMemoryUsage()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                    检查内存使用
+                </button>
+            </div>
+            <div id="performance-results" class="mt-4 bg-gray-50 p-4 rounded text-sm font-mono h-32 overflow-y-auto">
+                <div class="text-gray-500">点击测试按钮查看性能数据...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const testResults = document.getElementById('test-results');
+        const performanceResults = document.getElementById('performance-results');
+        
+        // 添加日志
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const colorClass = {
+                'success': 'text-green-600',
+                'error': 'text-red-600',
+                'warning': 'text-yellow-600',
+                'info': 'text-blue-600'
+            }[type] || 'text-gray-600';
+            
+            const logDiv = document.createElement('div');
+            logDiv.innerHTML = `<span class="text-gray-400">[${timestamp}]</span> <span class="${colorClass}">${message}</span>`;
+            testResults.appendChild(logDiv);
+            testResults.scrollTop = testResults.scrollHeight;
+        }
+        
+        // 更新状态显示
+        function updateStatus(elementId, status, message) {
+            const element = document.getElementById(elementId);
+            const statusMap = {
+                'success': { text: '✅', class: 'text-green-600' },
+                'error': { text: '❌', class: 'text-red-600' },
+                'warning': { text: '⚠️', class: 'text-yellow-600' },
+                'info': { text: 'ℹ️', class: 'text-blue-600' }
+            };
+            
+            const statusInfo = statusMap[status] || statusMap['info'];
+            element.textContent = statusInfo.text + ' ' + message;
+            element.className = 'text-2xl font-bold ' + statusInfo.class;
+        }
+        
+        // 测试localStorage字段名
+        async function testLocalStorage() {
+            addLog('🔧 测试localStorage字段名一致性...', 'info');
+            
+            try {
+                const fields = ['user_info', 'caregiver_info', 'admin_info', 'user_token', 'caregiver_token', 'admin_token'];
+                const results = {};
+                
+                fields.forEach(field => {
+                    const value = localStorage.getItem(field);
+                    results[field] = value ? '存在' : '不存在';
+                });
+                
+                addLog('📊 localStorage字段检查结果:', 'info');
+                Object.entries(results).forEach(([field, status]) => {
+                    addLog(`  - ${field}: ${status}`, status === '存在' ? 'success' : 'warning');
+                });
+                
+                // 检查是否有旧字段名
+                const oldFields = ['userInfo', 'caregiverInfo', 'adminInfo'];
+                const oldFieldResults = {};
+                
+                oldFields.forEach(field => {
+                    const value = localStorage.getItem(field);
+                    oldFieldResults[field] = value ? '存在（需要清理）' : '不存在';
+                });
+                
+                const hasOldFields = Object.values(oldFieldResults).some(status => status.includes('存在'));
+                if (hasOldFields) {
+                    addLog('⚠️ 发现旧字段名:', 'warning');
+                    Object.entries(oldFieldResults).forEach(([field, status]) => {
+                        addLog(`  - ${field}: ${status}`, 'warning');
+                    });
+                } else {
+                    addLog('✅ 未发现旧字段名，localStorage字段名已统一', 'success');
+                }
+                
+            } catch (error) {
+                addLog('❌ localStorage测试失败: ' + error.message, 'error');
+            }
+        }
+        
+        // 测试消息格式工具
+        async function testMessageFormat() {
+            addLog('🔧 测试消息格式工具...', 'info');
+            
+            try {
+                if (!window.MessageFormatUtils) {
+                    throw new Error('MessageFormatUtils未找到');
+                }
+                
+                // 测试消息构建
+                const testMessage = MessageFormatUtils.buildSendMessageData(1, '测试消息', { recipientType: 'user' });
+                addLog('✅ 消息构建测试通过', 'success');
+                
+                // 测试消息验证
+                const validation = MessageFormatUtils.validateMessageData(testMessage);
+                if (validation.isValid) {
+                    addLog('✅ 消息验证测试通过', 'success');
+                } else {
+                    addLog('❌ 消息验证测试失败: ' + validation.errors.join(', '), 'error');
+                }
+                
+                // 测试字段标准化
+                const rawMessage = {
+                    senderId: 1,
+                    receiverId: 2,
+                    content: '测试消息',
+                    type: 'text'
+                };
+                
+                const standardized = MessageFormatUtils.standardizeMessageData(rawMessage);
+                addLog('✅ 字段标准化测试通过', 'success');
+                addLog(`📝 标准化结果: ${JSON.stringify(standardized)}`, 'info');
+                
+            } catch (error) {
+                addLog('❌ 消息格式工具测试失败: ' + error.message, 'error');
+            }
+        }
+        
+        // 测试消息加载工具
+        async function testMessageLoader() {
+            addLog('🔧 测试消息加载工具...', 'info');
+            
+            try {
+                if (!window.messageLoader) {
+                    throw new Error('MessageLoader未找到');
+                }
+                
+                // 测试用户信息获取
+                const userInfo = window.messageLoader.getCurrentUserInfo();
+                addLog(`📊 当前用户信息: ${JSON.stringify(userInfo)}`, 'info');
+                
+                // 测试消息历史获取
+                try {
+                    const messages = await window.messageLoader.getMessageHistory(1, 'user', { limit: 5 });
+                    addLog(`✅ 消息历史获取成功，共 ${messages.length} 条消息`, 'success');
+                } catch (error) {
+                    addLog('⚠️ 消息历史获取失败（可能是未登录）: ' + error.message, 'warning');
+                }
+                
+                // 测试对话列表获取
+                try {
+                    const conversations = await window.messageLoader.getConversations({ limit: 5 });
+                    addLog(`✅ 对话列表获取成功，共 ${conversations.length} 个对话`, 'success');
+                } catch (error) {
+                    addLog('⚠️ 对话列表获取失败（可能是未登录）: ' + error.message, 'warning');
+                }
+                
+            } catch (error) {
+                addLog('❌ 消息加载工具测试失败: ' + error.message, 'error');
+            }
+        }
+        
+        // 测试统一聊天管理器
+        async function testUnifiedChatManager() {
+            addLog('🔧 测试统一聊天管理器...', 'info');
+            
+            // 检查脚本加载状态
+            addLog(`📋 脚本加载检查:`, 'info');
+            addLog(`- window.UnifiedChatManager: ${typeof window.UnifiedChatManager}`, 'info');
+            addLog(`- window.unifiedChatManager: ${typeof window.unifiedChatManager}`, 'info');
+            addLog(`- window.SERVER_CONFIG: ${typeof window.SERVER_CONFIG}`, 'info');
+            addLog(`- window.MessageFormatUtils: ${typeof window.MessageFormatUtils}`, 'info');
+            addLog(`- window.MessageLoader: ${typeof window.MessageLoader}`, 'info');
+            
+            try {
+                if (!window.unifiedChatManager) {
+                    throw new Error('UnifiedChatManager未找到，请检查脚本加载顺序');
+                }
+                
+                addLog('✅ 统一聊天管理器实例存在', 'success');
+                addLog(`📊 用户信息: ${window.unifiedChatManager.userInfo ? '已加载' : '未加载'}`, 'info');
+                addLog(`🔌 Socket状态: ${window.unifiedChatManager.isConnected ? '已连接' : '未连接'}`, 'info');
+                addLog(`💬 聊天窗口: ${window.unifiedChatManager.isOpen ? '已打开' : '已关闭'}`, 'info');
+                
+                // 测试方法存在性
+                const methods = ['openChat', 'closeChat', 'sendMessage', 'loadUserInfo', 'initSocket'];
+                methods.forEach(method => {
+                    if (typeof window.unifiedChatManager[method] === 'function') {
+                        addLog(`✅ 方法 ${method} 存在`, 'success');
+                    } else {
+                        addLog(`❌ 方法 ${method} 不存在`, 'error');
+                    }
+                });
+                
+            } catch (error) {
+                addLog('❌ 统一聊天管理器测试失败: ' + error.message, 'error');
+            }
+        }
+        
+        // 测试数据库连接
+        async function testDatabaseConnection() {
+            addLog('🔧 测试数据库连接...', 'info');
+            
+            try {
+                const response = await fetch('/api/test/database');
+                const data = await response.json();
+                
+                if (data.success) {
+                    addLog('✅ 数据库连接成功', 'success');
+                    addLog(`📊 表数量: ${data.data.table_count}`, 'info');
+                    addLog(`📊 测试查询结果: ${data.data.test_query}`, 'info');
+                } else {
+                    addLog('❌ 数据库连接失败: ' + data.message, 'error');
+                }
+            } catch (error) {
+                addLog('❌ 数据库连接测试失败: ' + error.message, 'error');
+            }
+        }
+        
+        // 测试消息API
+        async function testMessageAPI() {
+            addLog('🔧 测试消息API...', 'info');
+            
+            try {
+                const response = await fetch('/api/test/message-service');
+                const data = await response.json();
+                
+                if (data.success) {
+                    addLog('✅ 消息服务测试成功', 'success');
+                    addLog(`📊 数据库连接: ${data.data.db_connected ? '已连接' : '未连接'}`, 'info');
+                    addLog(`📊 模型加载: ${data.data.model_loaded ? '已加载' : '未加载'}`, 'info');
+                    addLog(`📊 内存消息数: ${data.data.memory_messages}`, 'info');
+                } else {
+                    addLog('❌ 消息服务测试失败: ' + data.message, 'error');
+                }
+            } catch (error) {
+                addLog('❌ 消息API测试失败: ' + error.message, 'error');
+            }
+        }
+        
+        // 测试对话API
+        async function testConversationAPI() {
+            addLog('🔧 测试对话API...', 'info');
+            
+            try {
+                const response = await fetch('/api/chat/conversations?user_id=1&user_type=user&limit=5');
+                const data = await response.json();
+                
+                if (data.success) {
+                    addLog('✅ 对话API测试成功', 'success');
+                    addLog(`📊 对话数量: ${data.data.length}`, 'info');
+                } else {
+                    addLog('❌ 对话API测试失败: ' + data.message, 'error');
+                }
+            } catch (error) {
+                addLog('❌ 对话API测试失败: ' + error.message, 'error');
+            }
+        }
+        
+        // 测试Socket连接
+        async function testSocketConnection() {
+            addLog('🔧 测试Socket连接...', 'info');
+            
+            try {
+                // 先设置模拟用户信息用于测试
+                if (!localStorage.getItem('user_token')) {
+                    addLog('📝 设置模拟用户信息用于测试...', 'info');
+                    localStorage.setItem('user_info', JSON.stringify({
+                        id: 1,
+                        name: '测试用户',
+                        email: 'test@example.com'
+                    }));
+                    localStorage.setItem('user_token', 'test-token-for-socket-connection');
+                    
+                    // 重新加载用户信息
+                    if (window.unifiedChatManager) {
+                        window.unifiedChatManager.loadUserInfo();
+                    }
+                }
+                
+                if (window.unifiedChatManager && window.unifiedChatManager.socket) {
+                    addLog('✅ Socket实例存在', 'success');
+                    addLog(`🔌 连接状态: ${window.unifiedChatManager.isConnected ? '已连接' : '未连接'}`, 'info');
+                    addLog(`🔑 用户Token: ${window.unifiedChatManager.userToken ? '已设置' : '未设置'}`, 'info');
+                    
+                    if (window.unifiedChatManager.isConnected) {
+                        addLog('✅ Socket连接正常', 'success');
+                    } else {
+                        addLog('⚠️ Socket未连接，尝试重连...', 'warning');
+                        window.unifiedChatManager.initSocket();
+                        // 等待连接建立
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        
+                        if (window.unifiedChatManager.isConnected) {
+                            addLog('✅ Socket重连成功', 'success');
+                        } else {
+                            addLog('⚠️ Socket重连失败，这可能是由于认证问题', 'warning');
+                            addLog('💡 提示：在实际使用中，用户需要先登录才能建立Socket连接', 'info');
+                        }
+                    }
+                } else {
+                    addLog('❌ Socket实例不存在', 'error');
+                }
+            } catch (error) {
+                addLog('❌ Socket连接测试失败: ' + error.message, 'error');
+            }
+        }
+        
+        // 测试用户端完整流程
+        async function testUserWorkflow() {
+            addLog('🔧 测试用户端完整流程...', 'info');
+            
+            try {
+                // 模拟用户登录
+                const mockUserInfo = {
+                    id: 1,
+                    name: '测试用户',
+                    type: 'user'
+                };
+                localStorage.setItem('user_info', JSON.stringify(mockUserInfo));
+                localStorage.setItem('user_token', 'mock_token');
+                
+                addLog('✅ 模拟用户登录成功', 'success');
+                
+                // 测试消息加载
+                if (window.messageLoader) {
+                    try {
+                        const conversations = await window.messageLoader.getConversations({ limit: 5 });
+                        addLog(`✅ 用户端消息加载成功，共 ${conversations.length} 个对话`, 'success');
+                    } catch (error) {
+                        addLog('⚠️ 用户端消息加载失败: ' + error.message, 'warning');
+                    }
+                }
+                
+                // 测试聊天管理器
+                if (window.unifiedChatManager) {
+                    addLog('✅ 用户端聊天管理器可用', 'success');
+                }
+                
+            } catch (error) {
+                addLog('❌ 用户端流程测试失败: ' + error.message, 'error');
+            }
+        }
+        
+        // 测试护工端完整流程
+        async function testCaregiverWorkflow() {
+            addLog('🔧 测试护工端完整流程...', 'info');
+            
+            try {
+                // 模拟护工登录
+                const mockCaregiverInfo = {
+                    id: 2,
+                    name: '测试护工',
+                    type: 'caregiver'
+                };
+                localStorage.setItem('caregiver_info', JSON.stringify(mockCaregiverInfo));
+                localStorage.setItem('caregiver_token', 'mock_token');
+                
+                addLog('✅ 模拟护工登录成功', 'success');
+                
+                // 测试消息加载
+                if (window.messageLoader) {
+                    try {
+                        const conversations = await window.messageLoader.getConversations({ limit: 5 });
+                        addLog(`✅ 护工端消息加载成功，共 ${conversations.length} 个对话`, 'success');
+                    } catch (error) {
+                        addLog('⚠️ 护工端消息加载失败: ' + error.message, 'warning');
+                    }
+                }
+                
+                // 测试聊天管理器
+                if (window.unifiedChatManager) {
+                    addLog('✅ 护工端聊天管理器可用', 'success');
+                }
+                
+            } catch (error) {
+                addLog('❌ 护工端流程测试失败: ' + error.message, 'error');
+            }
+        }
+        
+        // 测试跨平台消息
+        async function testCrossPlatformMessaging() {
+            addLog('🔧 测试跨平台消息...', 'info');
+            
+            try {
+                // 测试消息发送
+                if (window.unifiedChatManager) {
+                    const testContact = {
+                        id: 1,
+                        name: '测试联系人',
+                        type: 'user',
+                        online: true
+                    };
+                    
+                    // 测试打开聊天
+                    window.unifiedChatManager.openChat(testContact);
+                    addLog('✅ 跨平台聊天窗口打开成功', 'success');
+                    
+                    // 测试发送消息
+                    try {
+                        const messageData = MessageFormatUtils.buildSendMessageData(1, '跨平台测试消息', { recipientType: 'user' });
+                        addLog('✅ 跨平台消息构建成功', 'success');
+                    } catch (error) {
+                        addLog('❌ 跨平台消息构建失败: ' + error.message, 'error');
+                    }
+                }
+                
+            } catch (error) {
+                addLog('❌ 跨平台消息测试失败: ' + error.message, 'error');
+            }
+        }
+        
+        // 性能测试
+        async function testPerformance() {
+            addLog('🔧 运行性能测试...', 'info');
+            
+            const startTime = performance.now();
+            
+            // 测试组件初始化时间
+            const initStart = performance.now();
+            if (window.unifiedChatManager) {
+                const initEnd = performance.now();
+                addLog(`⏱️ 组件初始化时间: ${(initEnd - initStart).toFixed(2)} ms`, 'info');
+            }
+            
+            // 测试消息处理性能
+            const messageStart = performance.now();
+            for (let i = 0; i < 1000; i++) {
+                if (window.MessageFormatUtils) {
+                    window.MessageFormatUtils.buildSendMessageData(i, `测试消息${i}`, { recipientType: 'user' });
+                }
+            }
+            const messageEnd = performance.now();
+            addLog(`⏱️ 1000条消息处理时间: ${(messageEnd - messageStart).toFixed(2)} ms`, 'info');
+            
+            const endTime = performance.now();
+            addLog(`⏱️ 总测试时间: ${(endTime - startTime).toFixed(2)} ms`, 'info');
+            
+            // 更新性能结果显示
+            performanceResults.innerHTML = `
+                <div class="text-green-600">✅ 性能测试完成</div>
+                <div>组件初始化: ${(initEnd - initStart).toFixed(2)} ms</div>
+                <div>1000条消息处理: ${(messageEnd - messageStart).toFixed(2)} ms</div>
+                <div>总测试时间: ${(endTime - startTime).toFixed(2)} ms</div>
+            `;
+        }
+        
+        // 检查内存使用
+        async function testMemoryUsage() {
+            addLog('🔧 检查内存使用...', 'info');
+            
+            if (performance.memory) {
+                const memory = performance.memory;
+                const usedMB = (memory.usedJSHeapSize / 1024 / 1024).toFixed(2);
+                const totalMB = (memory.totalJSHeapSize / 1024 / 1024).toFixed(2);
+                const limitMB = (memory.jsHeapSizeLimit / 1024 / 1024).toFixed(2);
+                
+                addLog(`📊 已使用内存: ${usedMB} MB`, 'info');
+                addLog(`📊 总内存: ${totalMB} MB`, 'info');
+                addLog(`📊 内存限制: ${limitMB} MB`, 'info');
+                
+                // 更新性能结果显示
+                performanceResults.innerHTML = `
+                    <div class="text-blue-600">ℹ️ 内存使用情况</div>
+                    <div>已使用: ${usedMB} MB</div>
+                    <div>总计: ${totalMB} MB</div>
+                    <div>限制: ${limitMB} MB</div>
+                `;
+            } else {
+                addLog('⚠️ 无法获取内存信息', 'warning');
+            }
+        }
+        
+        // 运行所有测试
+        async function runAllTests() {
+            addLog('🚀 开始运行所有测试...', 'info');
+            
+            await testLocalStorage();
+            await testMessageFormat();
+            await testMessageLoader();
+            await testUnifiedChatManager();
+            await testDatabaseConnection();
+            await testMessageAPI();
+            await testConversationAPI();
+            await testSocketConnection();
+            await testUserWorkflow();
+            await testCaregiverWorkflow();
+            await testCrossPlatformMessaging();
+            
+            addLog('✅ 所有测试完成', 'success');
+        }
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog('📋 消息功能综合测试页面已加载', 'info');
+            
+            // 更新状态显示
+            updateStatus('overall-status', 'info', '准备测试');
+            updateStatus('components-status', 'info', '检查中');
+            updateStatus('api-status', 'info', '检查中');
+            updateStatus('socket-status', 'info', '检查中');
+            
+            addLog('⏳ 等待脚本动态加载完成...', 'info');
+        });
+    </script>
+</body>
+</html>

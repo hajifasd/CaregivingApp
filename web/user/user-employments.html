@@ -10,9 +10,13 @@
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     
     <!-- 引入用户登出功能 -->
+        <!-- 引入认证守卫 -->
+    <script src="/js/user-auth-guard.js"></script>
     <script src="/js/user-logout.js"></script>
     <!-- 引入用户信息加载器 -->
     <script src="/js/user-info-loader.js"></script>
+    <!-- 引入头像管理器 -->
+    <script src="../js/avatar-manager.js"></script>
     
     <!-- 配置Tailwind自定义主题 -->
     <script>
@@ -377,6 +381,7 @@
             const active = employmentsData.filter(e => e.status === 'active').length;
             const completed = employmentsData.filter(e => e.status === 'completed').length;
             const rejected = employmentsData.filter(e => e.status === 'rejected').length;
+            const cancelled = employmentsData.filter(e => e.status === 'cancelled').length;
             
             // 更新统计卡片显示
             const totalElement = document.querySelector('h3.text-2xl.font-bold.text-primary');
@@ -397,7 +402,8 @@
                 accepted,
                 active,
                 completed,
-                rejected
+                rejected,
+                cancelled
             });
         }
 
@@ -431,7 +437,7 @@
             container.innerHTML = employmentsData.map(employment => `
                 <div class="bg-white rounded-xl overflow-hidden card-shadow">
                     <div class="relative">
-                        <img src="${employment.caregiver_avatar || 'https://picsum.photos/id/26/400/200'}" alt="${employment.caregiver_name}工作照" class="w-full h-48 object-cover">
+                        <img src="${window.AvatarManager.getAvatarUrl(employment.caregiver_avatar, 'caregiver', 'large')}" alt="${employment.caregiver_name}工作照" class="w-full h-48 object-cover">
                         <div class="absolute top-3 right-3 ${getStatusBadgeClass(employment.status)} text-white text-xs px-2 py-1 rounded-full">
                             ${getStatusText(employment.status)}
                         </div>
@@ -442,7 +448,7 @@
                     <div class="p-6">
                         <div class="flex items-center justify-between mb-4">
                             <div>
-                                <h4 class="font-bold text-lg">${employment.caregiver_name} 护工</h4>
+                                <h4 class="font-bold text-lg">${employment.caregiver_name}/* 用户</h4>
                                 <p class="text-sm text-gray-500">ID: ${employment.caregiver_id}</p>
                             </div>
                             <div class="flex items-center">
@@ -500,6 +506,7 @@
                 'pending': 'bg-warning',
                 'accepted': 'bg-success',
                 'rejected': 'bg-danger',
+                'cancelled': 'bg-gray-500',
                 'active': 'bg-success',
                 'completed': 'bg-gray-500',
                 'terminated': 'bg-danger'
@@ -513,6 +520,7 @@
                 'pending': '待回复',
                 'accepted': '已接受',
                 'rejected': '已拒绝',
+                'cancelled': '已取消',
                 'active': '进行中',
                 'completed': '已完成',
                 'terminated': '已终止'
@@ -552,6 +560,8 @@
                     return `<button class="flex-1 bg-success hover:bg-success/90 text-white px-4 py-2 rounded-lg transition-colors text-sm" onclick="startEmployment(${id})">开始服务</button>`;
                 case 'rejected':
                     return `<button class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors text-sm" disabled>已拒绝</button>`;
+                case 'cancelled':
+                    return `<button class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors text-sm" disabled>已取消</button>`;
                 case 'active':
                     return `<button class="flex-1 bg-success hover:bg-success/90 text-white px-4 py-2 rounded-lg transition-colors text-sm" onclick="completeEmployment(${id})">完成服务</button>`;
                 case 'completed':
@@ -609,6 +619,12 @@
             if (confirm('确定要取消这个聘用申请吗？取消后无法恢复。')) {
                 const token = localStorage.getItem('user_token') || getCookie('user_token');
                 
+                // 显示加载状态
+                const button = event.target;
+                const originalText = button.textContent;
+                button.disabled = true;
+                button.textContent = '取消中...';
+                
                 fetch('/api/employment/cancel', {
                     method: 'POST',
                     headers: {
@@ -622,15 +638,21 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        alert('申请已取消');
-                        loadEmploymentsData(); // 重新加载数据
+                        // 成功取消，重新加载数据（这会从界面中删除该申请）
+                        loadEmploymentsData();
+                        showNotification('申请已取消', 'success');
                     } else {
-                        alert(data.message || '取消失败');
+                        showNotification(data.message || '取消失败', 'error');
                     }
                 })
                 .catch(error => {
                     console.error('取消申请失败:', error);
-                    alert('网络错误，请稍后重试');
+                    showNotification('网络错误，请稍后重试', 'error');
+                })
+                .finally(() => {
+                    // 恢复按钮状态
+                    button.disabled = false;
+                    button.textContent = originalText;
                 });
             }
         }
@@ -675,6 +697,42 @@
             backToTopBtn.addEventListener('click', () => {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
+        }
+        
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            // 创建通知元素
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full`;
+            
+            // 根据类型设置样式
+            if (type === 'success') {
+                notification.classList.add('bg-green-500', 'text-white');
+            } else if (type === 'error') {
+                notification.classList.add('bg-red-500', 'text-white');
+            } else if (type === 'warning') {
+                notification.classList.add('bg-yellow-500', 'text-white');
+            } else {
+                notification.classList.add('bg-blue-500', 'text-white');
+            }
+            
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            // 显示动画
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+            
+            // 自动隐藏
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
         }
         
 

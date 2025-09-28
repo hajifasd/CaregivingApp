@@ -29,12 +29,30 @@ class EnhancedChatManager {
         try {
             console.log('🔌 初始化WebSocket连接...');
             
-            // 连接Socket.IO服务器
-            this.socket = io('http://localhost:8000', {
-                transports: ['websocket', 'polling'],
-                timeout: 10000,
-                forceNew: true
-            });
+            // 优先使用全局Socket管理器
+            if (window.SocketManager && window.SocketManager.socket) {
+                this.socket = window.SocketManager.socket;
+                console.log('✅ EnhancedChatManager使用全局Socket管理器');
+            } else {
+                // 备用方案：创建新连接
+                const socketUrl = window.SERVER_CONFIG ? window.SERVER_CONFIG.socketUrl : 'http://localhost:8000';
+                const config = window.SERVER_CONFIG ? window.SERVER_CONFIG.socketConfig : {
+                    transports: ['websocket', 'polling'],
+                    timeout: 10000,
+                    reconnection: true,
+                    reconnectionAttempts: 5,
+                    reconnectionDelay: 1000
+                };
+                
+                // 添加认证信息
+                const token = localStorage.getItem('user_token') || localStorage.getItem('caregiver_token') || localStorage.getItem('admin_token');
+                if (token) {
+                    config.auth = { token: token };
+                }
+                
+                this.socket = io(socketUrl, config);
+                console.log('🔌 EnhancedChatManager创建新的Socket连接:', socketUrl);
+            }
             
             this.bindSocketEvents();
             

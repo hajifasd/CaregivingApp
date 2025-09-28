@@ -10,6 +10,8 @@
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     
     <!-- 引入用户登出功能 -->
+        <!-- 引入认证守卫 -->
+    <script src="/js/user-auth-guard.js"></script>
     <script src="/js/user-logout.js"></script>
     <!-- 引入用户信息加载器 -->
     <script src="/js/user-info-loader.js"></script>
@@ -132,38 +134,38 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">姓名</label>
-                            <input type="text" value="张阿姨" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
+                            <input type="text" name="name" value="" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">性别</label>
-                            <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
-                                <option>女</option>
-                                <option>男</option>
+                            <select name="gender" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
+                                <option value="女">女</option>
+                                <option value="男">男</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">手机号码</label>
-                            <input type="tel" value="138****5678" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
+                            <input type="tel" name="phone" value="" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">出生日期</label>
-                            <input type="date" value="1965-08-12" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
+                            <input type="date" name="birth_date" value="" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">家庭地址</label>
-                            <input type="text" value="北京市朝阳区建国路88号" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
+                            <input type="text" name="address" value="" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">紧急联系人</label>
-                            <input type="text" value="李小明（儿子）" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
+                            <input type="text" name="emergency_contact" value="" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
                         </div>
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-2">紧急联系电话</label>
-                            <input type="tel" value="139****8765" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
+                            <input type="tel" name="emergency_phone" value="" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
                         </div>
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-2">特殊需求说明</label>
-                            <textarea rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>本人需要定期进行康复护理，希望护工有相关经验，每周一、三、五上午需要服务。</textarea>
+                            <textarea name="special_needs" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" disabled></textarea>
                         </div>
                     </div>
                     
@@ -182,12 +184,12 @@
             <div class="space-y-6">
                 <div class="bg-white rounded-xl p-6 card-shadow text-center">
                     <div class="relative inline-block mb-4">
-                        <img src="https://picsum.photos/id/64/120/120" alt="张阿姨头像" class="w-32 h-32 rounded-full object-cover border-4 border-primary/20">
+                        <img src="https://picsum.photos/id/64/120/120" alt="用户头像" class="w-32 h-32 rounded-full object-cover border-4 border-primary/20">
                         <button class="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center shadow-md hidden" id="change-avatar-btn">
                             <i class="fa fa-camera"></i>
                         </button>
                     </div>
-                    <h3 class="font-bold text-lg mb-1">张阿姨</h3>
+                    <h3 class="font-bold text-lg mb-1">用户</h3>
                     <p class="text-gray-500 text-sm mb-4">注册时间: 2023-03-15</p>
                     <button class="w-full py-2 border border-primary text-primary hover:bg-primary/5 rounded-lg text-sm transition-colors hidden" id="upload-avatar-btn">
                         上传新头像
@@ -260,12 +262,135 @@
     <script>
         // 页面初始化
         document.addEventListener('DOMContentLoaded', function() {
+            // 等待用户信息加载器完成后再加载表单数据
+            setTimeout(() => {
+                loadProfileFormData();
+            }, 500);
+            
             // 绑定返回顶部按钮
             bindBackToTop();
             
             // 绑定编辑按钮事件
             bindEditEvents();
         });
+        
+        // 加载个人资料表单数据
+        function loadProfileFormData() {
+            // 从localStorage获取用户信息
+            const userInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
+            
+            console.log('加载个人资料表单数据:', userInfo);
+            
+            // 更新姓名
+            if (userInfo.name) {
+                const nameInput = document.querySelector('input[name="name"]');
+                if (nameInput) {
+                    nameInput.value = userInfo.name;
+                    console.log('更新姓名输入框:', userInfo.name);
+                }
+                
+                const nameHeading = document.querySelector('h3');
+                if (nameHeading) nameHeading.textContent = userInfo.name;
+                
+                const avatarImg = document.querySelector('img[alt*="头像"]');
+                if (avatarImg) avatarImg.alt = userInfo.name + '头像';
+            }
+            
+            // 更新手机号
+            if (userInfo.phone) {
+                const phoneInput = document.querySelector('input[name="phone"]');
+                if (phoneInput) phoneInput.value = userInfo.phone;
+            }
+            
+            // 更新邮箱
+            if (userInfo.email) {
+                const emailInput = document.querySelector('input[name="email"]');
+                if (emailInput) emailInput.value = userInfo.email;
+            }
+            
+            // 更新性别
+            if (userInfo.gender) {
+                const genderSelect = document.querySelector('select[name="gender"]');
+                if (genderSelect) {
+                    genderSelect.value = userInfo.gender;
+                }
+            }
+            
+            // 更新出生日期
+            if (userInfo.birth_date) {
+                const birthInput = document.querySelector('input[name="birth_date"]');
+                if (birthInput) birthInput.value = userInfo.birth_date;
+            }
+            
+            // 更新地址
+            if (userInfo.address) {
+                const addressInput = document.querySelector('input[name="address"]');
+                if (addressInput) addressInput.value = userInfo.address;
+            }
+            
+            // 更新紧急联系人
+            if (userInfo.emergency_contact) {
+                const emergencyInput = document.querySelector('input[name="emergency_contact"]');
+                if (emergencyInput) emergencyInput.value = userInfo.emergency_contact;
+            }
+            
+            // 更新紧急联系电话
+            if (userInfo.emergency_phone) {
+                const emergencyPhoneInput = document.querySelector('input[name="emergency_phone"]');
+                if (emergencyPhoneInput) emergencyPhoneInput.value = userInfo.emergency_phone;
+            }
+            
+            // 更新特殊需求
+            if (userInfo.special_needs) {
+                const textarea = document.querySelector('textarea[name="special_needs"]');
+                if (textarea) textarea.value = userInfo.special_needs;
+            }
+        }
+        
+        // 保存用户资料
+        async function saveUserProfile(userData) {
+            try {
+                const token = localStorage.getItem('user_token');
+                if (!token) {
+                    alert('请先登录');
+                    return;
+                }
+                
+                const response = await fetch('/api/user/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(userData)
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        // 更新localStorage中的用户信息
+                        const currentUserInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
+                        const updatedUserInfo = { ...currentUserInfo, ...userData };
+                        localStorage.setItem('user_info', JSON.stringify(updatedUserInfo));
+                        
+                        alert('个人信息保存成功');
+                        
+                        // 重新加载用户信息显示
+                        loadProfileFormData();
+                        
+                        // 退出编辑模式
+                        document.getElementById('cancel-edit-btn').click();
+                    } else {
+                        alert('保存失败：' + (result.message || '未知错误'));
+                    }
+                } else {
+                    alert('保存失败，请稍后重试');
+                }
+            } catch (error) {
+                console.error('保存用户资料失败:', error);
+                alert('保存失败，请检查网络连接');
+            }
+        }
         
         // 绑定编辑相关事件
         function bindEditEvents() {
@@ -314,11 +439,24 @@
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
                 
-                // 这里应该调用实际的API保存数据
-                alert('个人信息已保存');
+                // 收集表单数据
+                const formData = new FormData(form);
+                const userData = {
+                    name: formData.get('name'),
+                    phone: formData.get('phone'),
+                    email: formData.get('email'),
+                    gender: formData.get('gender'),
+                    birth_date: formData.get('birth_date'),
+                    address: formData.get('address'),
+                    emergency_contact: formData.get('emergency_contact'),
+                    emergency_phone: formData.get('emergency_phone'),
+                    special_needs: formData.get('special_needs')
+                };
                 
-                // 退出编辑模式
-                cancelBtn.click();
+                console.log('收集到的用户数据:', userData);
+                
+                // 调用API保存数据
+                saveUserProfile(userData);
             });
         }
         

@@ -14,38 +14,38 @@ auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/api/user/login', methods=['POST'])
 def user_login():
-    """用户登录接口"""
+    """用户登录接口 - 手机号+密码"""
     data = request.json
-    account = data.get('email')  # 前端可能发送email字段，但实际是手机号
+    phone = data.get('phone')  # 手机号登录
     password = data.get('password')
 
-    if not account or not password:
-        return jsonify({'success': False, 'message': '请输入账号和密码'}), 400
+    if not phone or not password:
+        return jsonify({'success': False, 'message': '请输入手机号和密码'}), 400
 
     # 验证用户
-    user = UserService.verify_user(account, password)
+    user = UserService.verify_user(phone, password)
     
     if user:
-        token = generate_token(user.id, 'user', user.fullname)
+        token = generate_token(user.id, 'user', user.name or user.phone)
         return jsonify({
             'success': True,
             'data': {'token': token, 'user': user.to_dict()},
             'message': '登录成功'
         })
-    elif (UserService.get_user_by_email(account) or UserService.get_user_by_phone(account)):
+    elif UserService.get_user_by_phone(phone):
         return jsonify({'success': False, 'message': '您的申请尚未通过审核'}), 403
     else:
-        return jsonify({'success': False, 'message': '账号或密码错误'}), 401
+        return jsonify({'success': False, 'message': '手机号或密码错误'}), 401
 
 @auth_bp.route('/api/register', methods=['POST'])
 def user_register():
     """用户注册接口"""
     data = request.json
-    fullname = data.get('fullname')
+    name = data.get('fullname')  # 前端发送的是fullname字段
     phone = data.get('phone')
     password = data.get('password')
 
-    if not fullname or not fullname.strip():
+    if not name or not name.strip():
         return jsonify({'code': 400, 'message': '请输入您的真实姓名'}), 400
 
     if not phone or not phone.strip():
@@ -59,11 +59,12 @@ def user_register():
         return jsonify({'code': 400, 'message': '该手机号已被注册'}), 400
 
     try:
-        # 生成临时邮箱
+        # 生成临时邮箱 - 使用配置化的域名
         import time
-        temp_email = f"user_{phone}_{int(time.time())}@temp.com"
+        from config.settings import TEMP_EMAIL_DOMAIN
+        temp_email = f"user_{phone}_{int(time.time())}@{TEMP_EMAIL_DOMAIN}"
         
-        user = UserService.create_user(temp_email, password, fullname, phone)
+        user = UserService.create_user(temp_email, password, name, phone)
         return jsonify({
             'code': 200,
             'data': user.to_dict(),

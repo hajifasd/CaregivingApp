@@ -1,0 +1,34 @@
+[2025-09-19T17:50:56.508630] crawl start pages=3 city=010000 city_kw=北京
+[2025-09-19T17:50:56.965463] 51job no rows matched on https://search.51job.com/list/010000,000000,0000,00,9,99,%E6%8A%A4%E5%B7%A5,2,1.html
+[2025-09-19T17:50:58.794405] 51job no rows matched on https://search.51job.com/list/010000,000000,0000,00,9,99,%E6%8A%A4%E5%B7%A5,2,2.html
+[2025-09-19T17:51:01.225127] 51job no rows matched on https://search.51job.com/list/010000,000000,0000,00,9,99,%E6%8A%A4%E5%B7%A5,2,3.html
+[2025-09-19T17:51:03.137090] zhaopin no rows matched on https://sou.zhaopin.com/?jl=北京&kw=%E6%8A%A4%E5%B7%A5&kt=3&p=1
+[2025-09-19T17:51:04.275631] zhaopin no rows matched on https://sou.zhaopin.com/?jl=北京&kw=%E6%8A%A4%E5%B7%A5&kt=3&p=2
+[2025-09-19T17:51:05.606233] zhaopin no rows matched on https://sou.zhaopin.com/?jl=北京&kw=%E6%8A%A4%E5%B7%A5&kt=3&p=3
+[2025-09-19T17:51:06.726469] crawl results 51job=0 zhaopin=0 total=0
+[2025-09-19T18:01:26.564018] loaded 5000 data saved D:\CaregivingApp\data\raw\jobs_5000_20250919_180126.json count=5000
+[2025-09-19T18:01:55.060557] loaded 5000 data saved D:\CaregivingApp\data\raw\jobs_5000_20250919_180155.json count=5000
+[2025-09-19T18:02:39.103018] import file saved D:\CaregivingApp\data\raw\jobs_import_20250919_180239.json count=5000
+[2025-09-19T18:02:59.568544] loaded 5000 data saved D:\CaregivingApp\data\raw\jobs_5000_20250919_180259.json count=5000
+[2025-09-19T18:03:52.087632] import file saved D:\CaregivingApp\data\raw\jobs_import_20250919_180352.json count=5000
+[2025-09-19T18:03:54.594579] import file saved D:\CaregivingApp\data\raw\jobs_import_20250919_180354.json count=5000
+[2025-09-19T18:07:28.371617] loaded 5000 data saved D:\CaregivingApp\data\raw\jobs_5000_20250919_180728.json count=5000
+[2025-09-19T18:08:40.348248] loaded 5000 data saved D:\CaregivingApp\data\raw\jobs_5000_20250919_180840.json count=5000
+[2025-09-19T18:08:50.233940] import file saved D:\CaregivingApp\data\raw\jobs_import_20250919_180850.json count=5000
+[2025-09-19T18:10:48.054006] loaded 5000 data saved D:\CaregivingApp\data\raw\jobs_5000_20250919_181047.json count=5000
+[2025-09-19T18:15:51.513316] crawl start pages=1 city=010000 city_kw=??
+[2025-09-19T18:15:51.973005] 51job no rows matched on https://search.51job.com/list/010000,000000,0000,00,9,99,%E6%8A%A4%E5%B7%A5,2,1.html
+[2025-09-19T18:15:53.538123] zhaopin no rows matched on https://sou.zhaopin.com/?jl=??&kw=%E6%8A%A4%E5%B7%A5&kt=3&p=1
+[2025-09-19T18:15:54.893021] crawl results 51job=0 zhaopin=0 total=0
+[2025-09-19T18:20:27.287794] loaded 50000 data saved D:\CaregivingApp\data\raw\jobs_50000_20250919_182026.json count=50000
+[2025-09-19T18:21:15.894498] loaded 50000 data saved D:\CaregivingApp\data\raw\jobs_50000_20250919_182115.json count=50000
+[2025-09-23T17:15:09.952257] crawl start pages=3 city=020000 city_kw=广州 (020000)
+[2025-09-23T17:15:10.497415] 51job no rows matched on https://search.51job.com/list/020000,000000,0000,00,9,99,%E6%8A%A4%E5%B7%A5,2,1.html
+[2025-09-23T17:15:12.278236] 51job no rows matched on https://search.51job.com/list/020000,000000,0000,00,9,99,%E6%8A%A4%E5%B7%A5,2,2.html
+[2025-09-23T17:15:14.581055] 51job no rows matched on https://search.51job.com/list/020000,000000,0000,00,9,99,%E6%8A%A4%E5%B7%A5,2,3.html
+[2025-09-23T17:15:17.238892] zhaopin no rows matched on https://sou.zhaopin.com/?jl=广州 (020000)&kw=%E6%8A%A4%E5%B7%A5&kt=3&p=1
+[2025-09-23T17:15:18.619091] zhaopin no rows matched on https://sou.zhaopin.com/?jl=广州 (020000)&kw=%E6%8A%A4%E5%B7%A5&kt=3&p=2
+[2025-09-23T17:15:20.297140] zhaopin no rows matched on https://sou.zhaopin.com/?jl=广州 (020000)&kw=%E6%8A%A4%E5%B7%A5&kt=3&p=3
+[2025-09-23T17:15:21.494402] crawl results 51job=0 zhaopin=0 total=0
+[2025-09-23T17:15:49.742374] loaded 50000 data saved d:\CaregivingApp\data\raw\jobs_50000_20250923_171548.json count=50000
+[2025-09-23T17:16:08.278212] import file saved d:\CaregivingApp\data\raw\jobs_import_20250923_171608.json count=4

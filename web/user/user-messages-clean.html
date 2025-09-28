@@ -12,15 +12,19 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- 引入用户登出功能 -->
+        <!-- 引入认证守卫 -->
+    <script src="/js/user-auth-guard.js"></script>
     <script src="/js/user-logout.js"></script>
     <!-- 引入用户信息管理 -->
     <script src="/js/user-info.js"></script>
     <!-- 引入Socket.IO客户端 -->
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <!-- 引入聊天管理器 -->
-    <script src="/js/chat-manager.js"></script>
-    <!-- 引入增强聊天管理器 -->
-    <script src="/js/enhanced-chat-manager.js"></script>
+    <!-- 引入消息格式工具 -->
+    <script src="/js/message-format-utils.js"></script>
+    <!-- 引入统一聊天管理器 -->
+    <script src="/js/unified-chat-manager.js"></script>
+    <!-- 引入消息加载工具 -->
+    <script src="/js/message-loader.js"></script>
     
     <!-- 配置Tailwind自定义主题 -->
     <script>
@@ -232,7 +236,7 @@
                         <h3 class="text-lg font-bold text-gray-800">已聘用护工</h3>
                     </div>
                     <div class="p-6" id="hired-caregivers-list">
-                        <!-- 护工列表将通过JavaScript动态生成 -->
+                        <!--/* 用户列表将通过JavaScript动态生成 -->
                     </div>
                 </div>
                 
@@ -288,16 +292,19 @@
             // 绑定筛选按钮事件
             bindFilterEvents();
             
-            // 初始化增强聊天管理器
-            if (window.EnhancedChatManager) {
-                console.log('✅ 增强聊天管理器已加载');
+            // 统一聊天管理器已在加载时自动初始化
+            if (window.unifiedChatManager) {
+                console.log('✅ 统一聊天管理器已初始化');
+            } else {
+                console.warn('⚠️ 统一聊天管理器未找到');
             }
         });
         
         // 加载用户信息
         function loadUserInfo() {
             try {
-                const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                // 统一使用 user_info 字段名
+                const userInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
                 if (userInfo.name) {
                     document.getElementById('user-name').textContent = userInfo.name;
                 }
@@ -395,14 +402,48 @@
         // 加载消息数据
         async function loadMessages() {
             try {
-                // 这里应该从后端API加载真实的消息数据
-                // 暂时使用空数组，等待后端API实现
-                messagesData = [];
-                generateMessagesList();
+                // 使用统一的消息加载工具
+                if (window.messageLoader) {
+                    await window.messageLoader.loadConversations('messages-container', {
+                        limit: 20,
+                        offset: 0
+                    });
+                } else {
+                    // 备用方案：使用旧API
+                    const token = localStorage.getItem('user_token');
+                    if (!token) {
+                        console.error('用户未登录');
+                        return;
+                    }
+                    
+                    const response = await fetch('/api/user/messages', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success) {
+                            messagesData = data.data || [];
+                        } else {
+                            console.error('加载消息失败:', data.message);
+                            messagesData = [];
+                        }
+                    } else {
+                        console.error('加载消息失败，状态码:', response.status);
+                        messagesData = [];
+                    }
+                    
+                    generateMessagesList();
+                }
                 updateStatistics();
             } catch (error) {
                 console.error('加载消息数据失败:', error);
-                showNotification('加载消息失败', 'error');
+                showNotification('加载消息失败: ' + error.message, 'error');
+                messagesData = [];
+                generateMessagesList();
+                updateStatistics();
             }
         }
         
@@ -495,7 +536,7 @@
                 const firstRecord = records[0];
                 return {
                     name: firstRecord.caregiverName || '护工',
-                    avatar: firstRecord.caregiverAvatar || 'https://picsum.photos/id/64/40/40'
+                    avatar: window.AvatarManager ? window.AvatarManager.getAvatarUrl(firstRecord.caregiverAvatar, 'caregiver', 'small') : '/uploads/avatars/default-caregiver.png'
                 };
             }
             

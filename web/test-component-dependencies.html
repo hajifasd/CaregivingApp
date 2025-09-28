@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>组件依赖测试页面</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/message-format-utils.js"></script>
+    <script src="/js/unified-chat-manager.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8 text-center">组件依赖测试页面</h1>
+        
+        <!-- 组件状态 -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">组件加载状态</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="text-center">
+                    <div class="text-2xl font-bold" id="unified-chat-status">检查中...</div>
+                    <div class="text-sm text-gray-600">统一聊天管理器</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold" id="message-format-status">检查中...</div>
+                    <div class="text-sm text-gray-600">消息格式工具</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold" id="old-components-status">检查中...</div>
+                    <div class="text-sm text-gray-600">旧组件状态</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 功能测试 -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">功能测试</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-lg font-medium mb-3">聊天功能测试</h3>
+                    <div class="space-y-2">
+                        <button onclick="testUnifiedChatManager()" class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                            测试统一聊天管理器
+                        </button>
+                        <button onclick="testMessageFormat()" class="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                            测试消息格式工具
+                        </button>
+                        <button onclick="testChatWindow()" class="w-full bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                            测试聊天窗口
+                        </button>
+                        <button onclick="testSocketConnection()" class="w-full bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">
+                            测试Socket连接
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-lg font-medium mb-3">组件冲突检测</h3>
+                    <div class="space-y-2">
+                        <button onclick="checkOldComponents()" class="w-full bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                            检查旧组件
+                        </button>
+                        <button onclick="checkGlobalVariables()" class="w-full bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600">
+                            检查全局变量
+                        </button>
+                        <button onclick="checkMemoryUsage()" class="w-full bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600">
+                            检查内存使用
+                        </button>
+                        <button onclick="runPerformanceTest()" class="w-full bg-teal-500 text-white px-4 py-2 rounded hover:bg-teal-600">
+                            性能测试
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 测试结果 -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">测试结果</h2>
+            <div id="test-results" class="bg-gray-50 p-4 rounded text-sm font-mono h-64 overflow-y-auto">
+                <div class="text-gray-500">等待测试...</div>
+            </div>
+        </div>
+        
+        <!-- 组件信息 -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h2 class="text-xl font-semibold mb-4">组件信息</h2>
+            <div id="component-info" class="bg-gray-50 p-4 rounded text-sm font-mono h-48 overflow-y-auto">
+                <div class="text-gray-500">点击测试按钮查看组件信息...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const testResults = document.getElementById('test-results');
+        const componentInfo = document.getElementById('component-info');
+        
+        // 添加日志
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const colorClass = {
+                'success': 'text-green-600',
+                'error': 'text-red-600',
+                'warning': 'text-yellow-600',
+                'info': 'text-blue-600'
+            }[type] || 'text-gray-600';
+            
+            const logDiv = document.createElement('div');
+            logDiv.innerHTML = `<span class="text-gray-400">[${timestamp}]</span> <span class="${colorClass}">${message}</span>`;
+            testResults.appendChild(logDiv);
+            testResults.scrollTop = testResults.scrollHeight;
+        }
+        
+        // 更新组件状态
+        function updateComponentStatus() {
+            // 检查统一聊天管理器
+            const unifiedChatStatus = document.getElementById('unified-chat-status');
+            if (window.unifiedChatManager) {
+                unifiedChatStatus.textContent = '✅ 已加载';
+                unifiedChatStatus.className = 'text-2xl font-bold text-green-600';
+            } else {
+                unifiedChatStatus.textContent = '❌ 未加载';
+                unifiedChatStatus.className = 'text-2xl font-bold text-red-600';
+            }
+            
+            // 检查消息格式工具
+            const messageFormatStatus = document.getElementById('message-format-status');
+            if (window.MessageFormatUtils) {
+                messageFormatStatus.textContent = '✅ 已加载';
+                messageFormatStatus.className = 'text-2xl font-bold text-green-600';
+            } else {
+                messageFormatStatus.textContent = '❌ 未加载';
+                messageFormatStatus.className = 'text-2xl font-bold text-red-600';
+            }
+            
+            // 检查旧组件
+            const oldComponentsStatus = document.getElementById('old-components-status');
+            const hasOldComponents = window.ChatWindow || window.ChatManager || window.EnhancedChatManager;
+            if (hasOldComponents) {
+                oldComponentsStatus.textContent = '⚠️ 存在旧组件';
+                oldComponentsStatus.className = 'text-2xl font-bold text-yellow-600';
+            } else {
+                oldComponentsStatus.textContent = '✅ 已清理';
+                oldComponentsStatus.className = 'text-2xl font-bold text-green-600';
+            }
+        }
+        
+        // 测试统一聊天管理器
+        function testUnifiedChatManager() {
+            addLog('🔧 测试统一聊天管理器...', 'info');
+            
+            if (!window.unifiedChatManager) {
+                addLog('❌ 统一聊天管理器未找到', 'error');
+                return;
+            }
+            
+            try {
+                // 测试基本功能
+                const manager = window.unifiedChatManager;
+                
+                addLog('✅ 统一聊天管理器实例存在', 'success');
+                addLog(`📊 用户信息: ${manager.userInfo ? '已加载' : '未加载'}`, 'info');
+                addLog(`🔌 Socket状态: ${manager.isConnected ? '已连接' : '未连接'}`, 'info');
+                addLog(`💬 聊天窗口: ${manager.isOpen ? '已打开' : '已关闭'}`, 'info');
+                
+                // 测试方法
+                const methods = ['openChat', 'closeChat', 'sendMessage', 'loadUserInfo'];
+                methods.forEach(method => {
+                    if (typeof manager[method] === 'function') {
+                        addLog(`✅ 方法 ${method} 存在`, 'success');
+                    } else {
+                        addLog(`❌ 方法 ${method} 不存在`, 'error');
+                    }
+                });
+                
+            } catch (error) {
+                addLog('❌ 统一聊天管理器测试失败: ' + error.message, 'error');
+            }
+        }
+        
+        // 测试消息格式工具
+        function testMessageFormat() {
+            addLog('🔧 测试消息格式工具...', 'info');
+            
+            if (!window.MessageFormatUtils) {
+                addLog('❌ 消息格式工具未找到', 'error');
+                return;
+            }
+            
+            try {
+                // 测试基本功能
+                const utils = window.MessageFormatUtils;
+                
+                addLog('✅ 消息格式工具已加载', 'success');
+                
+                // 测试方法
+                const methods = ['standardizeMessageData', 'validateMessageData', 'buildSendMessageData', 'getCurrentUserInfo'];
+                methods.forEach(method => {
+                    if (typeof utils[method] === 'function') {
+                        addLog(`✅ 方法 ${method} 存在`, 'success');
+                    } else {
+                        addLog(`❌ 方法 ${method} 不存在`, 'error');
+                    }
+                });
+                
+                // 测试消息构建
+                const testMessage = utils.buildSendMessageData(1, '测试消息', { recipientType: 'user' });
+                addLog(`📝 测试消息构建: ${JSON.stringify(testMessage)}`, 'info');
+                
+                // 测试消息验证
+                const validation = utils.validateMessageData(testMessage);
+                addLog(`✅ 消息验证: ${validation.isValid ? '通过' : '失败'}`, validation.isValid ? 'success' : 'error');
+                
+            } catch (error) {
+                addLog('❌ 消息格式工具测试失败: ' + error.message, 'error');
+            }
+        }
+        
+        // 测试聊天窗口
+        function testChatWindow() {
+            addLog('🔧 测试聊天窗口...', 'info');
+            
+            if (!window.unifiedChatManager) {
+                addLog('❌ 统一聊天管理器未找到', 'error');
+                return;
+            }
+            
+            try {
+                const manager = window.unifiedChatManager;
+                
+                // 测试聊天窗口创建
+                const chatWindow = document.getElementById('chat-window');
+                if (chatWindow) {
+                    addLog('✅ 聊天窗口DOM元素存在', 'success');
+                } else {
+                    addLog('⚠️ 聊天窗口DOM元素不存在，尝试创建', 'warning');
+                    manager.createChatWindow();
+                }
+                
+                // 测试打开聊天
+                const testContact = {
+                    id: 1,
+                    name: '测试联系人',
+                    type: 'user',
+                    online: true
+                };
+                
+                manager.openChat(testContact);
+                addLog('✅ 聊天窗口打开测试完成', 'success');
+                
+                // 关闭聊天
+                setTimeout(() => {
+                    manager.closeChat();
+                    addLog('✅ 聊天窗口关闭测试完成', 'success');
+                }, 1000);
+                
+            } catch (error) {
+                addLog('❌ 聊天窗口测试失败: ' + error.message, 'error');
+            }
+        }
+        
+        // 测试Socket连接
+        function testSocketConnection() {
+            addLog('🔧 测试Socket连接...', 'info');
+            
+            if (!window.unifiedChatManager) {
+                addLog('❌ 统一聊天管理器未找到', 'error');
+                return;
+            }
+            
+            try {
+                const manager = window.unifiedChatManager;
+                
+                if (manager.socket) {
+                    addLog('✅ Socket实例存在', 'success');
+                    addLog(`🔌 连接状态: ${manager.isConnected ? '已连接' : '未连接'}`, 'info');
+                    
+                    if (manager.isConnected) {
+                        addLog('✅ Socket连接正常', 'success');
+                    } else {
+                        addLog('⚠️ Socket未连接，尝试重连...', 'warning');
+                        manager.initSocket();
+                    }
+                } else {
+                    addLog('❌ Socket实例不存在', 'error');
+                }
+                
+            } catch (error) {
+                addLog('❌ Socket连接测试失败: ' + error.message, 'error');
+            }
+        }
+        
+        // 检查旧组件
+        function checkOldComponents() {
+            addLog('🔍 检查旧组件...', 'info');
+            
+            const oldComponents = {
+                'ChatWindow': window.ChatWindow,
+                'ChatManager': window.ChatManager,
+                'EnhancedChatManager': window.EnhancedChatManager,
+                'chatWindow': window.chatWindow,
+                'chatManager': window.chatManager,
+                'enhancedChatManager': window.enhancedChatManager
+            };
+            
+            let foundOldComponents = false;
+            
+            Object.entries(oldComponents).forEach(([name, component]) => {
+                if (component) {
+                    addLog(`⚠️ 发现旧组件: ${name}`, 'warning');
+                    foundOldComponents = true;
+                } else {
+                    addLog(`✅ 旧组件已清理: ${name}`, 'success');
+                }
+            });
+            
+            if (!foundOldComponents) {
+                addLog('✅ 所有旧组件已清理', 'success');
+            }
+        }
+        
+        // 检查全局变量
+        function checkGlobalVariables() {
+            addLog('🔍 检查全局变量...', 'info');
+            
+            const globalVars = Object.keys(window).filter(key => 
+                key.includes('chat') || key.includes('Chat') || key.includes('message') || key.includes('Message')
+            );
+            
+            addLog(`📊 找到 ${globalVars.length} 个相关全局变量:`, 'info');
+            globalVars.forEach(varName => {
+                const value = window[varName];
+                const type = typeof value;
+                addLog(`  - ${varName}: ${type}`, 'info');
+            });
+        }
+        
+        // 检查内存使用
+        function checkMemoryUsage() {
+            addLog('🔍 检查内存使用...', 'info');
+            
+            if (performance.memory) {
+                const memory = performance.memory;
+                addLog(`📊 已使用内存: ${(memory.usedJSHeapSize / 1024 / 1024).toFixed(2)} MB`, 'info');
+                addLog(`📊 总内存: ${(memory.totalJSHeapSize / 1024 / 1024).toFixed(2)} MB`, 'info');
+                addLog(`📊 内存限制: ${(memory.jsHeapSizeLimit / 1024 / 1024).toFixed(2)} MB`, 'info');
+            } else {
+                addLog('⚠️ 无法获取内存信息', 'warning');
+            }
+        }
+        
+        // 性能测试
+        function runPerformanceTest() {
+            addLog('⚡ 运行性能测试...', 'info');
+            
+            const startTime = performance.now();
+            
+            // 测试组件初始化时间
+            const initStart = performance.now();
+            if (window.unifiedChatManager) {
+                const initEnd = performance.now();
+                addLog(`⏱️ 组件初始化时间: ${(initEnd - initStart).toFixed(2)} ms`, 'info');
+            }
+            
+            // 测试消息处理性能
+            const messageStart = performance.now();
+            for (let i = 0; i < 1000; i++) {
+                if (window.MessageFormatUtils) {
+                    window.MessageFormatUtils.buildSendMessageData(i, `测试消息${i}`, { recipientType: 'user' });
+                }
+            }
+            const messageEnd = performance.now();
+            addLog(`⏱️ 1000条消息处理时间: ${(messageEnd - messageStart).toFixed(2)} ms`, 'info');
+            
+            const endTime = performance.now();
+            addLog(`⏱️ 总测试时间: ${(endTime - startTime).toFixed(2)} ms`, 'info');
+        }
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog('📋 组件依赖测试页面已加载', 'info');
+            updateComponentStatus();
+        });
+    </script>
+</body>
+</html>

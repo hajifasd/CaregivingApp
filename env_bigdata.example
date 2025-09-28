@@ -1,0 +1,121 @@
+# 护工资源管理系统 - 大数据环境变量配置
+# =====================================
+
+# 基础配置
+APP_SECRET=your_app_secret_key_here
+FLASK_SECRET_KEY=your_flask_secret_key_here
+
+# 数据库配置
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_USERNAME=root
+MYSQL_PASSWORD=your_mysql_password
+MYSQL_DATABASE=caregiving_db
+
+# 管理员配置
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=your_admin_password
+
+# ==================== 大数据技术栈配置 ====================
+
+# Hadoop配置
+HDFS_NAMENODE=hdfs://localhost:9000
+HDFS_USER=hadoop
+HDFS_DATA_DIR=/caregiver_data
+HDFS_LOG_DIR=/caregiver_logs
+
+# Hive配置
+HIVE_HOST=localhost
+HIVE_PORT=10000
+HIVE_DATABASE=caregiver_warehouse
+HIVE_USER=hive
+HIVE_PASSWORD=hive
+
+# Spark配置
+SPARK_MASTER=local[*]
+SPARK_APP_NAME=CaregiverDataAnalysis
+SPARK_DRIVER_MEMORY=4g
+SPARK_EXECUTOR_MEMORY=2g
+SPARK_EXECUTOR_CORES=2
+SPARK_SQL_ADAPTIVE_ENABLED=true
+SPARK_SQL_ADAPTIVE_COALESCE_PARTITIONS_ENABLED=true
+
+# MongoDB配置
+MONGODB_HOST=localhost
+MONGODB_PORT=27017
+MONGODB_DATABASE=caregiver_analytics
+MONGODB_USER=
+MONGODB_PASSWORD=
+
+# Redis配置
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_DB=0
+REDIS_PASSWORD=
+
+# 爬虫配置
+CRAWLER_DELAY=1
+CRAWLER_CONCURRENT_REQUESTS=16
+CRAWLER_USER_AGENT=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+
+# 机器学习配置
+MODEL_SAVE_PATH=./models
+TRAINING_DATA_PATH=./data/training
+TEST_DATA_PATH=./data/test
+
+# 数据可视化配置
+CHART_THEME=plotly_white
+DASHBOARD_REFRESH_INTERVAL=30
+MAX_DATA_POINTS=10000
+
+# 数据存储路径配置
+RAW_DATA_PATH=./data/raw
+PROCESSED_DATA_PATH=./data/processed
+ANALYSIS_RESULTS_PATH=./data/analysis
+MODELS_PATH=./models
+LOGS_PATH=./logs
+UPLOADS_PATH=./web/uploads
+
+# ==================== 生产环境配置 ====================
+
+# 生产环境警告：请修改以下默认值
+# 如果使用默认值，系统会显示警告信息
+
+# 安全配置警告
+if [ "$APP_SECRET" = "your_app_secret_key_here" ]; then
+    echo "⚠️  警告：请设置APP_SECRET环境变量"
+fi
+
+if [ "$FLASK_SECRET_KEY" = "your_flask_secret_key_here" ]; then
+    echo "⚠️  警告：请设置FLASK_SECRET_KEY环境变量"
+fi
+
+# 数据库配置警告
+if [ "$MYSQL_PASSWORD" = "your_mysql_password" ]; then
+    echo "⚠️  警告：请设置MYSQL_PASSWORD环境变量"
+fi
+
+# 管理员配置警告
+if [ "$ADMIN_PASSWORD" = "your_admin_password" ]; then
+    echo "⚠️  警告：请设置ADMIN_PASSWORD环境变量"
+fi
+
+# ==================== 使用说明 ====================
+
+# 1. 复制此文件为 .env
+#    cp env_bigdata.example .env
+
+# 2. 编辑 .env 文件，填入实际的环境变量值
+#    nano .env
+
+# 3. 确保所有大数据服务已安装并运行
+#    - Hadoop (HDFS, YARN)
+#    - Spark (Master, Worker)
+#    - MongoDB
+#    - Redis
+
+# 4. 启动大数据系统
+#    python bigdata/start_bigdata_system.py
+
+# 5. 访问大数据仪表盘
+#    http://localhost:8000/admin/bigdata-dashboard

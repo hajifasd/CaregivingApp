@@ -318,7 +318,14 @@ class AppointmentService:
     def submit_review(appointment_id, user_id, rating, content):
         """提交服务评价"""
         try:
+            from models.review import Review
+            from models import User, Caregiver
+            from extensions import db
+            
             AppointmentModel = Appointment.get_model(db)
+            ReviewModel = Review.get_model(db)
+            UserModel = User.get_model(db)
+            CaregiverModel = Caregiver.get_model(db)
             
             appointment = AppointmentModel.query.get(appointment_id)
             if not appointment:
@@ -332,15 +339,95 @@ class AppointmentService:
             if appointment.status != 'completed':
                 return None
             
-            # 这里可以创建评价记录
-            # 暂时返回成功
+            # 检查是否已经评价过
+            existing_review = ReviewModel.query.filter_by(
+                user_id=user_id,
+                caregiver_id=appointment.caregiver_id,
+                appointment_id=appointment_id
+            ).first()
+            
+            if existing_review:
+                return None  # 已经评价过
+            
+            # 创建评价记录
+            review = ReviewModel(
+                user_id=user_id,
+                caregiver_id=appointment.caregiver_id,
+                rating=rating,
+                comment=content,
+                service_type=appointment.service_type,
+                appointment_id=appointment_id
+            )
+            
+            db.session.add(review)
+            
+            # 更新护工评分
+            caregiver = CaregiverModel.query.get(appointment.caregiver_id)
+            if caregiver:
+                # 计算新的平均评分
+                all_reviews = ReviewModel.query.filter_by(caregiver_id=appointment.caregiver_id).all()
+                if all_reviews:
+                    total_rating = sum(r.rating for r in all_reviews) + rating
+                    avg_rating = total_rating / (len(all_reviews) + 1)
+                    caregiver.rating = round(avg_rating, 2)
+                    caregiver.review_count = len(all_reviews) + 1
+                else:
+                    caregiver.rating = rating
+                    caregiver.review_count = 1
+            
+            db.session.commit()
+            
             return {
+                'id': review.id,
                 'appointment_id': appointment_id,
+                'caregiver_id': appointment.caregiver_id,
                 'rating': rating,
                 'content': content,
-                'submitted_at': datetime.now(timezone.utc).isoformat()
+                'service_type': appointment.service_type,
+                'submitted_at': review.created_at.isoformat() if review.created_at else None
             }
             
         except Exception as e:
             logger.error(f"提交评价失败: {str(e)}")
+            db.session.rollback()
+            return None
+    
+    @staticmethod
+    def get_appointment_detail(appointment_id, user_id):
+        """获取预约详情"""
+        try:
+            from models import User, Caregiver
+            from extensions import db
+            
+            AppointmentModel = Appointment.get_model(db)
+            UserModel = User.get_model(db)
+            CaregiverModel = Caregiver.get_model(db)
+            
+            appointment = AppointmentModel.query.get(appointment_id)
+            if not appointment:
+                return None
+            
+            # 验证用户权限
+            if appointment.user_id != user_id:
+                return None
+            
+            # 获取护工信息
+            caregiver = CaregiverModel.query.get(appointment.caregiver_id)
+            caregiver_name = caregiver.name if caregiver else '未知护工'
+            
+            return {
+                'id': appointment.id,
+                'caregiver_id': appointment.caregiver_id,
+                'caregiver_name': caregiver_name,
+                'service_type': appointment.service_type,
+                'date': appointment.date.strftime('%Y-%m-%d') if appointment.date else None,
+                'start_time': appointment.start_time.strftime('%H:%M') if appointment.start_time else None,
+                'end_time': appointment.end_time.strftime('%H:%M') if appointment.end_time else None,
+                'status': appointment.status,
+                'notes': appointment.notes,
+                'created_at': appointment.created_at.isoformat() if appointment.created_at else None
+            }
+            
+        except Exception as e:
+            logger.error(f"获取预约详情失败: {str(e)}")
             return None

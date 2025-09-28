@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>护工注册 - 护工管理系统</title>
+    <title>护理助手 -/* 用户端</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -208,7 +208,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1><i class="fas fa-user-plus"></i> 护工注册</h1>
+            <h1><i class="fas fa-user-plus"></i>/* 用户注册</h1>
             <p>加入我们的护工团队，为需要帮助的人提供服务</p>
         </div>
         
@@ -454,7 +454,7 @@
                     
                     // 3秒后跳转到登录页面
                     setTimeout(() => {
-                        window.location.href = 'index.html';
+                        window.location.href = '/';
                     }, 3000);
                 } else {
                     showMessage(data.message || '注册失败', 'error');

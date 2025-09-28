@@ -8,6 +8,18 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入Font Awesome -->
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- 引入Socket.IO -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <!-- 引入护工端专用认证守卫 -->
+    <script src="/js/caregiver-auth-guard.js"></script>
+    <!-- 引入护工通用模块 -->
+    <script src="/js/caregiver-common.js"></script>
+    <!-- 引入护工登出功能 -->
+    <script src="/js/caregiver-logout.js"></script>
+    <!-- 引入配置文件 -->
+    <script src="/js/config.js"></script>
+    <!-- 引入功能管理器 -->
+    <script src="/js/location-manager.js"></script>
     
     <!-- 配置Tailwind自定义主题（与用户端保持一致） -->
     <script>
@@ -34,661 +46,298 @@
     
     <style type="text/tailwindcss">
         @layer utilities {
-            .content-auto {
-                content-visibility: auto;
-            }
-            .sidebar-item {
-                @apply flex items-center gap-3 px-4 py-3 text-neutral-dark hover:bg-primary/10 hover:text-primary rounded-lg transition-all duration-200;
-            }
-            .sidebar-item.active {
-                @apply bg-primary/10 text-primary font-medium;
-            }
             .card-shadow {
                 @apply shadow-sm hover:shadow-md transition-shadow duration-300;
             }
         }
     </style>
 </head>
-<body class="font-inter bg-gray-50 text-gray-800 flex h-screen overflow-hidden">
-    <!-- 侧边栏 -->
-    <aside class="w-64 bg-white border-r border-gray-200 flex-shrink-0 hidden md:block">
-        <div class="p-5 border-b border-gray-200">
+<body class="font-inter bg-gray-50 text-gray-800">
+    <!-- 顶部导航栏 -->
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+        <div class="flex items-center gap-6">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
                     <i class="fa fa-hands-helping text-white text-xl"></i>
                 </div>
-                <h1 class="text-xl font-bold text-primary">护工助手</h1>
+                <h1 class="text-xl font-bold text-primary">护理助手</h1>
             </div>
         </div>
         
-        <div class="p-4">
-            <nav class="space-y-1">
-                <a href="#dashboard" class="sidebar-item active" data-target="dashboard-content">
-                    <i class="fa fa-tachometer w-5 text-center"></i>
-                    <span>工作台</span>
-                </a>
-                <a href="#profile" class="sidebar-item" data-target="profile-content">
-                    <i class="fa fa-user w-5 text-center"></i>
-                    <span>个人信息</span>
-                </a>
-                
-                <a href="#hire-info" class="sidebar-item" data-target="hire-info-content">
-                    <i class="fa fa-briefcase w-5 text-center"></i>
-                    <span>聘用信息</span>
-                </a>
-                
-                <a href="#job-opportunities" class="sidebar-item" data-target="job-opportunities-content">
-                    <i class="fa fa-handshake w-5 text-center"></i>
-                    <span>工作申请</span>
-                    <span id="job-opportunities-badge" class="ml-auto bg-danger text-white text-xs rounded-full px-2 py-1 hidden">0</span>
-                </a>
-                <a href="#jobs" class="sidebar-item" data-target="jobs-content">
-                    <i class="fa fa-briefcase w-5 text-center"></i>
-                    <span>工作机会</span>
-                </a>
-                <a href="#appointments" class="sidebar-item" data-target="appointments-content">
-                    <i class="fa fa-calendar-check-o w-5 text-center"></i>
-                    <span>我的预约</span>
-                </a>
-                <a href="#schedule" class="sidebar-item" data-target="schedule-content">
-                    <i class="fa fa-calendar w-5 text-center"></i>
-                    <span>工作安排</span>
-                </a>
-                <a href="#earnings" class="sidebar-item" data-target="earnings-content">
-                    <i class="fa fa-chart-line w-5 text-center"></i>
-                    <span>收入统计</span>
-                </a>
-                <a href="#messages" class="sidebar-item" data-target="messages-content">
-                    <i class="fa fa-comments w-5 text-center"></i>
-                    <span>消息中心</span>
-                    <span class="ml-auto bg-danger text-white text-xs px-2 py-1 rounded-full">2</span>
-                </a>
-                <a href="#reviews" class="sidebar-item" data-target="reviews-content">
-                    <i class="fa fa-star w-5 text-center"></i>
-                    <span>评价管理</span>
-                </a>
-                <a href="#settings" class="sidebar-item" data-target="settings-content">
-                    <i class="fa fa-cog w-5 text-center"></i>
-                    <span>设置</span>
-                </a>
-            </nav>
+        <div class="flex items-center gap-6">
+            <div class="relative">
+                <input type="text" placeholder="搜索工作机会..." 
+                    class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 w-64">
+                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            </div>
         </div>
-    </aside>
+        
+        <div class="flex items-center gap-4">
+            <button class="p-2 rounded-full hover:bg-gray-100 relative">
+                <i class="fa fa-bell text-gray-600"></i>
+                <span class="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full"></span>
+            </button>
+            
+            <div class="flex items-center gap-3">
+                <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-9 h-9 rounded-full object-cover border-2 border-primary/20">
+                <div class="hidden md:block">
+                    <p class="text-sm font-medium" id="caregiver-name">用户</p>
+                    <p class="text-xs text-gray-500">专业护工</p>
+                </div>
+                <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-primary">登出</button>
+            </div>
+        </div>
+    </header>
     
-    <!-- 主内容区 -->
-    <div class="flex-1 flex flex-col overflow-hidden">
-        <!-- 顶部导航栏 -->
-        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
-            <div class="flex items-center md:hidden">
-                <button id="sidebar-toggle" class="p-2 rounded-md hover:bg-gray-100">
-                    <i class="fa fa-bars text-gray-600"></i>
-                </button>
+    <!-- 主导航菜单 -->
+    <nav class="bg-white border-b border-gray-200 px-6">
+        <div class="flex items-center space-x-8">
+            <a href="/caregiver/dashboard" class="py-4 px-2 text-primary border-b-2 border-primary">
+                <i class="fa fa-tachometer mr-2"></i>工作台
+            </a>
+            <a href="/caregiver/profile" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-user mr-2"></i>个人信息
+            </a>
+            <a href="/caregiver/hire-info" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-briefcase mr-2"></i>聘用信息
+            </a>
+            <a href="/caregiver/job-opportunities" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-handshake mr-2"></i>工作申请
+            </a>
+            <a href="/caregiver/jobs" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-briefcase mr-2"></i>工作机会
+            </a>
+            <a href="/caregiver/appointments" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-calendar-check-o mr-2"></i>我的预约
+            </a>
+            <a href="/caregiver/schedule" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-calendar mr-2"></i>工作安排
+            </a>
+            <a href="/caregiver/earnings" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-chart-line mr-2"></i>收入统计
+            </a>
+            <a href="/caregiver/location" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-map-marker mr-2"></i>位置服务
+            </a>
+            <a href="/caregiver/reviews" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-star mr-2"></i>评价管理
+            </a>
+            <a href="/caregiver/messages" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-comments mr-2"></i>消息中心
+            </a>
+            <a href="/caregiver/settings" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-cog mr-2"></i>设置
+            </a>
+        </div>
+    </nav>
+    
+    <!-- 页面内容 -->
+    <main class="p-6 bg-gray-50">
+        <div class="max-w-6xl mx-auto">
+            <!-- 欢迎区域 -->
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">欢迎回来，<span id="dashboard-name">用户</span></h2>
+                <p class="text-gray-500">今天是 <span id="current-date"></span>，祝您工作顺利</p>
             </div>
-            
-            <div class="flex items-center gap-6">
-                <div class="relative">
-                    <input type="text" placeholder="搜索工作机会..." 
-                        class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 w-64">
-                    <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                </div>
-            </div>
-            
-            <div class="flex items-center gap-4">
-                <button class="p-2 rounded-full hover:bg-gray-100 relative">
-                    <i class="fa fa-bell text-gray-600"></i>
-                    <span class="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full"></span>
-                </button>
-                
-                <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-bold" id="user-avatar">护</div>
-                    <div class="hidden md:block">
-                        <p class="text-sm font-medium" id="user-name">护工</p>
-                        <p class="text-xs text-gray-500">专业护工</p>
-                    </div>
-                    <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-primary">登出</button>
-                </div>
-            </div>
-        </header>
-        
-        <!-- 页面内容 -->
-        <main class="flex-1 overflow-y-auto p-6 bg-gray-50">
-            <!-- 工作台内容 -->
-            <div id="dashboard-content" class="content-block">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                    <div>
-                        <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold">欢迎回来，<span id="dashboard-name">护工</span></h2>
-                        <p class="text-gray-500">今天是 <span id="current-date"></span>，祝您工作顺利</p>
-                    </div>
-                    <button class="mt-4 md:mt-0 bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors">
-                        <i class="fa fa-plus"></i>
-                        <span>查看工作机会</span>
-                    </button>
-                </div>
-                
-                <!-- 快捷统计卡片 -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                    <div class="bg-white rounded-xl p-6 card-shadow">
-                        <div class="flex items-start justify-between">
-                            <div>
-                                <p class="text-gray-500 text-sm">总工作机会</p>
-                                <h3 class="text-3xl font-bold mt-2" id="total-jobs">0</h3>
-                                <p class="text-success text-sm mt-2 flex items-center">
-                                    <i class="fa fa-arrow-up mr-1"></i> 本周新增3个
-                                </p>
-                            </div>
-                            <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                                <i class="fa fa-briefcase text-primary text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white rounded-xl p-6 card-shadow">
-                        <div class="flex items-start justify-between">
-                            <div>
-                                <p class="text-gray-500 text-sm">进行中预约</p>
-                                <h3 class="text-3xl font-bold mt-2" id="active-appointments">0</h3>
-                                <p class="text-gray-500 text-sm mt-2">进行中</p>
-                            </div>
-                            <div class="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center">
-                                <i class="fa fa-calendar-check-o text-secondary text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white rounded-xl p-6 card-shadow">
-                        <div class="flex items-start justify-between">
-                            <div>
-                                <p class="text-gray-500 text-sm">本月收入</p>
-                                <h3 class="text-3xl font-bold mt-2" id="monthly-earnings">¥0</h3>
-                                <p class="text-success text-sm mt-2 flex items-center">
-                                    <i class="fa fa-arrow-up mr-1"></i> 较上月增长15%
-                                </p>
-                            </div>
-                            <div class="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
-                                <i class="fa fa-chart-line text-accent text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white rounded-xl p-6 card-shadow">
-                        <div class="flex items-start justify-between">
-                            <div>
-                                <p class="text-gray-500 text-sm">平均评分</p>
-                                <h3 class="text-3xl font-bold mt-2" id="rating">0.0</h3>
-                                <div class="flex text-warning mt-1">
-                                    <i class="fa fa-star"></i>
-                                    <i class="fa fa-star"></i>
-                                    <i class="fa fa-star"></i>
-                                    <i class="fa fa-star"></i>
-                                    <i class="fa fa-star-half-o"></i>
-                                </div>
-                            </div>
-                            <div class="w-12 h-12 rounded-full bg-warning/10 flex items-center justify-center">
-                                <i class="fa fa-star text-warning text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- 最近工作机会 -->
-                <div class="bg-white rounded-xl p-6 card-shadow">
+            <!-- 统计卡片 -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-primary/10 rounded-lg">
+                            <i class="fa fa-briefcase text-primary text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">总工作数</p>
+                            <p class="text-2xl font-bold text-gray-800" id="total-jobs">0</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-success/10 rounded-lg">
+                            <i class="fa fa-check text-success text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">进行中</p>
+                            <p class="text-2xl font-bold text-gray-800" id="active-appointments">0</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-warning/10 rounded-lg">
+                            <i class="fa fa-money text-warning text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">本月收入</p>
+                            <p class="text-2xl font-bold text-gray-800" id="monthly-earnings">¥0</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-danger/10 rounded-lg">
+                            <i class="fa fa-star text-danger text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">评分</p>
+                            <p class="text-2xl font-bold text-gray-800" id="rating">0.0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 快速操作 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-semibold">最近工作机会</h3>
-                        <a href="#jobs" class="text-primary hover:text-primary/80 text-sm">查看全部</a>
+                        <h3 class="text-lg font-bold text-gray-800">工作机会</h3>
+                        <a href="/caregiver/jobs" class="text-primary hover:text-primary/80 text-sm">查看全部</a>
                     </div>
                     <div id="recent-jobs">
                         <p class="text-gray-500 text-center py-8">暂无工作机会</p>
                     </div>
                 </div>
-            </div>
-
-            <!-- 个人信息内容 -->
-            <div id="profile-content" class="content-block hidden">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                    <div>
-                        <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold">个人信息</h2>
-                        <p class="text-gray-500">管理您的个人资料和资质信息</p>
+                
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-gray-800">我的预约</h3>
+                        <a href="/caregiver/appointments" class="text-primary hover:text-primary/80 text-sm">查看全部</a>
                     </div>
-                </div>
-
-                <div class="bg-white rounded-xl p-6 card-shadow">
-                    <form id="profile-form">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">姓名</label>
-                                <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="profile-name" readonly>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">手机号码</label>
-                                <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="profile-phone" readonly>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">性别</label>
-                                <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="profile-gender" placeholder="请输入性别">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">年龄</label>
-                                <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="profile-age" placeholder="请输入年龄">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">工作经验（年）</label>
-                                <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="profile-experience" placeholder="请输入工作经验">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">期望时薪（元/小时）</label>
-                                <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="profile-hourly-rate" placeholder="请输入期望时薪">
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">资质证书</label>
-                                <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="profile-qualification" placeholder="请输入资质证书">
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">个人介绍</label>
-                                <textarea class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="profile-introduction" rows="4" placeholder="请输入个人介绍"></textarea>
-                            </div>
-                        </div>
-                        <div class="mt-6">
-                            <button type="submit" class="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg transition-colors">保存修改</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- 工作机会内容 -->
-            <div id="jobs-content" class="content-block hidden">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                    <div>
-                        <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold">工作机会</h2>
-                        <p class="text-gray-500">浏览可用的护理工作机会</p>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl p-6 card-shadow">
-                    <div id="jobs-list">
-                        <p class="text-gray-500 text-center py-8">暂无工作机会</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 我的预约内容 -->
-            <div id="appointments-content" class="content-block hidden">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                    <div>
-                        <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold">我的预约</h2>
-                        <p class="text-gray-500">管理您的预约安排</p>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl p-6 card-shadow">
-                    <div id="appointments-list">
-                        <p class="text-gray-500 text-center py-8">暂无预约记录</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 工作安排内容 -->
-            <div id="schedule-content" class="content-block hidden">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                    <div>
-                        <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold">工作安排</h2>
-                        <p class="text-gray-500">查看您的工作日程安排</p>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl p-6 card-shadow">
-                    <div id="schedule-calendar">
-                        <p class="text-gray-500 text-center py-8">暂无工作安排</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 收入统计内容 -->
-            <div id="earnings-content" class="content-block hidden">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                    <div>
-                        <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold">收入统计</h2>
-                        <p class="text-gray-500">查看您的收入数据和分析</p>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl p-6 card-shadow">
-                    <div id="earnings-chart">
-                        <p class="text-gray-500 text-center py-8">暂无收入数据</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 消息中心内容 -->
-            <div id="messages-content" class="content-block hidden">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                    <div>
-                        <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold">消息中心</h2>
-                        <p class="text-gray-500">查看系统消息和通知</p>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl p-6 card-shadow">
-                    <div id="messages-list">
-                        <p class="text-gray-500 text-center py-8">暂无消息</p>
+                    <div id="recent-appointments">
+                        <p class="text-gray-500 text-center py-8">暂无预约</p>
                     </div>
                 </div>
                 
-                <!-- 聊天列表 -->
-                <div class="mt-6 bg-white rounded-xl p-6 card-shadow">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-semibold">聊天列表</h3>
-                        <button id="refresh-messages" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
-                            <i class="fa fa-refresh mr-2"></i>刷新
-                        </button>
+                        <h3 class="text-lg font-bold text-gray-800">消息中心</h3>
+                        <a href="/caregiver/messages" class="text-primary hover:text-primary/80 text-sm">查看全部</a>
                     </div>
-                    <div id="chat-list" class="space-y-3">
-                        <p class="text-gray-500 text-center py-8">暂无聊天记录</p>
+                    <div id="recent-messages">
+                        <p class="text-gray-500 text-center py-8">暂无消息</p>
                     </div>
                 </div>
             </div>
 
-            <!-- 评价管理内容 -->
-            <div id="reviews-content" class="content-block hidden">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                    <div>
-                        <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold">评价管理</h2>
-                        <p class="text-gray-500">查看客户对您的评价</p>
-                    </div>
+            <!-- 收入趋势图表 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">收入趋势</h3>
+                <div id="earnings-chart" class="h-64">
+                    <!-- 收入趋势图表将通过JavaScript动态生成 -->
                 </div>
-
-                <div class="bg-white rounded-xl p-6 card-shadow">
-                    <div id="reviews-list">
-                        <p class="text-gray-500 text-center py-8">暂无评价</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 设置内容 -->
-            <div id="settings-content" class="content-block hidden">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                    <div>
-                        <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold">账户设置</h2>
-                        <p class="text-gray-500">管理您的账户安全设置</p>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl p-6 card-shadow">
-                    <h3 class="text-lg font-semibold mb-4">修改密码</h3>
-                    <form id="password-form">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">当前密码</label>
-                                <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="current-password" required>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">新密码</label>
-                                <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="new-password" required>
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">确认新密码</label>
-                                <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="confirm-password" required>
-                            </div>
-                        </div>
-                        <div class="mt-6">
-                            <button type="submit" class="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg transition-colors">修改密码</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- 聘用信息内容 -->
-            <div id="hire-info-content" class="content-block hidden">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                    <div>
-                        <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold">聘用信息管理</h2>
-                        <p class="text-gray-500">设置您的聘用信息，让用户了解您的服务</p>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- 聘用信息表单 -->
-                    <div class="bg-white rounded-xl p-6 card-shadow">
-                        <h3 class="text-lg font-semibold mb-4">设置聘用信息</h3>
-                        <form id="hire-info-form">
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">服务类型 *</label>
-                                    <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="hire-service-type" required>
-                                        <option value="">请选择服务类型</option>
-                                        <option value="居家护理">居家护理</option>
-                                        <option value="医院陪护">医院陪护</option>
-                                        <option value="康复护理">康复护理</option>
-                                        <option value="老年护理">老年护理</option>
-                                        <option value="母婴护理">母婴护理</option>
-                                        <option value="专业护理">专业护理</option>
-                                    </select>
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">工作状态 *</label>
-                                    <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="hire-status" required>
-                                        <option value="">请选择工作状态</option>
-                                        <option value="available">可立即聘用</option>
-                                        <option value="busy">需提前预约</option>
-                                        <option value="unavailable">暂不接单</option>
-                                    </select>
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">期望时薪（元/小时） *</label>
-                                    <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="hire-hourly-rate" placeholder="请输入期望时薪" required>
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">工作时间 *</label>
-                                    <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="hire-work-time" required>
-                                        <option value="">请选择工作时间</option>
-                                        <option value="全职">全职</option>
-                                        <option value="兼职">兼职</option>
-                                        <option value="灵活时间">灵活时间</option>
-                                        <option value="夜班">夜班</option>
-                                    </select>
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">服务区域</label>
-                                    <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="hire-service-area" placeholder="请输入服务区域">
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">可服务时间</label>
-                                    <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="hire-available-time" placeholder="如：周一至周五 9:00-18:00">
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">专业技能</label>
-                                    <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="hire-skills" placeholder="如：心肺复苏,伤口护理,导尿护理">
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">服务承诺</label>
-                                    <textarea class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" id="hire-commitment" rows="3" placeholder="请输入您的服务承诺"></textarea>
-                                </div>
-                                
-                                <div class="flex gap-3">
-                                    <button type="submit" class="flex-1 bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg transition-colors">
-                                        保存聘用信息
-                                    </button>
-                                    <button type="button" id="preview-hire-info" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors">
-                                        预览效果
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                    
-                    <!-- 当前聘用信息预览 -->
-                    <div class="bg-white rounded-xl p-6 card-shadow">
-                        <h3 class="text-lg font-semibold mb-4">当前聘用信息预览</h3>
-                        <div id="current-hire-info-preview">
-                            <p class="text-gray-500 text-center py-8">请先填写聘用信息</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 工作申请内容 -->
-            <div id="job-opportunities-content" class="content-block hidden">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                    <div>
-                        <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold">工作申请管理</h2>
-                        <p class="text-gray-500">查看和处理用户发来的工作申请</p>
-                    </div>
-                    <div class="flex gap-3">
-                        <button id="refresh-job-opportunities" class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg transition-colors">
-                            <i class="fa fa-refresh mr-2"></i>刷新
-                        </button>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl p-6 card-shadow">
-                    <div id="job-opportunities-list">
-                        <p class="text-gray-500 text-center py-8">正在加载工作申请...</p>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- 聊天窗口 -->
-    <div id="chat-window" class="fixed bottom-20 right-6 bg-white rounded-lg shadow-lg w-full max-w-md h-96 flex flex-col hidden z-50">
-        <div class="flex items-center justify-between p-4 border-b border-gray-200">
-            <h3 id="chat-title" class="text-lg font-semibold text-gray-800">与用户聊天</h3>
-            <button id="close-chat" class="p-2 rounded-full hover:bg-gray-100 text-gray-600">
-                <i class="fa fa-times"></i>
-            </button>
-        </div>
-        <div class="flex-1 overflow-y-auto p-4">
-            <div id="chat-messages" class="space-y-4">
-                <p class="text-gray-500 text-center py-8">开始新的对话</p>
             </div>
         </div>
-        <div class="p-4 border-t border-gray-200">
-            <div class="flex items-center gap-2">
-                <input type="text" id="chat-input" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" placeholder="输入消息...">
-                <button id="send-message" class="p-2 rounded-full hover:bg-gray-100 text-primary">
-                    <i class="fa fa-paper-plane"></i>
-                </button>
-            </div>
-        </div>
-    </div>
+    </main>
+
+    <!-- 返回顶部按钮 -->
+    <button id="back-to-top" class="fixed bottom-6 right-6 w-12 h-12 bg-primary text-white rounded-full shadow-lg hover:bg-primary/90 transition-all duration-300 hidden">
+        <i class="fa fa-arrow-up"></i>
+    </button>
 
     <script>
-        // 页面加载时检查登录状态
+        // 页面初始化
         document.addEventListener('DOMContentLoaded', function() {
-            checkAuth();
+            // 认证守卫会自动处理认证检查，这里只需要加载护工信息
+            loadCaregiverInfo();
             loadDashboardData();
+            setupEventListeners();
             updateCurrentDate();
         });
+
+        // 加载护工信息
+        function loadCaregiverInfo() {
+            // 使用通用模块的loadUserInfo
+            if (window.CaregiverCommon && window.CaregiverCommon.loadUserInfo) {
+                window.CaregiverCommon.loadUserInfo();
+            } else {
+                // 备用方案：直接加载护工信息
+                const caregiverInfo = JSON.parse(localStorage.getItem('caregiver_info') || '{}');
+                
+                // 更新用户名显示
+                const nameElement = document.getElementById('caregiver-name');
+                if (nameElement) {
+                    nameElement.textContent = caregiverInfo.name || '护工';
+                }
+                
+                // 更新仪表盘欢迎信息
+                const dashboardNameElement = document.getElementById('dashboard-name');
+                if (dashboardNameElement) {
+                    dashboardNameElement.textContent = caregiverInfo.name || '护工';
+                }
+                
+                console.log('护工信息加载完成:', caregiverInfo);
+            }
+        }
+
+        // 加载用户信息函数已移至通用模块 CaregiverCommon.loadUserInfo()
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 返回顶部按钮
+            const backToTopBtn = document.getElementById('back-to-top');
+            window.addEventListener('scroll', () => {
+                if (window.pageYOffset > 300) {
+                    backToTopBtn.classList.remove('hidden');
+                } else {
+                    backToTopBtn.classList.add('hidden');
+                }
+            });
+            
+            backToTopBtn.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+
+            // 退出登录
+            document.getElementById('logout-btn').addEventListener('click', function() {
+                localStorage.removeItem('caregiver_info');
+                window.location.href = '/caregiver/';
+            });
+        }
 
         // 更新当前日期
         function updateCurrentDate() {
             const now = new Date();
-            const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
-            document.getElementById('current-date').textContent = now.toLocaleDateString('zh-CN', options);
-        }
-
-        // 检查认证状态
-        function checkAuth() {
-            const token = localStorage.getItem('caregiver_token') || getCookie('caregiver_token');
-            if (!token) {
-                window.location.href = '/index.html';
-                return;
-            }
-
-            // 验证token有效性
-            fetch('/api/caregiver/verify', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (!data.success) {
-                    localStorage.removeItem('caregiver_token');
-                    document.cookie = 'caregiver_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-                    window.location.href = '/index.html';
-                } else {
-                    // 更新用户信息显示
-                    updateUserInfo(data.data);
-                }
-            })
-            .catch(error => {
-                console.error('Token验证失败:', error);
-                window.location.href = '/index.html';
+            const dateStr = now.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                weekday: 'long'
             });
+            document.getElementById('current-date').textContent = dateStr;
         }
-
-        // 获取cookie
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-        }
-
-        // 更新用户信息显示
-        function updateUserInfo(caregiver) {
-            document.getElementById('user-name').textContent = caregiver.name;
-            document.getElementById('user-avatar').textContent = caregiver.name.charAt(0);
-            document.getElementById('dashboard-name').textContent = caregiver.name;
-            
-            // 填充个人信息表单
-            document.getElementById('profile-name').value = caregiver.name;
-            document.getElementById('profile-phone').value = caregiver.phone;
-            document.getElementById('profile-gender').value = caregiver.gender || '';
-            document.getElementById('profile-age').value = caregiver.age || '';
-            document.getElementById('profile-experience').value = caregiver.experience_years || '';
-            document.getElementById('profile-hourly-rate').value = caregiver.hourly_rate || '';
-            document.getElementById('profile-qualification').value = caregiver.qualification || '';
-            document.getElementById('profile-introduction').value = caregiver.introduction || '';
-        }
-
-        // 导航切换
-        document.querySelectorAll('.sidebar-item').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                // 移除所有active状态
-                document.querySelectorAll('.sidebar-item').forEach(l => l.classList.remove('active'));
-                document.querySelectorAll('.content-block').forEach(c => c.classList.add('hidden'));
-                
-                // 添加active状态
-                this.classList.add('active');
-                
-                // 显示对应内容
-                const target = this.getAttribute('data-target');
-                document.getElementById(target).classList.remove('hidden');
-            });
-        });
-
-        // 移动端侧边栏切换
-        document.getElementById('sidebar-toggle').addEventListener('click', function() {
-            document.querySelector('aside').classList.toggle('hidden');
-        });
 
         // 加载仪表盘数据
-        function loadDashboardData() {
-            const token = localStorage.getItem('caregiver_token') || getCookie('caregiver_token');
-            
-            fetch('/api/caregiver/dashboard', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
+        async function loadDashboardData() {
+            try {
+                const response = await fetch('/api/caregiver/dashboard', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        updateDashboardStats(result.data);
+                        loadRecentJobs();
+                        loadRecentAppointments();
+                        loadRecentMessages();
+                        renderEarningsChart(result.data.earnings_trend || []);
+                    } else {
+                        showNotification(result.message || '加载仪表盘数据失败', 'error');
+                    }
+                } else {
+                    showNotification('加载仪表盘数据失败', 'error');
                 }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    updateDashboardStats(data.data);
-                }
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('加载仪表盘数据失败:', error);
-            });
+                showNotification('加载仪表盘数据失败，请重试', 'error');
+            }
         }
 
         // 更新仪表盘统计
@@ -696,1042 +345,210 @@
             document.getElementById('total-jobs').textContent = data.total_jobs || 0;
             document.getElementById('active-appointments').textContent = data.active_appointments || 0;
             document.getElementById('monthly-earnings').textContent = `¥${data.monthly_earnings || 0}`;
-            document.getElementById('rating').textContent = (data.rating || 0).toFixed(1);
+            document.getElementById('rating').textContent = data.rating || '0.0';
+            
+            // 更新护工姓名
+            const caregiverInfo = JSON.parse(localStorage.getItem('caregiver_info') || '{}');
+            document.getElementById('dashboard-name').textContent = caregiverInfo.name || '用户';
         }
 
-        // 个人信息表单提交
-        document.getElementById('profile-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const token = localStorage.getItem('caregiver_token') || getCookie('caregiver_token');
-            const formData = {
-                gender: document.getElementById('profile-gender').value,
-                age: parseInt(document.getElementById('profile-age').value) || null,
-                experience_years: parseInt(document.getElementById('profile-experience').value) || 0,
-                hourly_rate: parseFloat(document.getElementById('profile-hourly-rate').value) || null,
-                qualification: document.getElementById('profile-qualification').value,
-                introduction: document.getElementById('profile-introduction').value
-            };
-
-            fetch('/api/caregiver/profile', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(formData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('个人信息更新成功');
-                } else {
-                    alert(data.message || '更新失败');
-                }
-            })
-            .catch(error => {
-                alert('网络错误，请稍后重试');
-            });
-        });
-
-        // 密码修改表单提交
-        document.getElementById('password-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const currentPassword = document.getElementById('current-password').value;
-            const newPassword = document.getElementById('new-password').value;
-            const confirmPassword = document.getElementById('confirm-password').value;
-
-            if (newPassword !== confirmPassword) {
-                alert('新密码与确认密码不一致');
-                return;
-            }
-
-            const token = localStorage.getItem('caregiver_token') || getCookie('caregiver_token');
-            
-            fetch('/api/caregiver/password', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    current_password: currentPassword,
-                    new_password: newPassword
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('密码修改成功');
-                    document.getElementById('password-form').reset();
-                } else {
-                    alert(data.message || '密码修改失败');
-                }
-            })
-            .catch(error => {
-                alert('网络错误，请稍后重试');
-            });
-        });
-
-        // 退出登录
-        document.getElementById('logout-btn').addEventListener('click', function() {
-            localStorage.removeItem('caregiver_token');
-            document.cookie = 'caregiver_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-            window.location.href = '/index.html';
-        });
-
-        // 获取当前护工ID（从token中解析）
-        function getCurrentCaregiverId() {
-            // 从JWT token中解析护工ID
-            const token = localStorage.getItem('caregiver_token') || getCookie('caregiver_token');
-            if (!token) {
-                console.error('未找到护工token');
-                return null;
-            }
-            
+        // 加载最近工作机会
+        async function loadRecentJobs() {
             try {
-                // 解析JWT token
-                const payload = token.split('.')[1];
-                if (payload) {
-                    // 使用更兼容的base64解码方法
-                    const decoded = JSON.parse(decodeURIComponent(escape(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))));
-                    console.log('解析的token载荷:', decoded);
-                    return decoded.user_id || decoded.caregiver_id;
+                const response = await fetch('/api/caregiver/jobs', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        displayRecentJobs(result.jobs || []);
+                    }
                 }
-            } catch (e) {
-                console.error('解析token失败:', e);
+            } catch (error) {
+                console.error('加载最近工作机会失败:', error);
             }
-            
-            // 如果解析失败，尝试从用户信息中获取
-            const userInfoElement = document.getElementById('user-name');
-            if (userInfoElement && userInfoElement.dataset.caregiverId) {
-                return userInfoElement.dataset.caregiverId;
-            }
-            
-            // 最后尝试从localStorage中获取护工信息
-            try {
-                const caregiverInfo = localStorage.getItem('caregiver_info');
-                if (caregiverInfo) {
-                    const info = JSON.parse(caregiverInfo);
-                    return info.id;
-                }
-            } catch (e) {
-                console.error('解析护工信息失败:', e);
-            }
-            
-            console.error('无法获取护工ID');
-            return null;
         }
 
-        // 聘用信息表单提交
-        document.getElementById('hire-info-form').addEventListener('submit', function(e) {
-            e.preventDefault();
+        // 显示最近工作机会
+        function displayRecentJobs(jobs) {
+            const container = document.getElementById('recent-jobs');
             
-            const token = localStorage.getItem('caregiver_token') || getCookie('caregiver_token');
-            const formData = {
-                service_type: document.getElementById('hire-service-type').value,
-                status: document.getElementById('hire-status').value,
-                hourly_rate: parseFloat(document.getElementById('hire-hourly-rate').value),
-                work_time: document.getElementById('hire-work-time').value,
-                service_area: document.getElementById('hire-service-area').value,
-                available_time: document.getElementById('hire-available-time').value,
-                skills: document.getElementById('hire-skills').value,
-                commitment: document.getElementById('hire-commitment').value
-            };
-
-            // 验证必填字段
-            if (!formData.service_type || !formData.status || !formData.hourly_rate || !formData.work_time) {
-                alert('请填写所有必填字段');
+            if (jobs.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">暂无工作机会</p>';
                 return;
             }
 
-            fetch('/api/caregiver/hire-info', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(formData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('聘用信息保存成功');
-                    loadCurrentHireInfo();
-                } else {
-                    alert(data.message || '保存失败');
-                }
-            })
-            .catch(error => {
-                console.error('保存聘用信息失败:', error);
-                alert('网络错误，请稍后重试');
-            });
-        });
-
-        // 预览聘用信息
-        document.getElementById('preview-hire-info').addEventListener('click', function() {
-            const formData = {
-                service_type: document.getElementById('hire-service-type').value,
-                status: document.getElementById('hire-status').value,
-                hourly_rate: document.getElementById('hire-hourly-rate').value,
-                work_time: document.getElementById('hire-work-time').value,
-                service_area: document.getElementById('hire-service-area').value,
-                available_time: document.getElementById('hire-available-time').value,
-                skills: document.getElementById('hire-skills').value,
-                commitment: document.getElementById('hire-commitment').value
-            };
-
-            if (!formData.service_type || !formData.status || !formData.hourly_rate || !formData.work_time) {
-                alert('请先填写必填字段');
-                return;
-            }
-
-            showHireInfoPreview(formData);
-        });
-
-        // 显示聘用信息预览
-        function showHireInfoPreview(data) {
-            const previewContainer = document.getElementById('current-hire-info-preview');
-            
-            const statusText = {
-                'available': '可立即聘用',
-                'busy': '需提前预约',
-                'unavailable': '暂不接单'
-            };
-
-            const workTimeText = {
-                '全职': '全职',
-                '兼职': '兼职',
-                '灵活时间': '灵活时间',
-                '夜班': '夜班'
-            };
-
-            previewContainer.innerHTML = `
-                <div class="bg-gray-50 rounded-lg p-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <p class="text-sm text-gray-600">服务类型</p>
-                            <p class="font-medium">${data.service_type}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-600">工作状态</p>
-                            <span class="inline-block px-2 py-1 text-xs rounded-full ${
-                                data.status === 'available' ? 'bg-success text-white' : 
-                                data.status === 'busy' ? 'bg-warning text-white' : 'bg-gray-500 text-white'
-                            }">${statusText[data.status]}</span>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-600">期望时薪</p>
-                            <p class="font-medium text-primary">¥${data.hourly_rate}/小时</p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-600">工作时间</p>
-                            <p class="font-medium">${workTimeText[data.work_time]}</p>
-                        </div>
-                        ${data.service_area ? `
-                        <div>
-                            <p class="text-sm text-gray-600">服务区域</p>
-                            <p class="font-medium">${data.service_area}</p>
-                        </div>
-                        ` : ''}
-                        ${data.available_time ? `
-                        <div>
-                            <p class="text-sm text-gray-600">可服务时间</p>
-                            <p class="font-medium">${data.available_time}</p>
-                        </div>
-                        ` : ''}
+            container.innerHTML = jobs.slice(0, 3).map(job => `
+                <div class="border-b border-gray-200 pb-3 mb-3 last:border-b-0 last:pb-0 last:mb-0">
+                    <h4 class="font-medium text-gray-800 mb-1">${job.title}</h4>
+                    <p class="text-sm text-gray-600 mb-2">${job.description}</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-primary font-medium">¥${job.salary}/小时</span>
+                        <span class="text-xs text-gray-500">${job.location}</span>
                     </div>
-                    ${data.skills ? `
-                    <div class="mt-4">
-                        <p class="text-sm text-gray-600 mb-2">专业技能</p>
-                        <div class="flex flex-wrap gap-2">
-                            ${data.skills.split(',').map(skill => 
-                                `<span class="bg-primary/10 text-primary text-xs px-2 py-1 rounded">${skill.trim()}</span>`
-                            ).join('')}
-                        </div>
-                    </div>
-                    ` : ''}
-                    ${data.commitment ? `
-                    <div class="mt-4">
-                        <p class="text-sm text-gray-600 mb-2">服务承诺</p>
-                        <p class="text-gray-800">${data.commitment}</p>
-                    </div>
-                    ` : ''}
-                </div>
-            `;
-        }
-
-        // 加载当前聘用信息
-        function loadCurrentHireInfo() {
-            const token = localStorage.getItem('caregiver_token') || getCookie('caregiver_token');
-            
-            fetch('/api/caregiver/hire-info', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.data) {
-                    // 填充表单
-                    const hireInfo = data.data;
-                    document.getElementById('hire-service-type').value = hireInfo.service_type || '';
-                    document.getElementById('hire-status').value = hireInfo.status || '';
-                    document.getElementById('hire-hourly-rate').value = hireInfo.hourly_rate || '';
-                    document.getElementById('hire-work-time').value = hireInfo.work_time || '';
-                    document.getElementById('hire-service-area').value = hireInfo.service_area || '';
-                    document.getElementById('hire-available-time').value = hireInfo.available_time || '';
-                    document.getElementById('hire-skills').value = hireInfo.skills || '';
-                    document.getElementById('hire-commitment').value = hireInfo.commitment || '';
-                    
-                    // 显示预览
-                    showHireInfoPreview(hireInfo);
-                }
-            })
-            .catch(error => {
-                console.error('加载聘用信息失败:', error);
-            });
-        }
-
-        // 加载工作机会
-        function loadJobOpportunities() {
-            const token = localStorage.getItem('caregiver_token') || getCookie('caregiver_token');
-            const caregiverId = getCurrentCaregiverId();
-            
-            if (!caregiverId) {
-                console.error('无法获取护工ID');
-                return;
-            }
-            
-            console.log('正在加载护工ID为', caregiverId, '的工作机会...');
-            
-            fetch('/api/employment/applications/caregiver/' + caregiverId, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-            .then(response => {
-                console.log('API响应状态:', response.status);
-                return response.json();
-            })
-            .then(data => {
-                console.log('API响应数据:', data);
-                if (data.success) {
-                    displayJobOpportunities(data.data);
-                } else {
-                    console.error('加载工作机会失败:', data.message);
-                    // 显示错误信息
-                    const container = document.getElementById('job-opportunities-list');
-                    container.innerHTML = `
-                        <div class="text-center py-8">
-                            <i class="fa fa-exclamation-triangle text-4xl text-warning mb-4"></i>
-                            <p class="text-warning">加载失败</p>
-                            <p class="text-sm text-gray-400">${data.message || '未知错误'}</p>
-                        </div>
-                    `;
-                }
-            })
-            .catch(error => {
-                console.error('加载工作机会失败:', error);
-                // 显示错误信息
-                const container = document.getElementById('job-opportunities-list');
-                container.innerHTML = `
-                    <div class="text-center py-8">
-                        <i class="fa fa-exclamation-triangle text-4xl text-danger mb-4"></i>
-                        <p class="text-danger">网络错误</p>
-                        <p class="text-sm text-gray-400">请检查网络连接后重试</p>
-                    </div>
-                `;
-            });
-        }
-
-        // 显示工作机会
-        function displayJobOpportunities(applications) {
-            const container = document.getElementById('job-opportunities-list');
-            
-            if (!applications || applications.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-8">
-                        <i class="fa fa-inbox text-4xl text-gray-300 mb-4"></i>
-                        <p class="text-gray-500">暂无工作申请</p>
-                        <p class="text-sm text-gray-400">当用户向您发送工作申请时，会在这里显示</p>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = applications.map(application => `
-                <div class="bg-white rounded-xl p-6 card-shadow mb-4">
-                    <div class="flex items-start justify-between mb-4">
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-800">${application.service_type}服务申请</h3>
-                            <p class="text-sm text-gray-500">申请时间：${new Date(application.created_at).toLocaleString()}</p>
-                        </div>
-                        <span class="inline-block px-3 py-1 text-xs rounded-full ${
-                            application.status === 'pending' ? 'bg-warning text-white' :
-                            application.status === 'accepted' ? 'bg-success text-white' :
-                            application.status === 'rejected' ? 'bg-danger text-white' : 'bg-gray-500 text-white'
-                        }">
-                            ${application.status === 'pending' ? '待回复' :
-                              application.status === 'accepted' ? '已接受' :
-                              application.status === 'rejected' ? '已拒绝' : '未知状态'}
-                        </span>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <p class="text-sm text-gray-600">建议开始日期</p>
-                            <p class="font-medium">${application.proposed_start_date}</p>
-                        </div>
-                        ${application.proposed_end_date ? `
-                        <div>
-                            <p class="text-sm text-gray-600">建议结束日期</p>
-                            <p class="font-medium">${application.proposed_end_date}</p>
-                        </div>
-                        ` : ''}
-                        ${application.proposed_hours ? `
-                        <div>
-                            <p class="text-sm text-gray-600">建议服务时长</p>
-                            <p class="font-medium">${application.proposed_hours}小时</p>
-                        </div>
-                        ` : ''}
-                        ${application.proposed_rate ? `
-                        <div>
-                            <p class="text-sm text-gray-600">建议时薪</p>
-                            <p class="font-medium text-primary">¥${application.proposed_rate}/小时</p>
-                        </div>
-                        ` : ''}
-                    </div>
-                    
-                    ${application.application_message ? `
-                    <div class="mb-4">
-                        <p class="text-sm text-gray-600 mb-2">申请说明</p>
-                        <p class="text-gray-800 bg-gray-50 p-3 rounded-lg">${application.application_message}</p>
-                    </div>
-                    ` : ''}
-                    
-                    ${application.status === 'pending' ? `
-                    <div class="flex gap-3">
-                        <button onclick="respondToApplication(${application.id}, 'accepted')" 
-                                class="bg-success hover:bg-success/90 text-white px-4 py-2 rounded-lg transition-colors">
-                            <i class="fa fa-check mr-2"></i>接受申请
-                        </button>
-                        <button onclick="respondToApplication(${application.id}, 'rejected')" 
-                                class="bg-danger hover:bg-danger/90 text-white px-4 py-2 rounded-lg transition-colors">
-                            <i class="fa fa-times mr-2"></i>拒绝申请
-                        </button>
-                    </div>
-                    ` : application.status === 'accepted' ? `
-                    <div class="bg-success/10 border border-success/20 rounded-lg p-3">
-                        <p class="text-success text-sm">
-                            <i class="fa fa-check-circle mr-2"></i>
-                            您已接受此申请，聘用合同已自动创建
-                        </p>
-                    </div>
-                    ` : application.status === 'rejected' ? `
-                    <div class="bg-danger/10 border border-danger/20 rounded-lg p-3">
-                        <p class="text-danger text-sm">
-                            <i class="fa fa-times-circle mr-2"></i>
-                            您已拒绝此申请
-                        </p>
-                    </div>
-                    ` : ''}
                 </div>
             `).join('');
         }
 
-        // 回复工作申请
-        function respondToApplication(applicationId, status) {
-            const response = prompt(status === 'accepted' ? '请输入接受说明（可选）：' : '请输入拒绝原因（建议填写）：');
-            if (response === null) return; // 用户取消
-            
-            const token = localStorage.getItem('caregiver_token') || getCookie('caregiver_token');
-            const caregiverId = getCurrentCaregiverId();
-            
-            if (!caregiverId) {
-                alert('无法获取护工ID，请重新登录');
-                return;
-            }
-            
-            fetch('/api/employment/respond', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    application_id: applicationId,
-                    caregiver_id: caregiverId,
-                    response: response || (status === 'accepted' ? '已接受您的工作申请' : '抱歉，无法接受您的工作申请'),
-                    status: status
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message);
-                    loadJobOpportunities(); // 重新加载工作机会
-                } else {
-                    alert(data.message || '操作失败');
-                }
-            })
-            .catch(error => {
-                console.error('回复申请失败:', error);
-                alert('网络错误，请稍后重试');
-            });
-        }
-
-        // 刷新工作机会
-        document.getElementById('refresh-job-opportunities').addEventListener('click', function() {
-            loadJobOpportunities();
-        });
-
-        // 延迟加载聘用信息和工作机会
-        setTimeout(() => {
-            loadCurrentHireInfo();
-            loadJobOpportunities();
-        }, 1000);
-
-        // ==================== 聊天功能 ====================
-        let currentChatUser = null;
-        let socket = null;
-
-        // 初始化聊天功能
-        function initChat() {
-            // 连接WebSocket
+        // 加载最近预约
+        async function loadRecentAppointments() {
             try {
-                socket = io('http://localhost:8000');
-                
-                socket.on('connect', () => {
-                    console.log('✅ 护工端聊天服务器连接成功');
-                    
-                    // 连接成功后立即加入护工房间
-                    const caregiverId = getCurrentCaregiverId();
-                    if (caregiverId) {
-                        socket.emit('join', {
-                            user_id: caregiverId,
-                            user_type: 'caregiver'
-                        });
-                        console.log(`🔗 护工 ${caregiverId} 正在加入房间: caregiver_${caregiverId}`);
-                        
-                        // 延迟加入房间，确保连接稳定
-                        setTimeout(() => {
-                            socket.emit('join', {
-                                user_id: caregiverId,
-                                user_type: 'caregiver'
-                            });
-                            console.log(`🔄 护工 ${caregiverId} 重新加入房间`);
-                        }, 1000);
-                    } else {
-                        console.warn('⚠️ 无法获取护工ID，无法加入房间');
+                const response = await fetch('/api/caregiver/appointments', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
                     }
                 });
-                
-                socket.on('disconnect', () => {
-                    console.log('❌ 护工端聊天服务器连接断开');
-                });
-                
-                socket.on('message_received', (data) => {
-                    console.log('护工端WebSocket收到消息:', data);
-                    handleIncomingMessage(data);
-                });
-                
-                // 监听其他可能的WebSocket事件
-                socket.on('new_message', (data) => {
-                    console.log('护工端收到新消息事件:', data);
-                    handleIncomingMessage(data);
-                });
-                
-                socket.on('user_message', (data) => {
-                    console.log('护工端收到用户消息:', data);
-                    handleIncomingMessage(data);
-                });
-                
-                socket.on('joined_room', (data) => {
-                    console.log(`✅ 护工已加入房间: ${data.room}`);
-                    console.log(`🔗 护工房间信息:`, data);
-                    
-                    // 测试WebSocket连接
-                    socket.emit('test_message', {
-                        message: '护工端WebSocket连接测试',
-                        caregiver_id: getCurrentCaregiverId()
-                    });
-                });
-                
-                socket.on('message_sent', (data) => {
-                    console.log('✅ 护工消息发送确认:', data);
-                });
-                
-                socket.on('error', (data) => {
-                    console.error('❌ 护工端错误:', data.message);
-                });
-                
-                // 添加连接状态监听
-                socket.on('connect_error', (error) => {
-                    console.error('❌ 护工端连接错误:', error);
-                });
-                
-            } catch (error) {
-                console.error('❌ 护工端Socket.IO连接失败:', error);
-            }
 
-            // 加载聊天列表
-            loadChatList();
-            
-            // 绑定事件
-            bindChatEvents();
-        }
-
-        // 绑定聊天相关事件
-        function bindChatEvents() {
-            // 刷新消息按钮
-            document.getElementById('refresh-messages').addEventListener('click', function() {
-                loadChatList();
-            });
-
-            // 发送消息按钮
-            document.getElementById('send-message').addEventListener('click', function() {
-                sendMessage();
-            });
-
-            // 回车发送消息
-            document.getElementById('chat-input').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    sendMessage();
-                }
-            });
-
-            // 关闭聊天窗口
-            document.getElementById('close-chat').addEventListener('click', function() {
-                closeChatWindow();
-            });
-        }
-
-        // 加载聊天列表
-        async function loadChatList() {
-            try {
-                const caregiverId = getCurrentCaregiverId();
-                if (!caregiverId) {
-                    console.warn('无法获取护工ID');
-                    return;
-                }
-
-                // 获取聘用合同列表（有合同的用户就是可以聊天的用户）
-                const response = await fetch(`/api/employment/contracts/caregiver/${caregiverId}`);
-                const data = await response.json();
-
-                if (data.success) {
-                    const contracts = data.data.contracts || [];
-                    console.log(`📋 护工 ${caregiverId} 的合同数量: ${contracts.length}`);
-                    
-                    // 如果没有合同，尝试从聊天记录中获取联系人
-                    if (contracts.length === 0) {
-                        console.log('📝 没有聘用合同，尝试从聊天记录获取联系人...');
-                        await loadChatListFromMessages(caregiverId);
-                    } else {
-                        displayChatList(contracts);
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        displayRecentAppointments(result.data.appointments || []);
                     }
-                } else {
-                    console.error('加载聊天列表失败:', data.message);
-                    // 即使合同加载失败，也尝试从聊天记录获取
-                    await loadChatListFromMessages(caregiverId);
                 }
             } catch (error) {
-                console.error('加载聊天列表失败:', error);
-                // 即使出错，也尝试从聊天记录获取
-                const caregiverId = getCurrentCaregiverId();
-                if (caregiverId) {
-                    await loadChatListFromMessages(caregiverId);
-                }
-            }
-        }
-        
-        // 从聊天记录中加载联系人列表
-        async function loadChatListFromMessages(caregiverId) {
-            try {
-                // 获取护工的所有对话
-                const response = await fetch(`/api/chat/conversations?user_id=${caregiverId}&user_type=caregiver`);
-                const data = await response.json();
-                
-                if (data.success) {
-                    const conversations = data.data.conversations || [];
-                    console.log(`💬 从聊天记录找到 ${conversations.length} 个对话`);
-                    
-                    if (conversations.length > 0) {
-                        displayChatListFromConversations(conversations);
-                    } else {
-                        // 显示空状态
-                        const chatList = document.getElementById('chat-list');
-                        chatList.innerHTML = '<p class="text-gray-500 text-center py-8">暂无聊天记录</p>';
-                    }
-                } else {
-                    console.error('获取对话列表失败:', data.message);
-                    const chatList = document.getElementById('chat-list');
-                    chatList.innerHTML = '<p class="text-gray-500 text-center py-8">暂无聊天记录</p>';
-                }
-            } catch (error) {
-                console.error('从聊天记录加载联系人失败:', error);
-                const chatList = document.getElementById('chat-list');
-                chatList.innerHTML = '<p class="text-gray-500 text-center py-8">暂无聊天记录</p>';
+                console.error('加载最近预约失败:', error);
             }
         }
 
-        // 从对话记录显示聊天列表
-        function displayChatListFromConversations(conversations) {
-            const chatList = document.getElementById('chat-list');
+        // 显示最近预约
+        function displayRecentAppointments(appointments) {
+            const container = document.getElementById('recent-appointments');
             
-            if (conversations.length === 0) {
-                chatList.innerHTML = '<p class="text-gray-500 text-center py-8">暂无聊天记录</p>';
+            if (appointments.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">暂无预约</p>';
                 return;
             }
 
-            const chatItems = conversations.map(conversation => {
-                const userId = conversation.user_id;
-                const userName = `用户${userId}`; // 暂时使用用户ID，后续可以从用户信息获取
-                const lastMessage = conversation.last_message_content || '暂无消息';
-                const lastMessageTime = conversation.last_message_time ? new Date(conversation.last_message_time).toLocaleString('zh-CN') : '';
-                const unreadCount = conversation.unread_count || 0;
-                
-                return `
-                    <div class="chat-item p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors" 
-                         data-user-id="${userId}" data-user-name="${userName}" onclick="openChat('${userId}', '${userName}')">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                                <i class="fa fa-user text-white"></i>
-                            </div>
-                            <div class="flex-1">
-                                <div class="flex items-center justify-between">
-                                    <h4 class="font-medium text-gray-800">${userName}</h4>
-                                    ${unreadCount > 0 ? `<span class="bg-red-500 text-white text-xs px-2 py-1 rounded-full">${unreadCount}</span>` : ''}
-                                </div>
-                                <p class="text-sm text-gray-600 truncate">${lastMessage}</p>
-                                <p class="text-xs text-gray-500">${lastMessageTime}</p>
-                            </div>
-                        </div>
+            container.innerHTML = appointments.slice(0, 3).map(appointment => `
+                <div class="border-b border-gray-200 pb-3 mb-3 last:border-b-0 last:pb-0 last:mb-0">
+                    <h4 class="font-medium text-gray-800 mb-1">${appointment.service_type}</h4>
+                    <p class="text-sm text-gray-600 mb-2">${appointment.patient_name}</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-500">${appointment.appointment_time}</span>
+                        <span class="px-2 py-1 text-xs rounded-full ${
+                            appointment.status === 'pending' ? 'bg-warning/10 text-warning' :
+                            appointment.status === 'confirmed' ? 'bg-primary/10 text-primary' :
+                            appointment.status === 'in_progress' ? 'bg-success/10 text-success' :
+                            'bg-gray-100 text-gray-600'
+                        }">
+                            ${appointment.status === 'pending' ? '待确认' :
+                              appointment.status === 'confirmed' ? '已确认' :
+                              appointment.status === 'in_progress' ? '进行中' : '已完成'}
+                        </span>
                     </div>
-                `;
-            }).join('');
-
-            chatList.innerHTML = chatItems;
+                </div>
+            `).join('');
         }
 
-        // 显示聊天列表
-        function displayChatList(contracts) {
-            const chatList = document.getElementById('chat-list');
-            
-            if (contracts.length === 0) {
-                chatList.innerHTML = '<p class="text-gray-500 text-center py-8">暂无聊天记录</p>';
-                return;
-            }
-
-            const chatItems = contracts.map(contract => {
-                const user = contract.user || {};
-                const userName = user.name || user.username || '用户';
-                const lastMessage = contract.last_message_content || '暂无消息';
-                const lastMessageTime = contract.last_message_time ? new Date(contract.last_message_time).toLocaleString('zh-CN') : '';
-                
-                return `
-                    <div class="chat-item p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors" 
-                         data-user-id="${user.id}" data-user-name="${userName}" onclick="openChat('${user.id}', '${userName}')">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                                <i class="fa fa-user text-white"></i>
-                            </div>
-                            <div class="flex-1">
-                                <h4 class="font-medium text-gray-800">${userName}</h4>
-                                <p class="text-sm text-gray-600 truncate">${lastMessage}</p>
-                                <p class="text-xs text-gray-500">${lastMessageTime}</p>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            chatList.innerHTML = chatItems;
-        }
-
-        // 打开聊天窗口
-        function openChat(userId, userName) {
-            currentChatUser = { id: userId, name: userName };
-            
-            // 显示聊天窗口
-            document.getElementById('chat-window').classList.remove('hidden');
-            document.getElementById('chat-title').textContent = `与 ${userName} 聊天`;
-            
-            // 加载聊天历史
-            loadChatHistory(userId);
-            
-            // 聚焦输入框
-            document.getElementById('chat-input').focus();
-        }
-
-        // 关闭聊天窗口
-        function closeChatWindow() {
-            document.getElementById('chat-window').classList.add('hidden');
-            currentChatUser = null;
-            
-            // 清空消息显示区域
-            document.getElementById('chat-messages').innerHTML = '<p class="text-gray-500 text-center py-8">开始新的对话</p>';
-            document.getElementById('chat-input').value = '';
-        }
-
-        // 加载聊天历史
-        async function loadChatHistory(userId) {
+        // 加载最近消息
+        async function loadRecentMessages() {
             try {
-                const caregiverId = getCurrentCaregiverId();
-                if (!caregiverId) return;
+                const response = await fetch('/api/caregiver/messages', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    }
+                });
 
-                const response = await fetch(`/api/chat/history/${userId}?user_id=${caregiverId}&user_type=caregiver&limit=100`);
-                const data = await response.json();
-
-                if (data.success) {
-                    const messages = data.data.messages || [];
-                    displayChatHistory(messages);
-                } else {
-                    console.error('加载聊天历史失败:', data.message);
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        displayRecentMessages(result.data.messages || []);
+                    }
                 }
             } catch (error) {
-                console.error('加载聊天历史失败:', error);
+                console.error('加载最近消息失败:', error);
             }
         }
 
-        // 显示聊天历史
-        function displayChatHistory(messages) {
-            const messagesContainer = document.getElementById('chat-messages');
+        // 显示最近消息
+        function displayRecentMessages(messages) {
+            const container = document.getElementById('recent-messages');
             
             if (messages.length === 0) {
-                messagesContainer.innerHTML = '<p class="text-gray-500 text-center py-8">开始新的对话</p>';
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">暂无消息</p>';
                 return;
             }
 
-            const messagesHtml = messages.map(message => {
-                const isOwnMessage = message.sender_id == getCurrentCaregiverId();
-                const messageClass = isOwnMessage ? 'ml-auto bg-primary text-white' : 'mr-auto bg-gray-200 text-gray-800';
-                
-                return `
-                    <div class="flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-3">
-                        <div class="max-w-xs ${messageClass} rounded-lg p-3">
-                            <p class="text-sm">${message.content}</p>
-                            <p class="text-xs ${isOwnMessage ? 'text-white/70' : 'text-gray-500'} mt-1">
-                                ${new Date(message.timestamp).toLocaleString('zh-CN')}
-                            </p>
+            container.innerHTML = messages.slice(0, 3).map(message => `
+                <div class="border-b border-gray-200 pb-3 mb-3 last:border-b-0 last:pb-0 last:mb-0">
+                    <h4 class="font-medium text-gray-800 mb-1">${message.sender_name}</h4>
+                    <p class="text-sm text-gray-600 mb-2">${message.content}</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-500">${message.created_at}</span>
+                        ${message.is_read ? '' : '<span class="w-2 h-2 bg-primary rounded-full"></span>'}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 渲染收入趋势图表
+        function renderEarningsChart(earningsData) {
+            const chartContainer = document.getElementById('earnings-chart');
+            
+            if (earningsData.length === 0) {
+                chartContainer.innerHTML = `
+                    <div class="flex items-center justify-center h-full">
+                        <div class="text-center">
+                            <i class="fa fa-chart-line text-4xl text-gray-400 mb-4"></i>
+                            <p class="text-gray-500">暂无收入数据</p>
                         </div>
                     </div>
                 `;
-            }).join('');
-
-            messagesContainer.innerHTML = messagesHtml;
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        // 发送消息
-        async function sendMessage() {
-            if (!currentChatUser) return;
-
-            const input = document.getElementById('chat-input');
-            const content = input.value.trim();
-            
-            if (!content) return;
-
-            const caregiverId = getCurrentCaregiverId();
-            if (!caregiverId) return;
-
-            // 构造消息
-            const message = {
-                sender_id: caregiverId,
-                sender_type: 'caregiver',
-                sender_name: '护工',
-                recipient_id: currentChatUser.id,
-                recipient_type: 'user',
-                content: content,
-                type: 'text'
-            };
-
-            try {
-                // 发送消息到后端
-                const response = await fetch('/api/chat/send', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(message)
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    // 添加到本地显示
-                    addMessageToDisplay({
-                        ...message,
-                        timestamp: new Date().toISOString()
-                    });
-
-                    // 清空输入框
-                    input.value = '';
-
-                    // 刷新聊天列表
-                    loadChatList();
-                } else {
-                    console.error('发送消息失败:', data.message);
-                    alert('发送消息失败: ' + data.message);
-                }
-            } catch (error) {
-                console.error('发送消息失败:', error);
-                alert('发送消息失败，请稍后重试');
-            }
-        }
-
-        // 添加消息到显示区域
-        function addMessageToDisplay(message) {
-            const messagesContainer = document.getElementById('chat-messages');
-            const isOwnMessage = message.sender_id == getCurrentCaregiverId();
-            const messageClass = isOwnMessage ? 'ml-auto bg-primary text-white' : 'mr-auto bg-gray-200 text-gray-800';
-            
-            const messageHtml = `
-                <div class="flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-3">
-                    <div class="max-w-xs ${messageClass} rounded-lg p-3">
-                        <p class="text-sm">${message.content}</p>
-                        <p class="text-xs ${isOwnMessage ? 'text-white/70' : 'text-gray-500'} mt-1">
-                            ${new Date(message.timestamp).toLocaleString('zh-CN')}
-                        </p>
-                    </div>
-                </div>
-            `;
-
-            messagesContainer.insertAdjacentHTML('beforeend', messageHtml);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        // 处理接收到的消息
-        function handleIncomingMessage(data) {
-            console.log('护工端收到消息:', data);
-            
-            // 确保消息数据格式正确
-            if (!data || !data.content) {
-                console.warn('收到无效消息数据:', data);
                 return;
             }
+
+            // 使用简单的条形图显示收入趋势
+            const maxEarnings = Math.max(...earningsData.map(item => item.amount));
             
-            // 检查消息是否应该显示在聊天窗口中
-            let shouldDisplayInChat = false;
-            
-            // 如果当前聊天窗口打开且消息来自当前聊天的用户
-            if (currentChatUser && (data.sender_id == currentChatUser.id || data.recipient_id == currentChatUser.id)) {
-                shouldDisplayInChat = true;
-                addMessageToDisplay(data);
-                console.log('✅ 消息已添加到聊天窗口');
-            }
-            
-            // 更新聊天列表中的最新消息
-            updateChatListMessage(data);
-            
-            // 如果消息中心页面是可见的，自动刷新聊天列表
-            if (document.getElementById('messages-content') && !document.getElementById('messages-content').classList.contains('hidden')) {
-                setTimeout(() => {
-                    loadChatList();
-                }, 1000);
-            }
-            
-            // 显示通知
-            showMessageNotification(data);
-            
-            // 如果消息没有显示在聊天窗口中，在控制台显示详细信息
-            if (!shouldDisplayInChat) {
-                console.log('📨 收到新消息，但当前聊天窗口未打开或用户不匹配');
-                console.log('当前聊天用户:', currentChatUser);
-                console.log('消息发送者ID:', data.sender_id);
-                console.log('消息接收者ID:', data.recipient_id);
-                console.log('当前护工ID:', getCurrentCaregiverId());
-                
-                // 显示全局消息通知
-                showGlobalMessageNotification(data);
-            }
-        }
-        
-        // 显示全局消息通知
-        function showGlobalMessageNotification(message) {
-            // 在页面顶部显示消息通知
-            const notification = document.createElement('div');
-            notification.className = 'fixed top-4 right-4 bg-blue-500 text-white p-4 rounded-lg shadow-lg z-50 max-w-sm';
-            notification.innerHTML = `
-                <div class="flex items-center gap-2">
-                    <i class="fa fa-message"></i>
-                    <span class="font-medium">新消息</span>
+            chartContainer.innerHTML = `
+                <div class="flex items-end justify-between h-full">
+                    ${earningsData.map(item => `
+                        <div class="flex flex-col items-center flex-1 mx-1">
+                            <div class="w-full bg-primary/20 rounded-t" style="height: ${Math.max(20, (item.amount / maxEarnings) * 200)}px">
+                                <div class="w-full bg-primary rounded-t" style="height: 100%"></div>
+                            </div>
+                            <div class="text-xs text-gray-600 mt-2 text-center">${item.date}</div>
+                            <div class="text-xs text-gray-800 font-medium">¥${item.amount}</div>
+                        </div>
+                    `).join('')}
                 </div>
-                <p class="text-sm mt-1">${message.sender_name || '用户'}: ${message.content}</p>
-                <button onclick="this.parentElement.remove()" class="absolute top-2 right-2 text-white hover:text-gray-200">
-                    <i class="fa fa-times"></i>
-                </button>
             `;
+        }
+
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+                type === 'success' ? 'bg-success text-white' :
+                type === 'error' ? 'bg-danger text-white' :
+                type === 'warning' ? 'bg-warning text-white' :
+                'bg-primary text-white'
+            }`;
+            notification.textContent = message;
             
             document.body.appendChild(notification);
             
-            // 5秒后自动移除
             setTimeout(() => {
-                if (notification.parentElement) {
-                    notification.remove();
-                }
-            }, 5000);
-        }
-        
-        // 显示消息通知
-        function showMessageNotification(message) {
-            // 创建通知元素
-            const notification = document.createElement('div');
-            notification.className = 'fixed top-4 right-4 bg-primary text-white p-3 rounded-lg shadow-lg z-50';
-            notification.innerHTML = `
-                <div class="flex items-center gap-2">
-                    <i class="fa fa-comment"></i>
-                    <span>收到新消息: ${message.content.substring(0, 30)}${message.content.length > 30 ? '...' : ''}</span>
-                </div>
-            `;
-            
-            document.body.appendChild(notification);
-            
-            // 3秒后自动移除
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
+                notification.remove();
             }, 3000);
         }
 
-        // 更新聊天列表中的最新消息
-        function updateChatListMessage(message) {
-            // 更新聊天列表中对应用户的最新消息显示
-            const chatList = document.getElementById('chat-list');
-            const chatItems = chatList.querySelectorAll('.chat-item');
-            
-            chatItems.forEach(item => {
-                const userId = item.getAttribute('data-user-id');
-                if (userId == message.sender_id || userId == message.recipient_id) {
-                    // 更新最新消息内容
-                    const messageContent = item.querySelector('p.text-sm.text-gray-600');
-                    if (messageContent) {
-                        messageContent.textContent = message.content;
-                    }
-                    
-                    // 更新最新消息时间
-                    const messageTime = item.querySelector('p.text-xs.text-gray-500');
-                    if (messageTime) {
-                        messageTime.textContent = new Date(message.timestamp).toLocaleString('zh-CN');
-                    }
+        // 页面加载时的认证检查
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查是否有护工token
+            const caregiverToken = localStorage.getItem('caregiver_token');
+            if (caregiverToken) {
+                // 将token添加到页面URL中，以便后端认证装饰器可以获取
+                const currentUrl = new URL(window.location);
+                if (!currentUrl.searchParams.has('caregiver_token')) {
+                    currentUrl.searchParams.set('caregiver_token', caregiverToken);
+                    window.history.replaceState({}, '', currentUrl);
                 }
-            });
-        }
-
-        // 定时刷新聊天列表（每30秒刷新一次）
-        setInterval(() => {
-            if (document.getElementById('messages-content').classList.contains('hidden') === false) {
-                loadChatList();
             }
-        }, 30000);
-
-        // 初始化聊天功能
-        setTimeout(() => {
-            initChat();
-        }, 2000);
+        });
     </script>
 </body>
 </html>

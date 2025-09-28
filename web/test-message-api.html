@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>消息API测试页面</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/message-format-utils.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8 text-center">消息API测试页面</h1>
+        
+        <!-- 用户信息显示 -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">当前用户信息</h2>
+            <div id="user-info-display" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="text-center">
+                    <div class="text-2xl font-bold" id="user-id">-</div>
+                    <div class="text-sm text-gray-600">用户ID</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold" id="user-name">-</div>
+                    <div class="text-sm text-gray-600">用户姓名</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold" id="user-type">-</div>
+                    <div class="text-sm text-gray-600">用户类型</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 消息格式测试 -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">消息格式测试</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-lg font-medium mb-3">测试消息数据</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">接收者ID:</label>
+                            <input type="text" id="recipient-id" value="1" class="w-full p-2 border rounded">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">接收者类型:</label>
+                            <select id="recipient-type" class="w-full p-2 border rounded">
+                                <option value="user">用户</option>
+                                <option value="caregiver">护工</option>
+                                <option value="admin">管理员</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">消息内容:</label>
+                            <textarea id="message-content" class="w-full p-2 border rounded" rows="3">这是一条测试消息</textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">消息类型:</label>
+                            <select id="message-type" class="w-full p-2 border rounded">
+                                <option value="text">文本</option>
+                                <option value="image">图片</option>
+                                <option value="file">文件</option>
+                                <option value="system">系统消息</option>
+                            </select>
+                        </div>
+                        <button onclick="testMessageFormat()" class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                            测试消息格式
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-lg font-medium mb-3">标准化结果</h3>
+                    <div id="format-result" class="bg-gray-50 p-4 rounded text-sm font-mono h-64 overflow-y-auto">
+                        <div class="text-gray-500">点击"测试消息格式"查看结果...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 数据验证测试 -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">数据验证测试</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-lg font-medium mb-3">测试用例</h3>
+                    <div class="space-y-2">
+                        <button onclick="testValidMessage()" class="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                            测试有效消息
+                        </button>
+                        <button onclick="testInvalidMessage()" class="w-full bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                            测试无效消息
+                        </button>
+                        <button onclick="testMissingFields()" class="w-full bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">
+                            测试缺失字段
+                        </button>
+                        <button onclick="testWrongTypes()" class="w-full bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                            测试错误类型
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-lg font-medium mb-3">验证结果</h3>
+                    <div id="validation-result" class="bg-gray-50 p-4 rounded text-sm font-mono h-64 overflow-y-auto">
+                        <div class="text-gray-500">点击测试按钮查看结果...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 测试日志 -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h2 class="text-xl font-semibold mb-4">测试日志</h2>
+            <div id="test-logs" class="bg-gray-50 p-4 rounded text-sm font-mono h-64 overflow-y-auto">
+                <div class="text-gray-500">等待测试...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const testLogs = document.getElementById('test-logs');
+        const formatResult = document.getElementById('format-result');
+        const validationResult = document.getElementById('validation-result');
+        
+        // 添加日志
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const colorClass = {
+                'success': 'text-green-600',
+                'error': 'text-red-600',
+                'warning': 'text-yellow-600',
+                'info': 'text-blue-600'
+            }[type] || 'text-gray-600';
+            
+            const logDiv = document.createElement('div');
+            logDiv.innerHTML = `<span class="text-gray-400">[${timestamp}]</span> <span class="${colorClass}">${message}</span>`;
+            testLogs.appendChild(logDiv);
+            testLogs.scrollTop = testLogs.scrollHeight;
+        }
+        
+        // 更新用户信息显示
+        function updateUserInfo() {
+            const userInfo = MessageFormatUtils.getCurrentUserInfo();
+            document.getElementById('user-id').textContent = userInfo.id || '-';
+            document.getElementById('user-name').textContent = userInfo.name || '-';
+            document.getElementById('user-type').textContent = userInfo.type || '-';
+        }
+        
+        // 测试消息格式
+        function testMessageFormat() {
+            addLog('🔧 测试消息格式标准化...', 'info');
+            
+            try {
+                const recipientId = document.getElementById('recipient-id').value;
+                const recipientType = document.getElementById('recipient-type').value;
+                const content = document.getElementById('message-content').value;
+                const messageType = document.getElementById('message-type').value;
+                
+                const messageData = MessageFormatUtils.buildSendMessageData(
+                    recipientId,
+                    content,
+                    {
+                        recipientType: recipientType,
+                        messageType: messageType
+                    }
+                );
+                
+                formatResult.innerHTML = `<pre>${JSON.stringify(messageData, null, 2)}</pre>`;
+                addLog('✅ 消息格式标准化成功', 'success');
+                
+                // 验证消息
+                const validation = MessageFormatUtils.validateMessageData(messageData);
+                if (validation.isValid) {
+                    addLog('✅ 消息数据验证通过', 'success');
+                } else {
+                    addLog('❌ 消息数据验证失败: ' + validation.errors.join(', '), 'error');
+                }
+                
+            } catch (error) {
+                addLog('❌ 消息格式测试失败: ' + error.message, 'error');
+                formatResult.innerHTML = `<div class="text-red-600">错误: ${error.message}</div>`;
+            }
+        }
+        
+        // 测试有效消息
+        function testValidMessage() {
+            addLog('✅ 测试有效消息...', 'info');
+            
+            const validMessage = {
+                sender_id: 1,
+                sender_type: 'user',
+                sender_name: '测试用户',
+                recipient_id: 2,
+                recipient_type: 'caregiver',
+                content: '这是一条有效消息',
+                message_type: 'text'
+            };
+            
+            const validation = MessageFormatUtils.validateMessageData(validMessage);
+            validationResult.innerHTML = `
+                <div class="mb-2"><strong>测试数据:</strong></div>
+                <pre class="mb-2">${JSON.stringify(validMessage, null, 2)}</pre>
+                <div class="mb-2"><strong>验证结果:</strong></div>
+                <div class="${validation.isValid ? 'text-green-600' : 'text-red-600'}">
+                    ${validation.isValid ? '✅ 验证通过' : '❌ 验证失败'}
+                </div>
+                ${validation.errors.length > 0 ? `<div class="text-red-600">错误: ${validation.errors.join(', ')}</div>` : ''}
+            `;
+            
+            if (validation.isValid) {
+                addLog('✅ 有效消息测试通过', 'success');
+            } else {
+                addLog('❌ 有效消息测试失败', 'error');
+            }
+        }
+        
+        // 测试无效消息
+        function testInvalidMessage() {
+            addLog('❌ 测试无效消息...', 'info');
+            
+            const invalidMessage = {
+                sender_id: null,
+                sender_type: 'invalid_type',
+                content: '',
+                message_type: 'invalid_type'
+            };
+            
+            const validation = MessageFormatUtils.validateMessageData(invalidMessage);
+            validationResult.innerHTML = `
+                <div class="mb-2"><strong>测试数据:</strong></div>
+                <pre class="mb-2">${JSON.stringify(invalidMessage, null, 2)}</pre>
+                <div class="mb-2"><strong>验证结果:</strong></div>
+                <div class="${validation.isValid ? 'text-green-600' : 'text-red-600'}">
+                    ${validation.isValid ? '✅ 验证通过' : '❌ 验证失败'}
+                </div>
+                ${validation.errors.length > 0 ? `<div class="text-red-600">错误: ${validation.errors.join(', ')}</div>` : ''}
+            `;
+            
+            if (!validation.isValid) {
+                addLog('✅ 无效消息测试通过（正确识别为无效）', 'success');
+            } else {
+                addLog('❌ 无效消息测试失败（应该识别为无效）', 'error');
+            }
+        }
+        
+        // 测试缺失字段
+        function testMissingFields() {
+            addLog('⚠️ 测试缺失字段...', 'info');
+            
+            const missingFieldsMessage = {
+                content: '只有内容的消息'
+            };
+            
+            const validation = MessageFormatUtils.validateMessageData(missingFieldsMessage);
+            validationResult.innerHTML = `
+                <div class="mb-2"><strong>测试数据:</strong></div>
+                <pre class="mb-2">${JSON.stringify(missingFieldsMessage, null, 2)}</pre>
+                <div class="mb-2"><strong>验证结果:</strong></div>
+                <div class="${validation.isValid ? 'text-green-600' : 'text-red-600'}">
+                    ${validation.isValid ? '✅ 验证通过' : '❌ 验证失败'}
+                </div>
+                ${validation.errors.length > 0 ? `<div class="text-red-600">错误: ${validation.errors.join(', ')}</div>` : ''}
+            `;
+            
+            if (!validation.isValid) {
+                addLog('✅ 缺失字段测试通过（正确识别缺失字段）', 'success');
+            } else {
+                addLog('❌ 缺失字段测试失败（应该识别缺失字段）', 'error');
+            }
+        }
+        
+        // 测试错误类型
+        function testWrongTypes() {
+            addLog('🔍 测试错误类型...', 'info');
+            
+            const wrongTypesMessage = {
+                sender_id: 'not_a_number',
+                sender_type: 'invalid_type',
+                recipient_id: true,
+                recipient_type: 123,
+                content: '消息内容',
+                message_type: 'wrong_type'
+            };
+            
+            const validation = MessageFormatUtils.validateMessageData(wrongTypesMessage);
+            validationResult.innerHTML = `
+                <div class="mb-2"><strong>测试数据:</strong></div>
+                <pre class="mb-2">${JSON.stringify(wrongTypesMessage, null, 2)}</pre>
+                <div class="mb-2"><strong>验证结果:</strong></div>
+                <div class="${validation.isValid ? 'text-green-600' : 'text-red-600'}">
+                    ${validation.isValid ? '✅ 验证通过' : '❌ 验证失败'}
+                </div>
+                ${validation.errors.length > 0 ? `<div class="text-red-600">错误: ${validation.errors.join(', ')}</div>` : ''}
+            `;
+            
+            if (!validation.isValid) {
+                addLog('✅ 错误类型测试通过（正确识别类型错误）', 'success');
+            } else {
+                addLog('❌ 错误类型测试失败（应该识别类型错误）', 'error');
+            }
+        }
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog('📋 消息API测试页面已加载', 'info');
+            updateUserInfo();
+        });
+    </script>
+</body>
+</html>

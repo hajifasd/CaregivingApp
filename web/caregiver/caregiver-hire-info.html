@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>护理助手 - 护工端</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+        <!-- 引入认证守卫 -->
+    <script src="/js/caregiver-auth-guard.js"></script>
+    <script src="/js/config.js"></script>
+    <script src="/js/caregiver-common.js"></script>
+    <script src="/js/avatar-manager.js"></script>
+    <style>
+        :root {
+            --primary: #165DFF;
+            --primary-light: #4080FF;
+            --primary-dark: #0E42D2;
+            --success: #00B42A;
+            --warning: #FF7D00;
+            --danger: #F53F3F;
+            --neutral-dark: #1D2129;
+            --neutral-light: #F7F8FA;
+        }
+        .bg-primary { background-color: var(--primary); }
+        .text-primary { color: var(--primary); }
+        .border-primary { border-color: var(--primary); }
+        .bg-success { background-color: var(--success); }
+        .text-success { color: var(--success); }
+        .bg-warning { background-color: var(--warning); }
+        .text-warning { color: var(--warning); }
+        .bg-danger { background-color: var(--danger); }
+        .text-danger { color: var(--danger); }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 顶部导航栏 -->
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                    <i class="fa fa-hands-helping text-white text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-primary">护理助手</h1>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-6">
+            <div class="relative">
+                <input type="text" placeholder="搜索工作机会..." 
+                    class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 w-64">
+                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <button class="p-2 rounded-full hover:bg-gray-100 relative">
+                <i class="fa fa-bell text-gray-600"></i>
+                <span class="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full"></span>
+            </button>
+            
+            <div class="flex items-center gap-3">
+                <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-9 h-9 rounded-full object-cover border-2 border-primary/20">
+                <div class="hidden md:block">
+                    <p class="text-sm font-medium" id="caregiver-name">用户</p>
+                    <p class="text-xs text-gray-500">专业护工</p>
+                </div>
+                <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-primary">登出</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主导航菜单 -->
+    <nav class="bg-white border-b border-gray-200 px-6">
+        <div class="flex items-center space-x-8">
+            <a href="/caregiver/dashboard" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-tachometer mr-2"></i>工作台
+            </a>
+            <a href="/caregiver/profile" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-user mr-2"></i>个人信息
+            </a>
+            <a href="/caregiver/hire-info" class="py-4 px-2 text-primary border-b-2 border-primary hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-briefcase mr-2"></i>聘用信息
+            </a>
+            <a href="/caregiver/job-opportunities" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-handshake mr-2"></i>工作申请
+            </a>
+            <a href="/caregiver/jobs" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-briefcase mr-2"></i>工作机会
+            </a>
+            <a href="/caregiver/appointments" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-calendar-check-o mr-2"></i>我的预约
+            </a>
+            <a href="/caregiver/schedule" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-calendar mr-2"></i>工作安排
+            </a>
+            <a href="/caregiver/earnings" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-chart-line mr-2"></i>收入统计
+            </a>
+            <a href="/caregiver/location" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-map-marker mr-2"></i>位置服务
+            </a>
+            <a href="/caregiver/reviews" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-star mr-2"></i>评价管理
+            </a>
+            <a href="/caregiver/messages" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-comments mr-2"></i>消息中心
+            </a>
+            <a href="/caregiver/settings" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-cog mr-2"></i>设置
+            </a>
+        </div>
+    </nav>
+    
+    <!-- 页面内容 -->
+    <main class="p-6 bg-gray-50">
+        <div class="max-w-4xl mx-auto">
+            <!-- 聘用信息卡片 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-bold text-gray-800">聘用信息管理</h2>
+                    <button id="edit-hire-info-btn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                        <i class="fa fa-edit mr-2"></i>编辑信息
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- 基本信息 -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">期望薪资</label>
+                            <input type="number" id="expected-salary" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" readonly>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">可工作时间</label>
+                            <select id="available-time" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
+                                <option value="">请选择</option>
+                                <option value="full_time">全职</option>
+                                <option value="part_time">兼职</option>
+                                <option value="flexible">灵活时间</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">服务地区</label>
+                            <input type="text" id="service-area" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" readonly>
+                        </div>
+                    </div>
+                    
+                    <!-- 专业技能 -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">护理经验</label>
+                            <input type="text" id="nursing-experience" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" readonly>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">专业技能</label>
+                            <textarea id="professional-skills" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" readonly></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">证书资质</label>
+                            <textarea id="certifications" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" readonly></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 工作偏好 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">工作偏好</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">护理类型偏好</label>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="pref-home-care" class="mr-2" disabled>
+                                <span class="text-sm text-gray-700">居家护理</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="pref-hospital-care" class="mr-2" disabled>
+                                <span class="text-sm text-gray-700">医院护理</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="pref-elderly-care" class="mr-2" disabled>
+                                <span class="text-sm text-gray-700">老年护理</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="pref-rehabilitation" class="mr-2" disabled>
+                                <span class="text-sm text-gray-700">康复护理</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">工作时间偏好</label>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="pref-morning" class="mr-2" disabled>
+                                <span class="text-sm text-gray-700">上午 (8:00-12:00)</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="pref-afternoon" class="mr-2" disabled>
+                                <span class="text-sm text-gray-700">下午 (14:00-18:00)</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="pref-evening" class="mr-2" disabled>
+                                <span class="text-sm text-gray-700">晚上 (18:00-22:00)</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="pref-night" class="mr-2" disabled>
+                                <span class="text-sm text-gray-700">夜间 (22:00-8:00)</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="flex justify-end gap-4">
+                <button id="cancel-edit-btn" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors hidden">
+                    取消
+                </button>
+                <button id="save-hire-info-btn" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors hidden">
+                    保存修改
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            loadHireInfo();
+            setupEventListeners();
+        });
+
+        // 检查认证状态
+        function checkAuth() {
+            const caregiverInfo = localStorage.getItem('caregiver_info');
+            if (!caregiverInfo) {
+                window.location.href = '/';
+                return;
+            }
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 编辑按钮
+            document.getElementById('edit-hire-info-btn').addEventListener('click', function() {
+                enableEditMode();
+            });
+
+            // 取消编辑
+            document.getElementById('cancel-edit-btn').addEventListener('click', function() {
+                disableEditMode();
+                loadHireInfo(); // 重新加载数据
+            });
+
+            // 保存修改
+            document.getElementById('save-hire-info-btn').addEventListener('click', function() {
+                saveHireInfo();
+            });
+
+            // 退出登录
+            document.getElementById('logout-btn').addEventListener('click', function() {
+                localStorage.removeItem('caregiver_info');
+                window.location.href = '/caregiver/';
+            });
+        }
+
+        // 加载聘用信息
+        async function loadHireInfo() {
+            try {
+                const response = await fetch('/api/caregiver/hire-info', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    populateHireInfo(data);
+                } else {
+                    showNotification('加载聘用信息失败', 'error');
+                }
+            } catch (error) {
+                console.error('加载聘用信息失败:', error);
+                showNotification('加载聘用信息失败，请重试', 'error');
+            }
+        }
+
+        // 填充聘用信息
+        function populateHireInfo(data) {
+            document.getElementById('expected-salary').value = data.expected_salary || '';
+            document.getElementById('available-time').value = data.available_time || '';
+            document.getElementById('service-area').value = data.service_area || '';
+            document.getElementById('nursing-experience').value = data.nursing_experience || '';
+            document.getElementById('professional-skills').value = data.professional_skills || '';
+            document.getElementById('certifications').value = data.certifications || '';
+
+            // 设置工作偏好
+            if (data.care_preferences) {
+                document.getElementById('pref-home-care').checked = data.care_preferences.includes('home_care');
+                document.getElementById('pref-hospital-care').checked = data.care_preferences.includes('hospital_care');
+                document.getElementById('pref-elderly-care').checked = data.care_preferences.includes('elderly_care');
+                document.getElementById('pref-rehabilitation').checked = data.care_preferences.includes('rehabilitation');
+            }
+
+            if (data.time_preferences) {
+                document.getElementById('pref-morning').checked = data.time_preferences.includes('morning');
+                document.getElementById('pref-afternoon').checked = data.time_preferences.includes('afternoon');
+                document.getElementById('pref-evening').checked = data.time_preferences.includes('evening');
+                document.getElementById('pref-night').checked = data.time_preferences.includes('night');
+            }
+        }
+
+        // 启用编辑模式
+        function enableEditMode() {
+            const inputs = document.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                input.removeAttribute('readonly');
+                input.removeAttribute('disabled');
+            });
+
+            document.getElementById('edit-hire-info-btn').classList.add('hidden');
+            document.getElementById('cancel-edit-btn').classList.remove('hidden');
+            document.getElementById('save-hire-info-btn').classList.remove('hidden');
+        }
+
+        // 禁用编辑模式
+        function disableEditMode() {
+            const inputs = document.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                input.setAttribute('readonly', 'readonly');
+                if (input.tagName === 'SELECT' || input.type === 'checkbox') {
+                    input.setAttribute('disabled', 'disabled');
+                }
+            });
+
+            document.getElementById('edit-hire-info-btn').classList.remove('hidden');
+            document.getElementById('cancel-edit-btn').classList.add('hidden');
+            document.getElementById('save-hire-info-btn').classList.add('hidden');
+        }
+
+        // 保存聘用信息
+        async function saveHireInfo() {
+            try {
+                const carePreferences = [];
+                const timePreferences = [];
+
+                if (document.getElementById('pref-home-care').checked) carePreferences.push('home_care');
+                if (document.getElementById('pref-hospital-care').checked) carePreferences.push('hospital_care');
+                if (document.getElementById('pref-elderly-care').checked) carePreferences.push('elderly_care');
+                if (document.getElementById('pref-rehabilitation').checked) carePreferences.push('rehabilitation');
+
+                if (document.getElementById('pref-morning').checked) timePreferences.push('morning');
+                if (document.getElementById('pref-afternoon').checked) timePreferences.push('afternoon');
+                if (document.getElementById('pref-evening').checked) timePreferences.push('evening');
+                if (document.getElementById('pref-night').checked) timePreferences.push('night');
+
+                const hireInfoData = {
+                    expected_salary: document.getElementById('expected-salary').value,
+                    available_time: document.getElementById('available-time').value,
+                    service_area: document.getElementById('service-area').value,
+                    nursing_experience: document.getElementById('nursing-experience').value,
+                    professional_skills: document.getElementById('professional-skills').value,
+                    certifications: document.getElementById('certifications').value,
+                    care_preferences: carePreferences,
+                    time_preferences: timePreferences
+                };
+
+                const response = await fetch('/api/caregiver/hire-info', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    },
+                    body: JSON.stringify(hireInfoData)
+                });
+
+                if (response.ok) {
+                    showNotification('聘用信息更新成功', 'success');
+                    disableEditMode();
+                } else {
+                    const error = await response.json();
+                    showNotification(error.message || '更新失败', 'error');
+                }
+            } catch (error) {
+                console.error('保存聘用信息失败:', error);
+                showNotification('保存失败，请重试', 'error');
+            }
+        }
+
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+                type === 'success' ? 'bg-success text-white' :
+                type === 'error' ? 'bg-danger text-white' :
+                type === 'warning' ? 'bg-warning text-white' :
+                'bg-primary text-white'
+            }`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

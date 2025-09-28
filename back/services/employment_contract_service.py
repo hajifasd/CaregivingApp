@@ -122,6 +122,34 @@ class EmploymentContractService:
             self.db.session.rollback()
             return {"success": False, "message": f"回复失败: {str(e)}"}
     
+    def cancel_application(self, application_id: int) -> Dict[str, Any]:
+        """取消聘用申请（从数据库中删除）"""
+        try:
+            if not self.db:
+                return {"success": False, "message": "数据库连接未初始化"}
+            
+            # 获取申请信息
+            application = self.application_model.query.get(application_id)
+            if not application:
+                return {"success": False, "message": "申请不存在"}
+            
+            # 检查申请状态，只有pending状态的申请才能取消
+            if application.status != 'pending':
+                return {"success": False, "message": "只有待回复的申请才能取消"}
+            
+            # 从数据库中删除申请记录
+            self.db.session.delete(application)
+            self.db.session.commit()
+            
+            return {
+                "success": True,
+                "message": "申请已取消"
+            }
+            
+        except Exception as e:
+            self.db.session.rollback()
+            return {"success": False, "message": f"取消申请失败: {str(e)}"}
+    
     def create_employment_contract(self, application_id: int, 
                                  contract_type: str = 'temporary',
                                  work_schedule: Dict = None,
@@ -431,6 +459,54 @@ class EmploymentContractService:
             
         except Exception as e:
             return {"success": False, "message": f"获取申请列表失败: {str(e)}"}
+
+    def get_application_detail(self, application_id: int) -> Dict[str, Any]:
+        """获取申请详情"""
+        try:
+            if not self.db:
+                return {"success": False, "message": "数据库连接未初始化"}
+            
+            # 获取申请详情
+            application = self.application_model.query.get(application_id)
+            if not application:
+                return {"success": False, "message": "申请不存在"}
+            
+            # 获取用户信息
+            try:
+                from models.user import UserModel
+                user_model = UserModel.get_model(self.db)
+                user = user_model.query.get(application.user_id)
+                
+                app_dict = application.to_dict()
+                if user:
+                    app_dict.update({
+                        'user_name': user.name,
+                        'user_avatar': getattr(user, 'avatar_url', None),
+                        'user_phone': user.phone,
+                        'user_address': getattr(user, 'address', '')
+                    })
+                else:
+                    app_dict.update({
+                        'user_name': '未知用户',
+                        'user_avatar': None,
+                        'user_phone': '',
+                        'user_address': ''
+                    })
+                
+                return {
+                    "success": True,
+                    "data": app_dict
+                }
+                
+            except Exception as e:
+                # 如果获取用户信息失败，返回基本申请信息
+                return {
+                    "success": True,
+                    "data": application.to_dict()
+                }
+            
+        except Exception as e:
+            return {"success": False, "message": f"获取申请详情失败: {str(e)}"}
 
     def get_user_hired_caregivers(self, user_id: int) -> Dict[str, Any]:
         """获取用户已经聘用的护工列表（用于消息页面的新建对话）"""

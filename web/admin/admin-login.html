@@ -185,10 +185,12 @@
                             // 显示成功消息
                             showMessage('登录成功，正在跳转...', 'success');
                             
-                            // 延迟跳转
+                            // 确保localStorage更新完成后再跳转
                             setTimeout(() => {
-                    window.location.href = '/admin-dashboard.html';
-                            }, 1000);
+                                console.log('准备跳转到管理端仪表板...');
+                                console.log('当前admin_token:', localStorage.getItem('admin_token'));
+                                window.location.href = '/admin/admin-dashboard.html';
+                            }, 1500);
                 } else {
                             showMessage(data.message || '登录失败', 'error');
                         }

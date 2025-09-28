@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>护理助手 - 护工端</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+        <!-- 引入增强认证守卫 -->
+    <script src="/js/caregiver-auth-guard.js"></script>
+    <script src="/js/config.js"></script>
+    <script src="/js/caregiver-common.js"></script>
+    <script src="/js/avatar-manager.js"></script>
+    <style>
+        :root {
+            --primary: #165DFF;
+            --primary-light: #4080FF;
+            --primary-dark: #0E42D2;
+            --success: #00B42A;
+            --warning: #FF7D00;
+            --danger: #F53F3F;
+            --neutral-dark: #1D2129;
+            --neutral-light: #F7F8FA;
+        }
+        .bg-primary { background-color: var(--primary); }
+        .text-primary { color: var(--primary); }
+        .border-primary { border-color: var(--primary); }
+        .bg-success { background-color: var(--success); }
+        .text-success { color: var(--success); }
+        .bg-warning { background-color: var(--warning); }
+        .text-warning { color: var(--warning); }
+        .bg-danger { background-color: var(--danger); }
+        .text-danger { color: var(--danger); }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 顶部导航栏 -->
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                    <i class="fa fa-hands-helping text-white text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-primary">护理助手</h1>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-6">
+            <div class="relative">
+                <input type="text" placeholder="搜索工作机会..." 
+                    class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 w-64">
+                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <button class="p-2 rounded-full hover:bg-gray-100 relative">
+                <i class="fa fa-bell text-gray-600"></i>
+                <span class="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full"></span>
+            </button>
+            
+            <div class="flex items-center gap-3">
+                <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-9 h-9 rounded-full object-cover border-2 border-primary/20">
+                <div class="hidden md:block">
+                    <p class="text-sm font-medium" id="caregiver-name-display">用户</p>
+                    <p class="text-xs text-gray-500">专业护工</p>
+                </div>
+                <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-primary">登出</button>
+            </div>
+        </div>
+    </header>
+    
+    <!-- 主导航菜单 -->
+    <nav class="bg-white border-b border-gray-200 px-6">
+        <div class="flex items-center space-x-8">
+            <a href="/caregiver/dashboard" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-tachometer mr-2"></i>工作台
+            </a>
+            <a href="/caregiver/profile" class="py-4 px-2 text-primary border-b-2 border-primary">
+                <i class="fa fa-user mr-2"></i>个人信息
+            </a>
+            <a href="/caregiver/hire-info" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-briefcase mr-2"></i>聘用信息
+            </a>
+            <a href="/caregiver/job-opportunities" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-handshake mr-2"></i>工作申请
+            </a>
+            <a href="/caregiver/jobs" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-briefcase mr-2"></i>工作机会
+            </a>
+            <a href="/caregiver/appointments" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-calendar-check-o mr-2"></i>我的预约
+            </a>
+            <a href="/caregiver/schedule" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-calendar mr-2"></i>工作安排
+            </a>
+            <a href="/caregiver/earnings" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-chart-line mr-2"></i>收入统计
+            </a>
+            <a href="/caregiver/location" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-map-marker mr-2"></i>位置服务
+            </a>
+            <a href="/caregiver/reviews" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-star mr-2"></i>评价管理
+            </a>
+            <a href="/caregiver/messages" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-comments mr-2"></i>消息中心
+            </a>
+            <a href="/caregiver/settings" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-cog mr-2"></i>设置
+            </a>
+        </div>
+    </nav>
+    
+    <!-- 页面内容 -->
+    <main class="p-6 bg-gray-50">
+        <div class="max-w-4xl mx-auto">
+            <!-- 个人信息卡片 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-bold text-gray-800">基本信息</h2>
+                    <button id="edit-profile-btn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                        <i class="fa fa-edit mr-2"></i>编辑信息
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- 头像区域 -->
+                    <div class="flex flex-col items-center">
+                        <div class="relative">
+                            <img id="caregiver-avatar" src="/uploads/avatars/default-caregiver.png" 
+                                 alt="用户头像" class="w-24 h-24 rounded-full object-cover border-4 border-gray-200">
+                            <button id="change-avatar-btn" class="absolute bottom-0 right-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors">
+                                <i class="fa fa-camera text-sm"></i>
+                            </button>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-2">点击更换头像</p>
+                    </div>
+                    
+                    <!-- 基本信息 -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">姓名</label>
+                            <input type="text" id="caregiver-name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" readonly>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">手机号</label>
+                            <input type="text" id="caregiver-phone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" readonly>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">邮箱</label>
+                            <input type="email" id="caregiver-email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 详细信息 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">详细信息</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">年龄</label>
+                        <input type="number" id="caregiver-age" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" readonly>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">性别</label>
+                        <select id="caregiver-gender" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
+                            <option value="">请选择性别</option>
+                            <option value="male">男</option>
+                            <option value="female">女</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">身份证号</label>
+                        <input type="text" id="caregiver-id-card" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" readonly>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">紧急联系人</label>
+                        <input type="text" id="caregiver-emergency-contact" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 专业技能 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">专业技能</h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">护理经验</label>
+                        <input type="text" id="caregiver-experience" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" readonly>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">专业技能</label>
+                        <textarea id="caregiver-skills" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" readonly></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">证书资质</label>
+                        <textarea id="caregiver-certificates" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" readonly></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="flex justify-end gap-4">
+                <button id="cancel-edit-btn" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors hidden">
+                    取消
+                </button>
+                <button id="save-profile-btn" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors hidden">
+                    保存修改
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- 头像上传模态框 -->
+    <div id="avatar-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg p-6 w-full max-w-md">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-gray-800">更换头像</h3>
+                    <button id="close-avatar-modal" class="text-gray-400 hover:text-gray-600">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="text-center">
+                    <div id="avatar-preview" class="w-32 h-32 mx-auto mb-4 rounded-full overflow-hidden border-4 border-gray-200">
+                        <img id="preview-img" src="" alt="预览" class="w-full h-full object-cover">
+                    </div>
+                    
+                    <input type="file" id="avatar-file-input" accept="image/*" class="hidden">
+                    <button id="select-avatar-btn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors mb-4">
+                        选择图片
+                    </button>
+                    
+                    <div class="flex justify-end gap-2">
+                        <button id="cancel-avatar-btn" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                            取消
+                        </button>
+                        <button id="upload-avatar-btn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                            上传
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 加载用户信息
+            CaregiverCommon.loadUserInfo();
+            loadCaregiverProfile();
+            setupEventListeners();
+        });
+
+        // 加载护工个人信息
+        async function loadCaregiverProfile() {
+            try {
+                const caregiverInfo = JSON.parse(localStorage.getItem('caregiver_info') || '{}');
+                console.log('护工信息加载:', caregiverInfo);
+                
+                if (!caregiverInfo || !caregiverInfo.id) {
+                    console.log('护工信息不存在，重定向到登录页');
+                    window.location.href = '/';
+                    return;
+                }
+
+                // 填充基本信息
+                const nameElement = document.getElementById('caregiver-name-display');
+                if (nameElement) {
+                    nameElement.textContent = caregiverInfo.name || '护工';
+                    console.log('用户名已更新:', caregiverInfo.name);
+                }
+                
+                // 同时更新表单中的姓名字段
+                const nameInput = document.getElementById('caregiver-name');
+                if (nameInput) {
+                    nameInput.value = caregiverInfo.name || '';
+                    console.log('表单姓名字段已更新:', caregiverInfo.name);
+                }
+                
+                // 安全地填充表单字段
+                const fields = [
+                    { id: 'caregiver-phone', value: caregiverInfo.phone || '' },
+                    { id: 'caregiver-email', value: caregiverInfo.email || '' },
+                    { id: 'caregiver-age', value: caregiverInfo.age || '' },
+                    { id: 'caregiver-gender', value: caregiverInfo.gender || '' },
+                    { id: 'caregiver-id-card', value: caregiverInfo.id_card || '' },
+                    { id: 'caregiver-emergency-contact', value: caregiverInfo.emergency_contact || '' },
+                    { id: 'caregiver-experience', value: caregiverInfo.experience_years || '' },
+                    { id: 'caregiver-skills', value: caregiverInfo.skills || '' }
+                ];
+                
+                fields.forEach(field => {
+                    const element = document.getElementById(field.id);
+                    if (element) {
+                        element.value = field.value;
+                        console.log(`字段 ${field.id} 已更新:`, field.value);
+                    } else {
+                        console.warn(`字段 ${field.id} 不存在`);
+                    }
+                });
+                document.getElementById('caregiver-certificates').value = caregiverInfo.certificates || '';
+
+                // 设置头像
+                const avatarUrl = window.AvatarManager.getAvatarUrl(caregiverInfo.avatar, 'caregiver', 'large');
+                document.getElementById('caregiver-avatar').src = avatarUrl;
+
+            } catch (error) {
+                console.error('加载护工信息失败:', error);
+                showNotification('加载个人信息失败', 'error');
+            }
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 编辑按钮
+            document.getElementById('edit-profile-btn').addEventListener('click', function() {
+                enableEditMode();
+            });
+
+            // 取消编辑
+            document.getElementById('cancel-edit-btn').addEventListener('click', function() {
+                disableEditMode();
+                loadCaregiverProfile(); // 重新加载数据
+            });
+
+            // 保存修改
+            document.getElementById('save-profile-btn').addEventListener('click', function() {
+                saveProfile();
+            });
+
+            // 更换头像
+            document.getElementById('change-avatar-btn').addEventListener('click', function() {
+                document.getElementById('avatar-modal').classList.remove('hidden');
+            });
+
+            // 头像模态框事件
+            document.getElementById('close-avatar-modal').addEventListener('click', function() {
+                document.getElementById('avatar-modal').classList.add('hidden');
+            });
+
+            document.getElementById('cancel-avatar-btn').addEventListener('click', function() {
+                document.getElementById('avatar-modal').classList.add('hidden');
+            });
+
+            document.getElementById('select-avatar-btn').addEventListener('click', function() {
+                document.getElementById('avatar-file-input').click();
+            });
+
+            document.getElementById('avatar-file-input').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        document.getElementById('preview-img').src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            document.getElementById('upload-avatar-btn').addEventListener('click', function() {
+                uploadAvatar();
+            });
+
+            // 退出登录
+            document.getElementById('logout-btn').addEventListener('click', function() {
+                localStorage.removeItem('caregiver_info');
+                window.location.href = '/caregiver/';
+            });
+        }
+
+        // 启用编辑模式
+        function enableEditMode() {
+            const inputs = document.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                input.removeAttribute('readonly');
+                input.removeAttribute('disabled');
+            });
+
+            document.getElementById('edit-profile-btn').classList.add('hidden');
+            document.getElementById('cancel-edit-btn').classList.remove('hidden');
+            document.getElementById('save-profile-btn').classList.remove('hidden');
+        }
+
+        // 禁用编辑模式
+        function disableEditMode() {
+            const inputs = document.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                input.setAttribute('readonly', 'readonly');
+                if (input.tagName === 'SELECT') {
+                    input.setAttribute('disabled', 'disabled');
+                }
+            });
+
+            document.getElementById('edit-profile-btn').classList.remove('hidden');
+            document.getElementById('cancel-edit-btn').classList.add('hidden');
+            document.getElementById('save-profile-btn').classList.add('hidden');
+        }
+
+        // 保存个人信息
+        async function saveProfile() {
+            try {
+                const profileData = {
+                    name: document.getElementById('caregiver-name').value,
+                    phone: document.getElementById('caregiver-phone').value,
+                    email: document.getElementById('caregiver-email').value,
+                    age: document.getElementById('caregiver-age').value,
+                    gender: document.getElementById('caregiver-gender').value,
+                    id_card: document.getElementById('caregiver-id-card').value,
+                    emergency_contact: document.getElementById('caregiver-emergency-contact').value,
+                    experience: document.getElementById('caregiver-experience').value,
+                    skills: document.getElementById('caregiver-skills').value,
+                    certificates: document.getElementById('caregiver-certificates').value
+                };
+
+                const response = await fetch('/api/caregiver/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    },
+                    body: JSON.stringify(profileData)
+                });
+
+                if (response.ok) {
+                    showNotification('个人信息更新成功', 'success');
+                    disableEditMode();
+                    // 更新本地存储
+                    const caregiverInfo = JSON.parse(localStorage.getItem('caregiver_info'));
+                    Object.assign(caregiverInfo, profileData);
+                    localStorage.setItem('caregiver_info', JSON.stringify(caregiverInfo));
+                } else {
+                    const error = await response.json();
+                    showNotification(error.message || '更新失败', 'error');
+                }
+            } catch (error) {
+                console.error('保存个人信息失败:', error);
+                showNotification('保存失败，请重试', 'error');
+            }
+        }
+
+        // 上传头像
+        async function uploadAvatar() {
+            const fileInput = document.getElementById('avatar-file-input');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showNotification('请选择图片文件', 'warning');
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('avatar', file);
+
+                const response = await fetch('/api/caregiver/upload-avatar', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    showNotification('头像上传成功', 'success');
+                    
+                    // 更新头像显示
+                    const avatarUrl = window.AvatarManager.getAvatarUrl(result.avatar_url, 'caregiver', 'large');
+                    document.getElementById('caregiver-avatar').src = avatarUrl;
+                    
+                    // 关闭模态框
+                    document.getElementById('avatar-modal').classList.add('hidden');
+                    
+                    // 更新本地存储
+                    const caregiverInfo = JSON.parse(localStorage.getItem('caregiver_info'));
+                    caregiverInfo.avatar = result.avatar_url;
+                    localStorage.setItem('caregiver_info', JSON.stringify(caregiverInfo));
+                } else {
+                    const error = await response.json();
+                    showNotification(error.message || '头像上传失败', 'error');
+                }
+            } catch (error) {
+                console.error('头像上传失败:', error);
+                showNotification('头像上传失败，请重试', 'error');
+            }
+        }
+
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+                type === 'success' ? 'bg-success text-white' :
+                type === 'error' ? 'bg-danger text-white' :
+                type === 'warning' ? 'bg-warning text-white' :
+                'bg-primary text-white'
+            }`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

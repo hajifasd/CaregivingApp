@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>护理助手 - 护工端</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+        <!-- 引入认证守卫 -->
+    <script src="/js/auth-guard.js"></script>
+    <script src="/js/config.js"></script>
+    <script src="/js/avatar-manager.js"></script>
+    <style>
+        :root {
+            --primary: #165DFF;
+            --primary-light: #4080FF;
+            --primary-dark: #0E42D2;
+            --success: #00B42A;
+            --warning: #FF7D00;
+            --danger: #F53F3F;
+            --neutral-dark: #1D2129;
+            --neutral-light: #F7F8FA;
+        }
+        .bg-primary { background-color: var(--primary); }
+        .text-primary { color: var(--primary); }
+        .border-primary { border-color: var(--primary); }
+        .bg-success { background-color: var(--success); }
+        .text-success { color: var(--success); }
+        .bg-warning { background-color: var(--warning); }
+        .text-warning { color: var(--warning); }
+        .bg-danger { background-color: var(--danger); }
+        .text-danger { color: var(--danger); }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 顶部导航栏 -->
+    <header class="bg-white border-b border-gray-200 px-6 py-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <h1 class="text-xl font-bold text-gray-800">工作台</h1>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <button id="logout-btn" class="px-4 py-2 text-gray-600 hover:text-danger transition-colors">
+                    <i class="fa fa-sign-out mr-2"></i>退出登录
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主导航菜单 -->
+    <nav class="bg-white border-b border-gray-200 px-6">
+        <div class="flex items-center space-x-8">
+            <a href="/caregiver/dashboard" class="py-4 px-2 text-primary border-b-2 border-primary">
+                <i class="fa fa-tachometer mr-2"></i>工作台
+            </a>
+            <a href="/caregiver/profile" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-user mr-2"></i>个人信息
+            </a>
+            <a href="/caregiver/hire-info" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-briefcase mr-2"></i>聘用信息
+            </a>
+            <a href="/caregiver/job-opportunities" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-handshake mr-2"></i>工作申请
+            </a>
+            <a href="/caregiver/jobs" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-briefcase mr-2"></i>工作机会
+            </a>
+            <a href="/caregiver/appointments" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-calendar-check-o mr-2"></i>我的预约
+            </a>
+            <a href="/caregiver/schedule" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-calendar mr-2"></i>工作安排
+            </a>
+            <a href="/caregiver/earnings" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-chart-line mr-2"></i>收入统计
+            </a>
+            <a href="/caregiver/location" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-map-marker mr-2"></i>位置服务
+            </a>
+            <a href="/caregiver/reviews" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-star mr-2"></i>评价管理
+            </a>
+            <a href="/caregiver/messages" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-comments mr-2"></i>消息中心
+            </a>
+            <a href="/caregiver/settings" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-cog mr-2"></i>设置
+            </a>
+        </div>
+    </nav>
+    
+    <!-- 页面内容 -->
+    <main class="p-6 bg-gray-50">
+        <div class="max-w-6xl mx-auto">
+            <!-- 欢迎区域 -->
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">欢迎回来，<span id="dashboard-name">用户</span></h2>
+                <p class="text-gray-500">今天是 <span id="current-date"></span>，祝您工作顺利</p>
+            </div>
+
+            <!-- 统计卡片 -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-primary/10 rounded-lg">
+                            <i class="fa fa-briefcase text-primary text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">总工作数</p>
+                            <p class="text-2xl font-bold text-gray-800" id="total-jobs">0</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-success/10 rounded-lg">
+                            <i class="fa fa-check text-success text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">进行中</p>
+                            <p class="text-2xl font-bold text-gray-800" id="active-appointments">0</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-warning/10 rounded-lg">
+                            <i class="fa fa-money text-warning text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">本月收入</p>
+                            <p class="text-2xl font-bold text-gray-800" id="monthly-earnings">¥0</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-danger/10 rounded-lg">
+                            <i class="fa fa-star text-danger text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">评分</p>
+                            <p class="text-2xl font-bold text-gray-800" id="rating">0.0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 快速操作 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-gray-800">工作机会</h3>
+                        <a href="/caregiver/jobs" class="text-primary hover:text-primary/80 text-sm">查看全部</a>
+                    </div>
+                    <div id="recent-jobs">
+                        <p class="text-gray-500 text-center py-8">暂无工作机会</p>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-gray-800">我的预约</h3>
+                        <a href="/caregiver/appointments" class="text-primary hover:text-primary/80 text-sm">查看全部</a>
+                    </div>
+                    <div id="recent-appointments">
+                        <p class="text-gray-500 text-center py-8">暂无预约</p>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-gray-800">消息中心</h3>
+                        <a href="/caregiver/messages" class="text-primary hover:text-primary/80 text-sm">查看全部</a>
+                    </div>
+                    <div id="recent-messages">
+                        <p class="text-gray-500 text-center py-8">暂无消息</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 收入趋势图表 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">收入趋势</h3>
+                <div id="earnings-chart" class="h-64">
+                    <!-- 收入趋势图表将通过JavaScript动态生成 -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 返回顶部按钮 -->
+    <button id="back-to-top" class="fixed bottom-6 right-6 w-12 h-12 bg-primary text-white rounded-full shadow-lg hover:bg-primary/90 transition-all duration-300 hidden">
+        <i class="fa fa-arrow-up"></i>
+    </button>
+
+    <script>
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            loadDashboardData();
+            setupEventListeners();
+            updateCurrentDate();
+        });
+
+        // 检查认证状态
+        function checkAuth() {
+            const caregiverInfo = localStorage.getItem('caregiver_info');
+            if (!caregiverInfo) {
+                window.location.href = '/';
+                return;
+            }
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 返回顶部按钮
+            const backToTopBtn = document.getElementById('back-to-top');
+            window.addEventListener('scroll', () => {
+                if (window.pageYOffset > 300) {
+                    backToTopBtn.classList.remove('hidden');
+                } else {
+                    backToTopBtn.classList.add('hidden');
+                }
+            });
+            
+            backToTopBtn.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+
+            // 退出登录
+            document.getElementById('logout-btn').addEventListener('click', function() {
+                localStorage.removeItem('caregiver_info');
+                window.location.href = '/caregiver/';
+            });
+        }
+
+        // 更新当前日期
+        function updateCurrentDate() {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                weekday: 'long'
+            });
+            document.getElementById('current-date').textContent = dateStr;
+        }
+
+        // 加载仪表盘数据
+        async function loadDashboardData() {
+            try {
+                const response = await fetch('/api/caregiver/dashboard', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    updateDashboardStats(data);
+                    loadRecentJobs();
+                    loadRecentAppointments();
+                    loadRecentMessages();
+                    renderEarningsChart(data.earnings_trend || []);
+                } else {
+                    showNotification('加载仪表盘数据失败', 'error');
+                }
+            } catch (error) {
+                console.error('加载仪表盘数据失败:', error);
+                showNotification('加载仪表盘数据失败，请重试', 'error');
+            }
+        }
+
+        // 更新仪表盘统计
+        function updateDashboardStats(data) {
+            document.getElementById('total-jobs').textContent = data.total_jobs || 0;
+            document.getElementById('active-appointments').textContent = data.active_appointments || 0;
+            document.getElementById('monthly-earnings').textContent = `¥${data.monthly_earnings || 0}`;
+            document.getElementById('rating').textContent = data.rating || '0.0';
+            
+            // 更新护工姓名
+            const caregiverInfo = JSON.parse(localStorage.getItem('caregiver_info') || '{}');
+            document.getElementById('dashboard-name').textContent = caregiverInfo.name || '护工';
+        }
+
+        // 加载最近工作机会
+        async function loadRecentJobs() {
+            try {
+                const response = await fetch('/api/jobs/recent', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    displayRecentJobs(data.jobs || []);
+                }
+            } catch (error) {
+                console.error('加载最近工作机会失败:', error);
+            }
+        }
+
+        // 显示最近工作机会
+        function displayRecentJobs(jobs) {
+            const container = document.getElementById('recent-jobs');
+            
+            if (jobs.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">暂无工作机会</p>';
+                return;
+            }
+
+            container.innerHTML = jobs.slice(0, 3).map(job => `
+                <div class="border-b border-gray-200 pb-3 mb-3 last:border-b-0 last:pb-0 last:mb-0">
+                    <h4 class="font-medium text-gray-800 mb-1">${job.title}</h4>
+                    <p class="text-sm text-gray-600 mb-2">${job.description}</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-primary font-medium">¥${job.salary}/小时</span>
+                        <span class="text-xs text-gray-500">${job.location}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 加载最近预约
+        async function loadRecentAppointments() {
+            try {
+                const response = await fetch('/api/caregiver/appointments/recent', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    displayRecentAppointments(data.appointments || []);
+                }
+            } catch (error) {
+                console.error('加载最近预约失败:', error);
+            }
+        }
+
+        // 显示最近预约
+        function displayRecentAppointments(appointments) {
+            const container = document.getElementById('recent-appointments');
+            
+            if (appointments.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">暂无预约</p>';
+                return;
+            }
+
+            container.innerHTML = appointments.slice(0, 3).map(appointment => `
+                <div class="border-b border-gray-200 pb-3 mb-3 last:border-b-0 last:pb-0 last:mb-0">
+                    <h4 class="font-medium text-gray-800 mb-1">${appointment.service_type}</h4>
+                    <p class="text-sm text-gray-600 mb-2">${appointment.patient_name}</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-500">${appointment.appointment_time}</span>
+                        <span class="px-2 py-1 text-xs rounded-full ${
+                            appointment.status === 'pending' ? 'bg-warning/10 text-warning' :
+                            appointment.status === 'confirmed' ? 'bg-primary/10 text-primary' :
+                            appointment.status === 'in_progress' ? 'bg-success/10 text-success' :
+                            'bg-gray-100 text-gray-600'
+                        }">
+                            ${appointment.status === 'pending' ? '待确认' :
+                              appointment.status === 'confirmed' ? '已确认' :
+                              appointment.status === 'in_progress' ? '进行中' : '已完成'}
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 加载最近消息
+        async function loadRecentMessages() {
+            try {
+                const response = await fetch('/api/caregiver/messages/recent', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    displayRecentMessages(data.messages || []);
+                }
+            } catch (error) {
+                console.error('加载最近消息失败:', error);
+            }
+        }
+
+        // 显示最近消息
+        function displayRecentMessages(messages) {
+            const container = document.getElementById('recent-messages');
+            
+            if (messages.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">暂无消息</p>';
+                return;
+            }
+
+            container.innerHTML = messages.slice(0, 3).map(message => `
+                <div class="border-b border-gray-200 pb-3 mb-3 last:border-b-0 last:pb-0 last:mb-0">
+                    <h4 class="font-medium text-gray-800 mb-1">${message.sender_name}</h4>
+                    <p class="text-sm text-gray-600 mb-2">${message.content}</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-500">${message.created_at}</span>
+                        ${message.is_read ? '' : '<span class="w-2 h-2 bg-primary rounded-full"></span>'}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 渲染收入趋势图表
+        function renderEarningsChart(earningsData) {
+            const chartContainer = document.getElementById('earnings-chart');
+            
+            if (earningsData.length === 0) {
+                chartContainer.innerHTML = `
+                    <div class="flex items-center justify-center h-full">
+                        <div class="text-center">
+                            <i class="fa fa-chart-line text-4xl text-gray-400 mb-4"></i>
+                            <p class="text-gray-500">暂无收入数据</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            // 使用简单的条形图显示收入趋势
+            const maxEarnings = Math.max(...earningsData.map(item => item.amount));
+            
+            chartContainer.innerHTML = `
+                <div class="flex items-end justify-between h-full">
+                    ${earningsData.map(item => `
+                        <div class="flex flex-col items-center flex-1 mx-1">
+                            <div class="w-full bg-primary/20 rounded-t" style="height: ${Math.max(20, (item.amount / maxEarnings) * 200)}px">
+                                <div class="w-full bg-primary rounded-t" style="height: 100%"></div>
+                            </div>
+                            <div class="text-xs text-gray-600 mt-2 text-center">${item.date}</div>
+                            <div class="text-xs text-gray-800 font-medium">¥${item.amount}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+                type === 'success' ? 'bg-success text-white' :
+                type === 'error' ? 'bg-danger text-white' :
+                type === 'warning' ? 'bg-warning text-white' :
+                'bg-primary text-white'
+            }`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

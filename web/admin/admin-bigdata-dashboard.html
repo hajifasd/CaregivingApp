@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>护理助手 -/* 用户端</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+        <!-- 引入认证守卫 -->
+    <script src="/js/admin-auth-guard.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .chart-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin: 10px 0;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .stat-label {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- 导航栏 -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold text-gray-800">护工资源管理系统 - 大数据分析</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="triggerDynamicAnalysis()" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                        触发动态分析
+                    </button>
+                    <div class="relative">
+                        <button onclick="toggleExportMenu()" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">
+                            导出报告 ▼
+                        </button>
+                        <div id="export-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
+                            <div class="py-1">
+                                <button onclick="exportReport('excel')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    📊 导出Excel报告
+                                </button>
+                                <button onclick="exportReport('pdf')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    📄 导出PDF报告
+                                </button>
+                                <button onclick="showExportHistory()" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    📁 导出历史
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="refreshData()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        刷新数据
+                    </button>
+                    <button onclick="logout()" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                        退出登录
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <!-- 控制台：筛选与刷新 -->
+        <div class="bg-white rounded-lg shadow p-4 mb-6">
+            <div class="flex flex-col lg:flex-row lg:items-end lg:space-x-4 space-y-4 lg:space-y-0">
+                <div class="flex-1">
+                    <label class="block text-sm text-gray-600 mb-1">日期范围</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input id="filterStart" type="date" class="border rounded px-3 py-2" />
+                        <input id="filterEnd" type="date" class="border rounded px-3 py-2" />
+                    </div>
+                </div>
+                <div class="flex-1">
+                    <label class="block text-sm text-gray-600 mb-1">城市</label>
+                    <select id="filterCity" class="border rounded px-3 py-2 w-full">
+                        <option value="">全部</option>
+                        <option>北京</option>
+                        <option>上海</option>
+                        <option>广州</option>
+                        <option>深圳</option>
+                        <option>其他</option>
+                    </select>
+                </div>
+                <div class="flex-1">
+                    <label class="block text-sm text-gray-600 mb-1">服务类型</label>
+                    <select id="filterService" class="border rounded px-3 py-2 w-full">
+                        <option value="">全部</option>
+                        <option>养老护理</option>
+                        <option>康复护理</option>
+                        <option>医疗护理</option>
+                        <option>综合护理</option>
+                    </select>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <input id="autoRefresh" type="checkbox" class="h-4 w-4" />
+                    <label for="autoRefresh" class="text-sm text-gray-700">自动刷新</label>
+                    <select id="refreshInterval" class="border rounded px-2 py-1">
+                        <option value="30">30s</option>
+                        <option value="60">60s</option>
+                        <option value="120">120s</option>
+                    </select>
+                </div>
+                <div class="flex space-x-2">
+                    <button id="applyFilters" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">应用筛选</button>
+                    <button id="resetFilters" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded">重置</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 标签导航 -->
+        <div class="mb-6">
+            <div class="flex flex-wrap gap-2">
+                <a href="#section-overview" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm">概览</a>
+                <a href="#section-distribution" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm">分布分析</a>
+                <a href="#section-trends" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm">趋势分析</a>
+                <a href="#section-prediction" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm">预测分析</a>
+                <a href="#section-cluster" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm">聚类分析</a>
+                <a href="#section-forecast" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm">需求预测</a>
+                <a href="#section-reco" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm">推荐</a>
+            </div>
+        </div>
+        <!-- 动态分析状态 -->
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">动态分析状态</h2>
+            <div class="bg-white rounded-lg shadow p-4 mb-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">分析状态</h3>
+                    <div class="flex space-x-2">
+                        <button onclick="getLatestAnalysis()" class="bg-blue-500 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
+                            获取最新分析
+                        </button>
+                        <button onclick="showAnalysisHistory()" class="bg-gray-500 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm">
+                            分析历史
+                        </button>
+                    </div>
+                </div>
+                <div id="analysis-status" class="text-sm text-gray-600">
+                    等待分析...
+                </div>
+            </div>
+            
+            <!-- 导出状态 -->
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">导出状态</h3>
+                    <div class="flex space-x-2">
+                        <button onclick="refreshExportList()" class="bg-green-500 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">
+                            刷新列表
+                        </button>
+                    </div>
+                </div>
+                <div id="export-status" class="text-sm text-gray-600 mb-4">
+                    等待导出...
+                </div>
+                <div id="export-list" class="space-y-2">
+                    <!-- 导出文件列表将在这里显示 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 系统状态 -->
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">系统状态</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="stat-card">
+                    <div class="stat-value" id="spark-status">运行中</div>
+                    <div class="stat-label">Spark状态</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="hadoop-status">运行中</div>
+                    <div class="stat-label">Hadoop状态</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="mongodb-status">运行中</div>
+                    <div class="stat-label">MongoDB状态</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="processing-status">活跃</div>
+                    <div class="stat-label">数据处理状态</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 关键指标 -->
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">关键指标</h2>
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-caregivers">-</div>
+                    <div class="stat-label">总护工数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="total-users">-</div>
+                    <div class="stat-label">总用户数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="total-appointments">-</div>
+                    <div class="stat-label">总预约数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="avg-rating">-</div>
+                    <div class="stat-label">平均评分</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="data-quality">-</div>
+                    <div class="stat-label">数据质量</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 图表区域 -->
+        <div id="section-overview" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!--/* 用户分布分析 -->
+            <div class="chart-container">
+                <h3 class="text-lg font-semibold mb-4">护工分布分析</h3>
+                <div class="flex justify-end mb-2">
+                    <button class="text-sm text-blue-600 hover:underline mr-3" onclick="exportPlot('caregiver-distribution-chart','caregiver_distribution')">导出图片</button>
+                    <button class="text-sm text-blue-600 hover:underline" onclick="exportCSV(distributionLastData, 'caregiver_distribution')">导出CSV</button>
+                </div>
+                <div id="caregiver-distribution-chart" class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+
+            <!-- 市场趋势分析 -->
+            <div class="chart-container">
+                <h3 class="text-lg font-semibold mb-4">市场趋势分析</h3>
+                <div class="flex justify-end mb-2">
+                    <button class="text-sm text-blue-600 hover:underline mr-3" onclick="exportPlot('market-trends-chart','market_trends')">导出图片</button>
+                    <button class="text-sm text-blue-600 hover:underline" onclick="exportCSV(trendsLastData, 'market_trends')">导出CSV</button>
+                </div>
+                <div id="market-trends-chart" class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+
+            <div id="section-prediction" class="lg:col-span-2"></div>
+            <!-- 成功率预测 -->
+            <div class="chart-container">
+                <h3 class="text-lg font-semibold mb-4">成功率预测</h3>
+                <div class="flex justify-end mb-2">
+                    <button class="text-sm text-blue-600 hover:underline mr-3" onclick="exportPlot('success-prediction-chart','success_prediction')">导出图片</button>
+                </div>
+                <div id="success-prediction-chart" class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+
+            <!-- 聚类分析 -->
+            <div class="chart-container">
+                <h3 class="text-lg font-semibold mb-4">护工聚类分析</h3>
+                <div class="flex justify-end mb-2">
+                    <button class="text-sm text-blue-600 hover:underline mr-3" onclick="exportPlot('cluster-analysis-chart','cluster_analysis')">导出图片</button>
+                </div>
+                <div id="cluster-analysis-chart" class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+
+            <div id="section-forecast" class="lg:col-span-2"></div>
+            <!-- 需求预测 -->
+            <div class="chart-container">
+                <h3 class="text-lg font-semibold mb-4">需求预测</h3>
+                <div class="flex justify-end mb-2">
+                    <button class="text-sm text-blue-600 hover:underline mr-3" onclick="exportPlot('demand-forecast-chart','demand_forecast')">导出图片</button>
+                    <button class="text-sm text-blue-600 hover:underline" onclick="exportCSV(forecastLastData, 'demand_forecast')">导出CSV</button>
+                </div>
+                <div id="demand-forecast-chart" class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+
+            <!-- 推荐分析 -->
+            <div class="chart-container">
+                <h3 class="text-lg font-semibold mb-4">推荐分析</h3>
+                <div class="flex justify-between mb-2">
+                    <div class="flex items-center space-x-2">
+                        <label class="text-sm text-gray-600">用户ID</label>
+                        <input id="recoUserId" type="number" class="border rounded px-2 py-1 w-28" placeholder="1" />
+                        <button class="text-sm bg-blue-600 text-white px-3 py-1 rounded" onclick="loadRecommendations()">获取推荐</button>
+                    </div>
+                    <div>
+                        <button class="text-sm text-blue-600 hover:underline" onclick="exportCSV(recommendationLastData, 'recommendations')">导出CSV</button>
+                    </div>
+                </div>
+                <div id="recommendation-chart" class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 数据处理控制 -->
+        <div class="mt-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">数据处理控制</h2>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex space-x-4">
+                    <button onclick="startDataProcessing()" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                        启动数据处理
+                    </button>
+                    <button onclick="startCrawling()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        启动数据爬取
+                    </button>
+                    <button onclick="generateReport()" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">
+                        生成分析报告
+                    </button>
+                </div>
+                <div id="processing-status" class="mt-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let dashboardData = {};
+        let charts = {};
+        let autoRefreshTimer = null;
+        let distributionLastData = null;
+        let trendsLastData = null;
+        let forecastLastData = null;
+        let recommendationLastData = null;
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initFilters();
+            loadDashboardData();
+            loadAllCharts();
+            initAutoRefresh();
+        });
+
+        function initFilters() {
+            document.getElementById('applyFilters').addEventListener('click', () => {
+                loadDashboardData();
+                loadAllCharts();
+            });
+            document.getElementById('resetFilters').addEventListener('click', () => {
+                document.getElementById('filterStart').value = '';
+                document.getElementById('filterEnd').value = '';
+                document.getElementById('filterCity').value = '';
+                document.getElementById('filterService').value = '';
+                loadDashboardData();
+                loadAllCharts();
+            });
+        }
+
+        function initAutoRefresh() {
+            const checkbox = document.getElementById('autoRefresh');
+            const intervalSel = document.getElementById('refreshInterval');
+            function setup() {
+                if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
+                if (checkbox.checked) {
+                    const sec = parseInt(intervalSel.value || '30', 10);
+                    autoRefreshTimer = setInterval(() => {
+                        loadDashboardData();
+                        loadAllCharts();
+                    }, sec * 1000);
+                }
+            }
+            checkbox.addEventListener('change', setup);
+            intervalSel.addEventListener('change', setup);
+        }
+
+        function getFiltersQuery() {
+            const start = document.getElementById('filterStart').value;
+            const end = document.getElementById('filterEnd').value;
+            const city = document.getElementById('filterCity').value;
+            const service = document.getElementById('filterService').value;
+            const params = new URLSearchParams();
+            if (start) params.append('start', start);
+            if (end) params.append('end', end);
+            if (city) params.append('city', city);
+            if (service) params.append('service_type', service);
+            const qs = params.toString();
+            return qs ? ('?' + qs) : '';
+        }
+
+        async function fetchJson(url, options = {}) {
+            try {
+                const res = await fetch(url, options);
+                if (!res.ok) throw new Error('网络错误 ' + res.status);
+                const data = await res.json();
+                if (!data.success) throw new Error(data.message || '请求失败');
+                return data.data || {};
+            } catch (e) {
+                console.error('请求失败:', e);
+                throw e;
+            }
+        }
+
+        function setLoading(containerId) {
+            const el = document.getElementById(containerId);
+            if (!el) return;
+            el.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+        }
+
+        function setError(containerId, msg) {
+            const el = document.getElementById(containerId);
+            if (!el) return;
+            el.innerHTML = `<div class="text-center text-red-600 py-10">${msg || '加载失败'}</div>`;
+        }
+
+        // 加载仪表盘数据
+        async function loadDashboardData() {
+            try {
+                const response = await fetch('/api/bigdata/dashboard');
+                const result = await response.json();
+                
+                if (result.success) {
+                    dashboardData = result.data;
+                    updateSummaryCards();
+                } else {
+                    console.error('加载仪表盘数据失败:', result.message);
+                }
+            } catch (error) {
+                console.error('加载仪表盘数据错误:', error);
+            }
+        }
+
+        // 更新摘要卡片
+        function updateSummaryCards() {
+            const summary = dashboardData.summary || {};
+            
+            document.getElementById('total-caregivers').textContent = summary.total_caregivers || '-';
+            document.getElementById('total-users').textContent = summary.total_users || '-';
+            document.getElementById('total-appointments').textContent = summary.total_appointments || '-';
+            document.getElementById('avg-rating').textContent = summary.avg_rating || '-';
+            document.getElementById('data-quality').textContent = (summary.data_quality_score * 100).toFixed(1) + '%';
+        }
+
+        // 加载所有图表
+        async function loadAllCharts() {
+            await Promise.all([
+                loadCaregiverDistributionChart(),
+                loadMarketTrendsChart(),
+                loadSuccessPredictionChart(),
+                loadClusterAnalysisChart(),
+                loadDemandForecastChart()
+            ]);
+        }
+
+        // 加载护工分布图表
+        async function loadCaregiverDistributionChart() {
+            const container = 'caregiver-distribution-chart';
+            setLoading(container);
+            try {
+                const data = await fetchJson('/api/bigdata/analysis/caregiver-distribution' + getFiltersQuery());
+                distributionLastData = data;
+                createDistributionChart(data);
+            } catch (error) {
+                setError(container, '护工分布加载失败');
+            }
+        }
+
+        // 创建分布图表
+        function createDistributionChart(data) {
+            const traces = [
+                {
+                    x: Object.keys(data.age_distribution),
+                    y: Object.values(data.age_distribution),
+                    type: 'bar',
+                    name: '年龄分布',
+                    marker: { color: '#3498db' }
+                },
+                {
+                    x: Object.keys(data.salary_distribution),
+                    y: Object.values(data.salary_distribution),
+                    type: 'bar',
+                    name: '薪资分布',
+                    marker: { color: '#e74c3c' }
+                }
+            ];
+
+            const layout = {
+                title: '护工分布统计',
+                barmode: 'group',
+                xaxis: { title: '分类' },
+                yaxis: { title: '数量' }
+            };
+
+            Plotly.newPlot('caregiver-distribution-chart', traces, layout);
+        }
+
+        // 加载市场趋势图表
+        async function loadMarketTrendsChart() {
+            const container = 'market-trends-chart';
+            setLoading(container);
+            try {
+                const data = await fetchJson('/api/bigdata/analysis/market-trends' + getFiltersQuery());
+                trendsLastData = data;
+                createTrendsChart(data);
+            } catch (error) {
+                setError(container, '市场趋势加载失败');
+            }
+        }
+
+        // 创建趋势图表
+        function createTrendsChart(data) {
+            const traces = [
+                {
+                    x: data.map(d => d.date),
+                    y: data.map(d => d.avg_salary),
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: '平均薪资',
+                    line: { color: '#2ecc71' }
+                },
+                {
+                    x: data.map(d => d.date),
+                    y: data.map(d => d.job_count),
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: '职位数量',
+                    yaxis: 'y2',
+                    line: { color: '#f39c12' }
+                }
+            ];
+
+            const layout = {
+                title: '市场趋势分析',
+                xaxis: { title: '时间' },
+                yaxis: { title: '平均薪资', side: 'left' },
+                yaxis2: { title: '职位数量', side: 'right', overlaying: 'y' }
+            };
+
+            Plotly.newPlot('market-trends-chart', traces, layout);
+        }
+
+        // 加载成功率预测图表
+        async function loadSuccessPredictionChart() {
+            const container = 'success-prediction-chart';
+            setLoading(container);
+            try {
+                const data = await fetchJson('/api/bigdata/analysis/success-prediction' + getFiltersQuery());
+                createPredictionChart(data);
+            } catch (error) {
+                setError(container, '成功率预测加载失败');
+            }
+        }
+
+        // 创建预测图表
+        function createPredictionChart(data) {
+            const predictions = data.predictions;
+            
+            const trace = {
+                x: predictions.map(p => p.actual_success_rate),
+                y: predictions.map(p => p.predicted_success_rate),
+                mode: 'markers',
+                type: 'scatter',
+                name: '预测结果',
+                text: predictions.map(p => p.name),
+                marker: {
+                    size: 10,
+                    color: predictions.map(p => p.predicted_success_rate),
+                    colorscale: 'Viridis'
+                }
+            };
+
+            const layout = {
+                title: `成功率预测 (准确率: ${(data.model_accuracy * 100).toFixed(1)}%)`,
+                xaxis: { title: '实际成功率' },
+                yaxis: { title: '预测成功率' }
+            };
+
+            Plotly.newPlot('success-prediction-chart', [trace], layout);
+        }
+
+        // 加载聚类分析图表
+        async function loadClusterAnalysisChart() {
+            const container = 'cluster-analysis-chart';
+            setLoading(container);
+            try {
+                const data = await fetchJson('/api/bigdata/analysis/cluster-analysis' + getFiltersQuery());
+                createClusterChart(data);
+            } catch (error) {
+                setError(container, '聚类分析加载失败');
+            }
+        }
+
+        // 创建聚类图表
+        function createClusterChart(data) {
+            const clusters = data.clusters;
+            
+            const trace = {
+                x: clusters.map(c => c.avg_salary),
+                y: clusters.map(c => c.avg_rating),
+                mode: 'markers+text',
+                type: 'scatter',
+                text: clusters.map(c => c.name),
+                textposition: 'top center',
+                marker: {
+                    size: clusters.map(c => c.count / 10),
+                    color: clusters.map(c => c.cluster_id),
+                    colorscale: 'Set1'
+                }
+            };
+
+            const layout = {
+                title: `护工聚类分析 (轮廓系数: ${data.silhouette_score.toFixed(2)})`,
+                xaxis: { title: '平均薪资' },
+                yaxis: { title: '平均评分' }
+            };
+
+            Plotly.newPlot('cluster-analysis-chart', [trace], layout);
+        }
+
+        // 加载需求预测图表
+        async function loadDemandForecastChart() {
+            const container = 'demand-forecast-chart';
+            setLoading(container);
+            try {
+                const data = await fetchJson('/api/bigdata/analysis/demand-forecast' + getFiltersQuery());
+                forecastLastData = data;
+                createForecastChart(data);
+            } catch (error) {
+                setError(container, '需求预测加载失败');
+            }
+        }
+
+        async function loadRecommendations() {
+            const container = 'recommendation-chart';
+            setLoading(container);
+            try {
+                const uid = document.getElementById('recoUserId').value || '1';
+                const data = await fetchJson(`/api/bigdata/analysis/recommendations?user_id=${encodeURIComponent(uid)}`);
+                recommendationLastData = data.recommendations || [];
+                createRecommendationTable(recommendationLastData);
+            } catch (e) {
+                setError(container, '推荐结果加载失败');
+            }
+        }
+
+        function createRecommendationTable(list) {
+            const container = document.getElementById('recommendation-chart');
+            if (!list || !list.length) {
+                container.innerHTML = '<div class="text-center text-gray-500 py-10">暂无推荐数据</div>';
+                return;
+            }
+            const rows = list.map((r, idx) => `
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="px-3 py-2">${idx + 1}</td>
+                    <td class="px-3 py-2">${r.caregiver_id}</td>
+                    <td class="px-3 py-2">${r.name || ''}</td>
+                    <td class="px-3 py-2">${(r.score * 100).toFixed(1)}%</td>
+                    <td class="px-3 py-2">${r.hourly_rate ?? '-'}</td>
+                    <td class="px-3 py-2">${r.rating ?? '-'}</td>
+                    <td class="px-3 py-2 text-gray-500">${r.reason || ''}</td>
+                </tr>
+            `).join('');
+            container.innerHTML = `
+                <div class="overflow-auto">
+                    <table class="min-w-full text-sm">
+                        <thead>
+                            <tr class="text-left bg-gray-50">
+                                <th class="px-3 py-2">#</th>
+                                <th class="px-3 py-2">护工ID</th>
+                                <th class="px-3 py-2">姓名</th>
+                                <th class="px-3 py-2">推荐分</th>
+                                <th class="px-3 py-2">时薪</th>
+                                <th class="px-3 py-2">评分</th>
+                                <th class="px-3 py-2">推荐理由</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // 导出工具
+        function exportPlot(divId, filename) {
+            const el = document.getElementById(divId);
+            if (!el) return;
+            Plotly.downloadImage(el, {format: 'png', filename: filename || 'chart', height: 600, width: 1000});
+        }
+
+        function exportCSV(data, filename) {
+            try {
+                let rows = [];
+                if (Array.isArray(data)) {
+                    rows = data;
+                } else if (data && typeof data === 'object') {
+                    rows = [data];
+                }
+                if (!rows.length) { showMessage('无可导出数据', 'info'); return; }
+                const headers = Object.keys(rows[0]);
+                const csv = [headers.join(',')].concat(rows.map(r => headers.map(h => JSON.stringify(r[h] ?? '')).join(','))).join('\n');
+                const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = (filename || 'export') + '.csv';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } catch (e) {
+                console.error('导出失败', e);
+                showMessage('导出失败', 'error');
+            }
+        }
+
+        // 创建预测图表
+        function createForecastChart(data) {
+            const forecast = data.forecast;
+            
+            const traces = [
+                {
+                    x: forecast.map(f => f.date),
+                    y: forecast.map(f => f.predicted_demand),
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: '预测需求',
+                    line: { color: '#e74c3c' }
+                },
+                {
+                    x: forecast.map(f => f.date),
+                    y: forecast.map(f => f.confidence_interval.upper),
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: '置信区间上限',
+                    line: { color: 'rgba(231, 76, 60, 0.3)', dash: 'dash' }
+                },
+                {
+                    x: forecast.map(f => f.date),
+                    y: forecast.map(f => f.confidence_interval.lower),
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: '置信区间下限',
+                    line: { color: 'rgba(231, 76, 60, 0.3)', dash: 'dash' },
+                    fill: 'tonexty'
+                }
+            ];
+
+            const layout = {
+                title: `需求预测 (模型准确率: ${(data.model_accuracy * 100).toFixed(1)}%)`,
+                xaxis: { title: '时间' },
+                yaxis: { title: '需求数量' }
+            };
+
+            Plotly.newPlot('demand-forecast-chart', traces, layout);
+        }
+
+        // 启动数据处理
+        async function startDataProcessing() {
+            try {
+                const response = await fetch('/api/bigdata/process/start', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('数据处理已启动', 'success');
+                    monitorProcess(result.data.process_id);
+                } else {
+                    showMessage('启动数据处理失败: ' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('启动数据处理错误:', error);
+                showMessage('启动数据处理失败', 'error');
+            }
+        }
+
+        // 监控处理进度
+        async function monitorProcess(processId) {
+            const statusDiv = document.getElementById('processing-status');
+            statusDiv.innerHTML = '<div class="text-blue-600">正在处理数据...</div>';
+            
+            // 模拟监控过程
+            setTimeout(() => {
+                statusDiv.innerHTML = '<div class="text-green-600">数据处理完成</div>';
+            }, 3000);
+        }
+
+        // 启动数据爬取
+        function startCrawling() {
+            showMessage('数据爬取功能开发中...', 'info');
+        }
+
+        // 生成分析报告
+        function generateReport() {
+            showMessage('分析报告生成功能开发中...', 'info');
+        }
+
+        // 刷新数据
+        function refreshData() {
+            loadDashboardData();
+            loadAllCharts();
+            showMessage('数据已刷新', 'success');
+        }
+
+        // 显示消息
+        function showMessage(message, type = 'info') {
+            const colors = {
+                'success': 'bg-green-500',
+                'error': 'bg-red-500',
+                'info': 'bg-blue-500'
+            };
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `fixed top-4 right-4 ${colors[type]} text-white px-4 py-2 rounded shadow-lg z-50`;
+            messageDiv.textContent = message;
+            
+            document.body.appendChild(messageDiv);
+            
+            setTimeout(() => {
+                document.body.removeChild(messageDiv);
+            }, 3000);
+        }
+
+        // 动态分析功能
+        async function triggerDynamicAnalysis() {
+            try {
+                const statusDiv = document.getElementById('analysis-status');
+                statusDiv.innerHTML = '<div class="text-blue-600">正在触发动态分析...</div>';
+                
+                const response = await fetch('/api/bigdata/dynamic/trigger', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        source: 'manual_trigger'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    statusDiv.innerHTML = `
+                        <div class="text-green-600">
+                            ✅ 动态分析触发成功<br>
+                            分析时间: ${result.data.analysis_timestamp}<br>
+                            数据版本: ${result.data.data_version}<br>
+                            数据源: ${result.data.data_sources.join(', ')}
+                        </div>
+                    `;
+                    
+                    // 刷新数据
+                    setTimeout(() => {
+                        loadDashboardData();
+                    }, 2000);
+                } else {
+                    statusDiv.innerHTML = `<div class="text-red-600">❌ 动态分析触发失败: ${result.message}</div>`;
+                }
+            } catch (error) {
+                console.error('触发动态分析失败:', error);
+                document.getElementById('analysis-status').innerHTML = 
+                    `<div class="text-red-600">❌ 触发失败: ${error.message}</div>`;
+            }
+        }
+        
+        async function getLatestAnalysis() {
+            try {
+                const statusDiv = document.getElementById('analysis-status');
+                statusDiv.innerHTML = '<div class="text-blue-600">正在获取最新分析结果...</div>';
+                
+                const response = await fetch('/api/bigdata/dynamic/latest');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const data = result.data;
+                    statusDiv.innerHTML = `
+                        <div class="text-green-600">
+                            ✅ 最新分析结果<br>
+                            分析时间: ${data.analysis_timestamp}<br>
+                            数据版本: ${data.data_version}<br>
+                            触发源: ${data.trigger_source}<br>
+                            数据量: ${JSON.stringify(data.data_counts)}
+                        </div>
+                    `;
+                } else {
+                    statusDiv.innerHTML = `<div class="text-yellow-600">⚠️ ${result.message}</div>`;
+                }
+            } catch (error) {
+                console.error('获取最新分析失败:', error);
+                document.getElementById('analysis-status').innerHTML = 
+                    `<div class="text-red-600">❌ 获取失败: ${error.message}</div>`;
+            }
+        }
+        
+        function showAnalysisHistory() {
+            // 这里可以显示分析历史
+            alert('分析历史功能开发中...');
+        }
+
+        // ==================== 导出功能 ====================
+        
+        // 切换导出菜单
+        function toggleExportMenu() {
+            const menu = document.getElementById('export-menu');
+            menu.classList.toggle('hidden');
+        }
+        
+        // 点击其他地方关闭菜单
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('export-menu');
+            const button = event.target.closest('button');
+            if (!button || !button.onclick || button.onclick.toString().indexOf('toggleExportMenu') === -1) {
+                menu.classList.add('hidden');
+            }
+        });
+        
+        // 导出报告
+        async function exportReport(format) {
+            try {
+                const statusDiv = document.getElementById('export-status');
+                statusDiv.innerHTML = `<div class="text-blue-600">正在导出${format.toUpperCase()}报告...</div>`;
+                
+                const response = await fetch(`/api/bigdata/export/${format}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({})
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    statusDiv.innerHTML = `<div class="text-green-600">✅ ${format.toUpperCase()}报告导出成功: ${result.filename}</div>`;
+                    
+                    // 显示下载链接
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = `/api/bigdata/export/download/${result.filename}`;
+                    downloadLink.download = result.filename;
+                    downloadLink.className = 'inline-block mt-2 bg-blue-500 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm';
+                    downloadLink.textContent = '📥 下载文件';
+                    downloadLink.onclick = () => {
+                        setTimeout(() => {
+                            refreshExportList();
+                        }, 1000);
+                    };
+                    
+                    statusDiv.appendChild(downloadLink);
+                    
+                    // 刷新导出列表
+                    setTimeout(() => {
+                        refreshExportList();
+                    }, 1000);
+                } else {
+                    statusDiv.innerHTML = `<div class="text-red-600">❌ ${format.toUpperCase()}报告导出失败: ${result.message}</div>`;
+                }
+            } catch (error) {
+                console.error('导出报告失败:', error);
+                document.getElementById('export-status').innerHTML = 
+                    `<div class="text-red-600">❌ 导出失败: ${error.message}</div>`;
+            }
+        }
+        
+        // 显示导出历史
+        async function showExportHistory() {
+            await refreshExportList();
+        }
+        
+        // 刷新导出列表
+        async function refreshExportList() {
+            try {
+                const response = await fetch('/api/bigdata/export/list');
+                const result = await response.json();
+                
+                const listDiv = document.getElementById('export-list');
+                
+                if (result.success && result.files.length > 0) {
+                    listDiv.innerHTML = result.files.map(file => `
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded border">
+                            <div class="flex-1">
+                                <div class="font-medium text-gray-900">${file.filename}</div>
+                                <div class="text-sm text-gray-500">
+                                    大小: ${(file.size / 1024).toFixed(1)} KB | 
+                                    修改时间: ${new Date(file.modified_time).toLocaleString()}
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <a href="/api/bigdata/export/download/${file.filename}" 
+                                   class="bg-blue-500 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
+                                    📥 下载
+                                </a>
+                                <button onclick="deleteExportFile('${file.filename}')" 
+                                        class="bg-red-500 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">
+                                    🗑️ 删除
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    listDiv.innerHTML = '<div class="text-gray-500 text-center py-4">暂无导出文件</div>';
+                }
+            } catch (error) {
+                console.error('获取导出列表失败:', error);
+                document.getElementById('export-list').innerHTML = 
+                    '<div class="text-red-500 text-center py-4">获取列表失败</div>';
+            }
+        }
+        
+        // 删除导出文件
+        async function deleteExportFile(filename) {
+            if (!confirm(`确定要删除文件 "${filename}" 吗？`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/bigdata/export/delete/${filename}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('文件删除成功');
+                    refreshExportList();
+                } else {
+                    alert(`删除失败: ${result.message}`);
+                }
+            } catch (error) {
+                console.error('删除文件失败:', error);
+                alert(`删除失败: ${error.message}`);
+            }
+        }
+
+        // 退出登录
+        function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                window.location.href = '/admin-login.html';
+            }
+        }
+        
+        // 页面加载时初始化
+        window.addEventListener('load', function() {
+            // 加载系统状态
+            loadSystemStatus();
+            
+            // 加载大数据状态
+            loadBigDataStatus();
+            
+            // 刷新导出列表
+            refreshExportList();
+            
+            // 获取最新分析结果
+            getLatestAnalysis();
+        });
+    </script>
+</body>
+</html>

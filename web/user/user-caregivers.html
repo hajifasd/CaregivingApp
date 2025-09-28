@@ -3,16 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>护理助手 - 寻找护工</title>
+    <title>护理助手 -/* 用户端</title>
     <!-- 引入Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入Font Awesome -->
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     
     <!-- 引入用户登出功能 -->
+        <!-- 引入认证守卫 -->
+    <script src="/js/user-auth-guard.js"></script>
     <script src="/js/user-logout.js"></script>
+    <!-- 引入用户搜索管理器 -->
+    <script src="../js/user-search-manager.js"></script>
     <!-- 引入用户信息加载器 -->
     <script src="/js/user-info-loader.js"></script>
+    <!-- 引入头像管理器 -->
+    <script src="../js/avatar-manager.js"></script>
     
     <!-- 配置Tailwind自定义主题 -->
     <script>
@@ -59,7 +65,7 @@
         
         <div class="flex items-center gap-6">
             <div class="relative">
-                <input type="text" placeholder="搜索护工、服务..." 
+                <input type="text" id="caregiver-search" placeholder="搜索护工、服务..." 
                     class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 w-64">
                 <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
             </div>
@@ -167,9 +173,9 @@
             </div>
         </div>
         
-        <!-- 护工列表 -->
+        <!--/* 用户列表 -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="caregivers-container">
-            <!-- 护工卡片将通过JavaScript动态生成 -->
+            <!--/* 用户卡片将通过JavaScript动态生成 -->
         </div>
         
         <!-- 分页 -->
@@ -205,7 +211,140 @@
             
             // 绑定返回顶部按钮
             bindBackToTop();
+            
+            // 初始化搜索功能
+            initCaregiverSearch();
         });
+        
+        // 初始化护工搜索功能
+        function initCaregiverSearch() {
+            const searchInput = document.getElementById('caregiver-search');
+            if (!searchInput) return;
+            
+            let searchTimeout;
+            
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim();
+                
+                // 清除之前的搜索超时
+                if (searchTimeout) {
+                    clearTimeout(searchTimeout);
+                }
+                
+                if (query.length === 0) {
+                    // 显示所有护工
+                    displayAllCaregivers();
+                    return;
+                }
+                
+                if (query.length < 2) {
+                    return;
+                }
+                
+                // 延迟搜索
+                searchTimeout = setTimeout(() => {
+                    searchCaregivers(query);
+                }, 300);
+            });
+        }
+        
+        // 搜索护工
+        function searchCaregivers(query) {
+            if (!caregiversData || caregiversData.length === 0) {
+                showSearchResults([]);
+                return;
+            }
+            
+            const results = caregiversData.filter(caregiver => {
+                const searchText = `${caregiver.name} ${caregiver.skills} ${caregiver.experience} ${caregiver.description}`.toLowerCase();
+                return searchText.includes(query.toLowerCase());
+            });
+            
+            showSearchResults(results);
+        }
+        
+        // 显示搜索结果
+        function showSearchResults(results) {
+            const container = document.getElementById('caregivers-container');
+            if (!container) return;
+            
+            if (results.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-16">
+                        <i class="fa fa-search text-gray-400 text-6xl mb-4"></i>
+                        <h3 class="text-xl font-semibold text-gray-600 mb-2">未找到相关护工</h3>
+                        <p class="text-gray-500 mb-6">请尝试其他搜索关键词</p>
+                        <button onclick="clearCaregiverSearch()" class="text-primary hover:text-primary/80">
+                            清除搜索条件
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            // 显示搜索结果
+            container.innerHTML = results.map(caregiver => `
+                <div class="bg-white rounded-xl overflow-hidden card-shadow">
+                    <div class="relative">
+                        <img src="${window.AvatarManager ? window.AvatarManager.getAvatarUrl(caregiver.avatar_url, 'caregiver', 'large') : '/uploads/avatars/default-caregiver.png'}" 
+                             alt="${caregiver.name}" 
+                             class="w-full h-48 object-cover">
+                        <div class="absolute top-4 right-4">
+                            <span class="bg-primary text-white px-3 py-1 rounded-full text-sm font-medium">
+                                ${caregiver.rating || 5.0}★
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-xl font-semibold">${caregiver.name}</h3>
+                            <span class="text-primary font-bold text-lg">¥${caregiver.hourly_rate}/小时</span>
+                        </div>
+                        
+                        <div class="flex items-center gap-4 mb-4 text-sm text-gray-600">
+                            <span><i class="fa fa-clock mr-1"></i>${caregiver.experience_years}年经验</span>
+                            <span><i class="fa fa-map-marker mr-1"></i>${caregiver.service_area || '服务区域'}</span>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="flex flex-wrap gap-2">
+                                ${(caregiver.skills || '护理服务').split(',').map(skill => `
+                                    <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-sm">${skill.trim()}</span>
+                                `).join('')}
+                            </div>
+                        </div>
+                        
+                        <p class="text-gray-600 text-sm mb-4 line-clamp-2">${caregiver.commitment || '专业护理服务，经验丰富，服务周到'}</p>
+                        
+                        <div class="flex gap-2">
+                            <button class="border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg transition-colors text-sm" 
+                                    onclick="viewCaregiverDetail(${caregiver.caregiver_id})">
+                                查看详情
+                            </button>
+                            <button class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg transition-colors text-sm" 
+                                    onclick="bookCaregiver(${caregiver.caregiver_id})">
+                                立即聘用
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // 显示所有护工
+        function displayAllCaregivers() {
+            generateCaregiverCards();
+        }
+        
+        // 清除护工搜索
+        function clearCaregiverSearch() {
+            const searchInput = document.getElementById('caregiver-search');
+            if (searchInput) {
+                searchInput.value = '';
+            }
+            displayAllCaregivers();
+        }
         
         // 从后端加载护工数据
         async function loadCaregiversData() {
@@ -272,7 +411,7 @@
             container.innerHTML = caregiversData.map(caregiver => `
                 <div class="bg-white rounded-xl overflow-hidden card-shadow">
                     <div class="relative">
-                        <img src="${caregiver.avatar || 'https://picsum.photos/id/64/400/300'}" alt="${caregiver.name || '护工'}工作照" class="w-full h-48 object-cover">
+                        <img src="${window.AvatarManager.getAvatarUrl(caregiver.avatar, 'caregiver', 'large')}" alt="${caregiver.name || '护工'}工作照" class="w-full h-48 object-cover">
                         <div class="absolute top-3 right-3 ${caregiver.status === 'available' ? 'bg-success' : 'bg-warning'} text-white text-xs px-2 py-1 rounded-full">
                             ${caregiver.status === 'available' ? '可立即聘用' : '需提前预约'}
                         </div>
@@ -282,7 +421,7 @@
                     </div>
                     <div class="p-5">
                         <div class="flex items-center justify-between mb-3">
-                            <h4 class="font-bold text-lg">${caregiver.name || '护工'} 护工</h4>
+                            <h4 class="font-bold text-lg">${caregiver.name || '护工'}/* 用户</h4>
                             <div class="flex items-center">
                                 <i class="fa fa-star text-warning mr-1"></i>
                                 <span class="text-sm font-medium">${caregiver.rating || '5.0'}</span>

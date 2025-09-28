@@ -31,6 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 4. 调用函数，绑定三个登录按钮
     bindLoginButton('user-login', '/');
-    bindLoginButton('caregiver-login', 'caregiver-login.html');
+    bindLoginButton('caregiver-login', '/');
     bindLoginButton('admin-login', 'admin-login.html');
 });

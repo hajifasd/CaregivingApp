@@ -18,14 +18,26 @@ function bindUserLogoutButton() {
 // 执行用户登出
 function logoutUser() {
     try {
+        // 使用认证守卫的登出方法（如果可用）
+        if (window.authGuard) {
+            window.authGuard.logout();
+            return;
+        }
+        
+        // 备用登出逻辑
         // 清除localStorage中的用户数据
         localStorage.removeItem('user_token');
         localStorage.removeItem('user_info');
         localStorage.removeItem('user_id');
+        localStorage.removeItem('caregiver_token');
+        localStorage.removeItem('caregiver_info');
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_info');
         
         // 清除cookie中的用户数据
         document.cookie = 'user_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        document.cookie = 'user_info=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'caregiver_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'admin_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
         
         // 显示登出成功消息
         showLogoutMessage();

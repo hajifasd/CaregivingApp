@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员登录测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-2xl font-bold mb-6">管理员登录测试</h1>
+        
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h2 class="text-lg font-semibold mb-4">测试步骤：</h2>
+            <ol class="list-decimal list-inside space-y-2 mb-6">
+                <li>输入管理员账号：admin</li>
+                <li>输入密码：admin123</li>
+                <li>点击登录按钮</li>
+                <li>查看控制台输出</li>
+            </ol>
+            
+            <form id="test-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">用户名：</label>
+                    <input type="text" id="username" value="admin" class="w-full p-2 border rounded">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">密码：</label>
+                    <input type="password" id="password" value="admin123" class="w-full p-2 border rounded">
+                </div>
+                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    测试登录
+                </button>
+            </form>
+        </div>
+        
+        <div class="bg-white p-6 rounded-lg shadow mt-6">
+            <h2 class="text-lg font-semibold mb-4">调试信息：</h2>
+            <div id="debug-info" class="bg-gray-50 p-4 rounded text-sm font-mono whitespace-pre-wrap"></div>
+        </div>
+        
+        <div class="bg-white p-6 rounded-lg shadow mt-6">
+            <h2 class="text-lg font-semibold mb-4">当前状态：</h2>
+            <div id="current-status" class="space-y-2">
+                <div>LocalStorage admin_token: <span id="token-status">检查中...</span></div>
+                <div>当前URL: <span id="current-url"></span></div>
+                <div>当前路径: <span id="current-path"></span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const debugInfo = document.getElementById('debug-info');
+        const tokenStatus = document.getElementById('token-status');
+        const currentUrl = document.getElementById('current-url');
+        const currentPath = document.getElementById('current-path');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            debugInfo.textContent += `[${timestamp}] ${message}\n`;
+            console.log(message);
+        }
+        
+        function updateStatus() {
+            const token = localStorage.getItem('admin_token');
+            tokenStatus.textContent = token ? '已设置' : '未设置';
+            currentUrl.textContent = window.location.href;
+            currentPath.textContent = window.location.pathname;
+        }
+        
+        // 页面加载时更新状态
+        updateStatus();
+        
+        // 监听localStorage变化
+        window.addEventListener('storage', updateStatus);
+        
+        document.getElementById('test-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            debugInfo.textContent = '';
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            log('开始测试管理员登录...');
+            log(`用户名: ${username}`);
+            log(`密码: ${password}`);
+            
+            try {
+                log('发送登录请求到 /api/login/admin...');
+                
+                const response = await fetch('/api/login/admin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+                
+                log(`响应状态: ${response.status}`);
+                log(`响应头: ${JSON.stringify(Object.fromEntries(response.headers.entries()))}`);
+                
+                const data = await response.json();
+                log(`响应数据: ${JSON.stringify(data, null, 2)}`);
+                
+                if (data.success) {
+                    log('登录成功！');
+                    log(`Token: ${data.data.token}`);
+                    
+                    // 存储token
+                    localStorage.setItem('admin_token', data.data.token);
+                    document.cookie = `admin_token=${data.data.token}; path=/; max-age=7200`;
+                    
+                    log('Token已存储到localStorage和cookie');
+                    
+                    // 更新状态
+                    updateStatus();
+                    
+                    // 测试跳转
+                    log('准备跳转到管理端仪表板...');
+                    setTimeout(() => {
+                        log('正在跳转到 /admin/admin-dashboard.html');
+                        window.location.href = '/admin/admin-dashboard.html';
+                    }, 2000);
+                    
+                } else {
+                    log(`登录失败: ${data.message}`);
+                }
+                
+            } catch (error) {
+                log(`请求失败: ${error.message}`);
+            }
+        });
+        
+        // 定期更新状态
+        setInterval(updateStatus, 1000);
+    </script>
+</body>
+</html>

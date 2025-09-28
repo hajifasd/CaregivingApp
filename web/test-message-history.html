@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>消息历史测试页面</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/message-format-utils.js"></script>
+    <script src="/js/message-loader.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8 text-center">消息历史测试页面</h1>
+        
+        <!-- 用户信息显示 -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">当前用户信息</h2>
+            <div id="user-info-display" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="text-center">
+                    <div class="text-2xl font-bold" id="user-id">-</div>
+                    <div class="text-sm text-gray-600">用户ID</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold" id="user-name">-</div>
+                    <div class="text-sm text-gray-600">用户姓名</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold" id="user-type">-</div>
+                    <div class="text-sm text-gray-600">用户类型</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 测试控制 -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">测试控制</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-lg font-medium mb-3">消息历史测试</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">联系人ID:</label>
+                            <input type="number" id="contact-id" value="1" class="w-full p-2 border rounded">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">联系人类型:</label>
+                            <select id="contact-type" class="w-full p-2 border rounded">
+                                <option value="user">用户</option>
+                                <option value="caregiver">护工</option>
+                                <option value="admin">管理员</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">限制数量:</label>
+                            <input type="number" id="message-limit" value="20" class="w-full p-2 border rounded">
+                        </div>
+                        <button onclick="testMessageHistory()" class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                            测试消息历史
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-lg font-medium mb-3">对话列表测试</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">限制数量:</label>
+                            <input type="number" id="conversation-limit" value="10" class="w-full p-2 border rounded">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">偏移量:</label>
+                            <input type="number" id="conversation-offset" value="0" class="w-full p-2 border rounded">
+                        </div>
+                        <button onclick="testConversations()" class="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                            测试对话列表
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 测试结果 -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">测试结果</h2>
+            <div id="test-results" class="bg-gray-50 p-4 rounded text-sm font-mono h-64 overflow-y-auto">
+                <div class="text-gray-500">等待测试...</div>
+            </div>
+        </div>
+        
+        <!-- 消息历史显示 -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">消息历史</h2>
+            <div id="message-history" class="bg-gray-50 p-4 rounded h-64 overflow-y-auto">
+                <div class="text-gray-500">点击"测试消息历史"查看结果...</div>
+            </div>
+        </div>
+        
+        <!-- 对话列表显示 -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h2 class="text-xl font-semibold mb-4">对话列表</h2>
+            <div id="conversation-list" class="bg-gray-50 p-4 rounded h-64 overflow-y-auto">
+                <div class="text-gray-500">点击"测试对话列表"查看结果...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const testResults = document.getElementById('test-results');
+        
+        // 添加日志
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const colorClass = {
+                'success': 'text-green-600',
+                'error': 'text-red-600',
+                'warning': 'text-yellow-600',
+                'info': 'text-blue-600'
+            }[type] || 'text-gray-600';
+            
+            const logDiv = document.createElement('div');
+            logDiv.innerHTML = `<span class="text-gray-400">[${timestamp}]</span> <span class="${colorClass}">${message}</span>`;
+            testResults.appendChild(logDiv);
+            testResults.scrollTop = testResults.scrollHeight;
+        }
+        
+        // 更新用户信息显示
+        function updateUserInfo() {
+            const userInfo = MessageFormatUtils.getCurrentUserInfo();
+            document.getElementById('user-id').textContent = userInfo.id || '-';
+            document.getElementById('user-name').textContent = userInfo.name || '-';
+            document.getElementById('user-type').textContent = userInfo.type || '-';
+        }
+        
+        // 测试消息历史
+        async function testMessageHistory() {
+            addLog('🔧 测试消息历史加载...', 'info');
+            
+            const contactId = document.getElementById('contact-id').value;
+            const contactType = document.getElementById('contact-type').value;
+            const limit = document.getElementById('message-limit').value;
+            
+            try {
+                if (!window.messageLoader) {
+                    throw new Error('消息加载工具未找到');
+                }
+                
+                const messages = await window.messageLoader.getMessageHistory(contactId, contactType, {
+                    limit: parseInt(limit),
+                    offset: 0
+                });
+                
+                addLog(`✅ 消息历史加载成功，共 ${messages.length} 条消息`, 'success');
+                
+                // 显示消息历史
+                displayMessageHistory(messages);
+                
+            } catch (error) {
+                addLog('❌ 消息历史加载失败: ' + error.message, 'error');
+                document.getElementById('message-history').innerHTML = `
+                    <div class="text-red-600">加载失败: ${error.message}</div>
+                `;
+            }
+        }
+        
+        // 测试对话列表
+        async function testConversations() {
+            addLog('🔧 测试对话列表加载...', 'info');
+            
+            const limit = document.getElementById('conversation-limit').value;
+            const offset = document.getElementById('conversation-offset').value;
+            
+            try {
+                if (!window.messageLoader) {
+                    throw new Error('消息加载工具未找到');
+                }
+                
+                const conversations = await window.messageLoader.getConversations({
+                    limit: parseInt(limit),
+                    offset: parseInt(offset)
+                });
+                
+                addLog(`✅ 对话列表加载成功，共 ${conversations.length} 个对话`, 'success');
+                
+                // 显示对话列表
+                displayConversations(conversations);
+                
+            } catch (error) {
+                addLog('❌ 对话列表加载失败: ' + error.message, 'error');
+                document.getElementById('conversation-list').innerHTML = `
+                    <div class="text-red-600">加载失败: ${error.message}</div>
+                `;
+            }
+        }
+        
+        // 显示消息历史
+        function displayMessageHistory(messages) {
+            const container = document.getElementById('message-history');
+            
+            if (messages.length === 0) {
+                container.innerHTML = '<div class="text-gray-500">暂无消息</div>';
+                return;
+            }
+            
+            const userInfo = MessageFormatUtils.getCurrentUserInfo();
+            const messagesHTML = messages.map(message => {
+                const isOwn = message.sender_id == userInfo.id && message.sender_type === userInfo.type;
+                const time = new Date(message.timestamp || message.created_at || Date.now()).toLocaleTimeString();
+                
+                return `
+                    <div class="flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4">
+                        <div class="max-w-xs px-4 py-2 rounded-lg ${
+                            isOwn ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-900'
+                        }">
+                            <div class="text-sm">${message.content}</div>
+                            <div class="text-xs opacity-75 mt-1">${time}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = `
+                <div class="space-y-3">
+                    ${messagesHTML}
+                </div>
+            `;
+        }
+        
+        // 显示对话列表
+        function displayConversations(conversations) {
+            const container = document.getElementById('conversation-list');
+            
+            // 确保conversations是数组
+            if (!Array.isArray(conversations)) {
+                console.error('conversations不是数组:', conversations);
+                container.innerHTML = '<div class="text-red-500">对话数据格式错误</div>';
+                return;
+            }
+            
+            if (conversations.length === 0) {
+                container.innerHTML = '<div class="text-gray-500">暂无对话</div>';
+                return;
+            }
+            
+            const conversationsHTML = conversations.map(conversation => {
+                return `
+                    <div class="flex items-center p-4 border-b border-gray-200 hover:bg-gray-50">
+                        <div class="flex-shrink-0">
+                            <img src="${conversation.avatar}" alt="${conversation.name}" 
+                                 class="w-12 h-12 rounded-full object-cover">
+                        </div>
+                        <div class="ml-4 flex-1 min-w-0">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-sm font-medium text-gray-900 truncate">${conversation.name}</h3>
+                                <span class="text-xs text-gray-500">${conversation.time}</span>
+                            </div>
+                            <p class="text-sm text-gray-600 truncate">${conversation.content}</p>
+                        </div>
+                        ${conversation.unread ? '<div class="w-2 h-2 bg-red-500 rounded-full"></div>' : ''}
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = `
+                <div class="divide-y divide-gray-200">
+                    ${conversationsHTML}
+                </div>
+            `;
+        }
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog('📋 消息历史测试页面已加载', 'info');
+            updateUserInfo();
+        });
+    </script>
+</body>
+</html>

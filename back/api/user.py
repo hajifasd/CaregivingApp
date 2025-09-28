@@ -14,6 +14,7 @@ from services.message_service import MessageService
 from utils.auth import require_auth
 from functools import wraps
 import logging
+from extensions import db
 
 logger = logging.getLogger(__name__)
 user_bp = Blueprint('user', __name__)
@@ -306,22 +307,132 @@ def get_user_messages():
         per_page = request.args.get('per_page', 20, type=int)
         contact_id = request.args.get('contact_id', type=int)  # 特定联系人的消息
         
-        messages = MessageService.get_user_messages(
-            user_id=user_id,
-            contact_id=contact_id,
-            page=page,
-            per_page=per_page
-        )
+        # 获取用户的消息列表
+        from services.message_service import message_service
+        message_service.set_db(db)
         
-        return jsonify({
+        # 获取用户的所有对话
+        from models.chat import ChatConversation
+        ChatConversationModel = ChatConversation.get_model(db)
+        
+        conversations = ChatConversationModel.query.filter(
+            ChatConversationModel.user_id == user_id,
+            ChatConversationModel.is_active == True
+        ).order_by(ChatConversationModel.updated_at.desc()).all()
+        
+        # 转换为前端需要的格式
+        messages = []
+        for conv in conversations:
+            messages.append({
+                'contactId': f'caregiver_{conv.caregiver_id}',
+                'type': 'caregiver',
+                'sender': f'护工{conv.caregiver_id}',
+                'avatar': '/uploads/avatars/default-caregiver.png',
+                'content': conv.last_message_content or '暂无消息',
+                'time': conv.last_message_time.strftime('%H:%M') if conv.last_message_time else '00:00',
+                'date': conv.last_message_time.strftime('%Y-%m-%d') if conv.last_message_time else '',
+                'unread': conv.unread_count > 0
+            })
+        
+        result = {
             'success': True,
             'data': messages,
+            'total': len(messages),
             'message': '获取成功'
-        })
+        }
         
+        return jsonify(result)
+    
     except Exception as e:
         logger.error(f"获取消息失败: {str(e)}")
         return jsonify({'success': False, 'message': '获取失败，请稍后重试'}), 500
+
+@user_bp.route('/api/user/messages/history', methods=['GET'])
+@require_auth()
+def get_user_message_history():
+        """获取用户与特定护工的消息历史"""
+        try:
+            user_id = request.user_id
+            contact_id = request.args.get('contact_id', type=int)
+            contact_type = request.args.get('contact_type', 'caregiver')
+            limit = request.args.get('limit', 50, type=int)
+            offset = request.args.get('offset', 0, type=int)
+            
+            if not contact_id:
+                return jsonify({'success': False, 'message': '缺少联系人ID'}), 400
+            
+            from services.message_service import message_service
+            message_service.set_db(db)
+            
+            messages = message_service.get_message_history(
+                user_id, 'user', contact_id, contact_type, limit, offset
+            )
+            
+            return jsonify({
+                'success': True,
+                'data': {
+                    'messages': messages,
+                    'contact_id': contact_id,
+                    'contact_type': contact_type,
+                    'has_more': len(messages) == limit
+                },
+                'message': '获取成功'
+            })
+            
+        except Exception as e:
+            logger.error(f"获取消息历史失败: {str(e)}")
+            return jsonify({'success': False, 'message': '获取失败，请稍后重试'}), 500
+
+@user_bp.route('/api/user/caregivers/search', methods=['GET'])
+@require_auth()
+def search_contactable_caregivers():
+    """搜索可联系的护工（所有护工）"""
+    try:
+        keyword = request.args.get('keyword', '').strip()
+        limit = request.args.get('limit', 50, type=int)
+        
+        # 获取所有护工信息
+        from models.caregiver import Caregiver
+        CaregiverModel = Caregiver.get_model(db)
+        
+        # 构建查询
+        query = CaregiverModel.query
+        
+        # 如果有关键词，进行模糊搜索
+        if keyword:
+            query = query.filter(
+                db.or_(
+                    CaregiverModel.name.contains(keyword),
+                    CaregiverModel.phone.contains(keyword)
+                )
+            )
+        
+        # 限制数量
+        caregivers = query.limit(limit).all()
+        
+        result = []
+        for caregiver in caregivers:
+            result.append({
+                'id': caregiver.id,
+                'name': caregiver.name,
+                'phone': caregiver.phone,
+                'avatar': caregiver.avatar_url or '/uploads/avatars/default-caregiver.png',
+                'type': 'caregiver',
+                'contactId': f'caregiver_{caregiver.id}',
+                'lastMessage': '暂无消息',
+                'time': '',
+                'online': True  # 默认在线状态
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': result,
+            'message': '搜索成功'
+        })
+        
+    except Exception as e:
+        logger.error(f"搜索护工失败: {str(e)}")
+        return jsonify({'success': False, 'message': '搜索失败，请稍后重试'}), 500
 
 @user_bp.route('/api/user/messages', methods=['POST'])
 @require_user_auth
@@ -458,3 +569,26 @@ def submit_review(appointment_id):
     except Exception as e:
         logger.error(f"提交评价失败: {str(e)}")
         return jsonify({'success': False, 'message': '提交失败，请稍后重试'}), 500
+
+@user_bp.route('/api/user/appointments/<int:appointment_id>', methods=['GET'])
+@require_user_auth
+def get_appointment_detail(appointment_id):
+    """获取预约详情"""
+    try:
+        user_id = request.user_id
+        
+        # 获取预约详情
+        appointment = AppointmentService.get_appointment_detail(appointment_id, user_id)
+        
+        if appointment:
+            return jsonify({
+                'success': True,
+                'data': appointment,
+                'message': '获取成功'
+            })
+        else:
+            return jsonify({'success': False, 'message': '预约不存在'}), 404
+            
+    except Exception as e:
+        logger.error(f"获取预约详情失败: {str(e)}")
+        return jsonify({'success': False, 'message': '获取失败，请稍后重试'}), 500

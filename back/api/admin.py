@@ -1132,3 +1132,47 @@ def batch_user_operation():
         db.session.rollback()
         logger.error(f"批量用户操作失败: {e}")
         return jsonify({'success': False, 'message': f'批量操作失败：{str(e)}'}), 500
+
+@admin_bp.route('/api/admin/caregivers/<int:caregiver_id>/related-data', methods=['GET'])
+def get_caregiver_related_data(caregiver_id):
+    """获取护工关联数据统计"""
+    try:
+        from models.caregiver import Caregiver
+        from models.business import Appointment, Employment
+        from models.caregiver_hire_info import CaregiverHireInfo
+        from models.review import Review
+        
+        CaregiverModel = Caregiver.get_model(db)
+        AppointmentModel = Appointment.get_model(db)
+        EmploymentModel = Employment.get_model(db)
+        CaregiverHireInfoModel = CaregiverHireInfo.get_model(db)
+        ReviewModel = Review.get_model(db)
+        
+        # 检查护工是否存在
+        caregiver = CaregiverModel.query.get(caregiver_id)
+        if not caregiver:
+            return jsonify({
+                'success': False,
+                'message': '护工不存在'
+            }), 404
+        
+        # 统计关联数据
+        related_data = {
+            'hire_info': CaregiverHireInfoModel.query.filter_by(caregiver_id=caregiver_id).count(),
+            'contracts': EmploymentModel.query.filter_by(caregiver_id=caregiver_id).count(),
+            'appointments': AppointmentModel.query.filter_by(caregiver_id=caregiver_id).count(),
+            'reviews': ReviewModel.query.filter_by(caregiver_id=caregiver_id).count()
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': related_data,
+            'message': '关联数据获取成功'
+        })
+        
+    except Exception as e:
+        logger.error(f"获取护工关联数据失败: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'获取关联数据失败: {str(e)}'
+        }), 500

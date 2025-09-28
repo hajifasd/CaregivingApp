@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>搜索调试页面</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-2xl font-bold mb-6">搜索功能调试</h1>
+        
+        <div class="bg-white p-6 rounded-lg shadow mb-4">
+            <h3 class="font-semibold mb-4">1. 设置测试数据</h3>
+            <button onclick="setupTestData()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                设置测试数据
+            </button>
+            <div id="setup-status" class="mt-2 text-sm"></div>
+        </div>
+        
+        <div class="bg-white p-6 rounded-lg shadow mb-4">
+            <h3 class="font-semibold mb-4">2. 测试搜索API</h3>
+            <div class="flex gap-2 mb-2">
+                <input type="text" id="search-input" placeholder="输入搜索关键词" 
+                       class="flex-1 p-2 border border-gray-300 rounded" value="张">
+                <button onclick="testSearch()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    测试搜索
+                </button>
+            </div>
+            <div id="search-status" class="mt-2 text-sm"></div>
+            <div id="search-results" class="mt-2"></div>
+        </div>
+        
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h3 class="font-semibold mb-4">控制台日志</h3>
+            <div id="console-log" class="bg-gray-100 p-4 rounded text-xs font-mono max-h-60 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <script>
+        // 重写console.log来显示在页面上
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        function addToConsole(message, type = 'log') {
+            const logDiv = document.getElementById('console-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const colorClass = type === 'error' ? 'text-red-600' : 'text-gray-800';
+            logDiv.innerHTML += `<div class="${colorClass}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToConsole(args.join(' '), 'log');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToConsole(args.join(' '), 'error');
+        };
+        
+        function setupTestData() {
+            console.log('🔧 设置测试数据...');
+            
+            const userInfo = {
+                id: 21,
+                name: '测试用户',
+                email: 'test@example.com'
+            };
+            
+            localStorage.setItem('user_info', JSON.stringify(userInfo));
+            localStorage.setItem('user_token', 'test-token-for-search');
+            
+            console.log('✅ 测试数据设置完成');
+            console.log('用户信息:', userInfo);
+            console.log('Token:', 'test-token-for-search');
+            
+            document.getElementById('setup-status').innerHTML = 
+                '<span class="text-green-600">✅ 测试数据设置完成</span>';
+        }
+        
+        async function testSearch() {
+            const keyword = document.getElementById('search-input').value.trim();
+            if (!keyword) {
+                console.log('⚠️ 请输入搜索关键词');
+                return;
+            }
+            
+            console.log(`🔍 开始搜索: "${keyword}"`);
+            
+            const token = localStorage.getItem('user_token');
+            console.log('Token状态:', token ? '已设置' : '未设置');
+            
+            if (!token) {
+                console.log('❌ 没有找到token，请先设置测试数据');
+                document.getElementById('search-status').innerHTML = 
+                    '<span class="text-red-600">❌ 请先设置测试数据</span>';
+                return;
+            }
+            
+            // 显示加载状态
+            document.getElementById('search-status').innerHTML = 
+                '<span class="text-blue-600">🔄 正在搜索...</span>';
+            
+            try {
+                const url = `/api/user/caregivers/search?keyword=${encodeURIComponent(keyword)}`;
+                console.log('请求URL:', url);
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                console.log('响应状态:', response.status);
+                console.log('响应头:', Object.fromEntries(response.headers.entries()));
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('响应数据:', result);
+                    
+                    if (result.success) {
+                        console.log(`✅ 搜索成功，找到 ${result.data.length} 个护工`);
+                        
+                        document.getElementById('search-status').innerHTML = 
+                            `<span class="text-green-600">✅ 搜索成功，找到 ${result.data.length} 个护工</span>`;
+                        
+                        // 显示结果
+                        const resultsDiv = document.getElementById('search-results');
+                        if (result.data.length > 0) {
+                            resultsDiv.innerHTML = `
+                                <div class="mt-2 space-y-2">
+                                    ${result.data.map(caregiver => `
+                                        <div class="flex items-center p-3 bg-gray-50 rounded border">
+                                            <img src="${caregiver.avatar}" alt="${caregiver.name}" 
+                                                 class="w-10 h-10 rounded-full mr-3 object-cover">
+                                            <div class="flex-1">
+                                                <div class="font-medium">${caregiver.name}</div>
+                                                <div class="text-sm text-gray-500">${caregiver.phone}</div>
+                                            </div>
+                                            <div class="text-xs text-gray-400">
+                                                ID: ${caregiver.id}
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `;
+                        } else {
+                            resultsDiv.innerHTML = '<div class="text-gray-500">未找到匹配的护工</div>';
+                        }
+                    } else {
+                        console.log('❌ 搜索失败:', result.message);
+                        document.getElementById('search-status').innerHTML = 
+                            `<span class="text-red-600">❌ 搜索失败: ${result.message}</span>`;
+                    }
+                } else {
+                    console.log('❌ 请求失败，状态码:', response.status);
+                    
+                    let errorText = '';
+                    try {
+                        const errorResult = await response.json();
+                        errorText = errorResult.message || '未知错误';
+                        console.log('错误详情:', errorResult);
+                    } catch (e) {
+                        errorText = `HTTP ${response.status}`;
+                    }
+                    
+                    document.getElementById('search-status').innerHTML = 
+                        `<span class="text-red-600">❌ 请求失败: ${errorText}</span>`;
+                }
+            } catch (error) {
+                console.log('❌ 搜索异常:', error.message);
+                document.getElementById('search-status').innerHTML = 
+                    `<span class="text-red-600">❌ 搜索异常: ${error.message}</span>`;
+            }
+        }
+        
+        // 页面加载时自动设置测试数据
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📋 页面加载完成');
+            setupTestData();
+        });
+    </script>
+</body>
+</html>

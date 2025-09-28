@@ -10,6 +10,8 @@
     <!-- 引入Font Awesome -->
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <!-- 引入Chart.js -->
+        <!-- 引入认证守卫 -->
+    <script src="/js/admin-auth-guard.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <!-- 配置Tailwind自定义主题 -->
@@ -87,7 +89,7 @@
                 仪表盘
             </a>
             <a href="/admin/admin-caregivers.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
-                护工管理
+               /* 用户管理
             </a>
             <a href="/admin/admin-users.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
                 用户管理
@@ -175,9 +177,90 @@
                 <button id="skill-analysis-btn" class="bg-warning hover:bg-warning/90 text-white px-6 py-3 rounded-lg font-medium transition-colors">
                     <i class="fa fa-puzzle-piece mr-2"></i>技能需求分析
                 </button>
-                <button id="export-btn" class="bg-secondary hover:bg-secondary/90 text-white px-6 py-3 rounded-lg font-medium transition-colors">
-                    <i class="fa fa-file-excel-o mr-2"></i>导出报告
+                <button id="forecast-btn" class="bg-accent hover:bg-accent/90 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                    <i class="fa fa-line-chart mr-2"></i>需求预测
                 </button>
+                <button id="success-predict-btn" class="bg-secondary hover:bg-secondary/90 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                    <i class="fa fa-bullseye mr-2"></i>成功率预测
+                </button>
+                <button id="cluster-btn" class="bg-neutral-dark hover:bg-neutral-dark/80 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                    <i class="fa fa-object-group mr-2"></i>聚类画像
+                </button>
+                <button id="dynamic-analysis-btn" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                    <i class="fa fa-magic mr-2"></i>动态分析
+                </button>
+                <div class="flex items-center gap-2">
+                    <input id="reco-user-id" type="number" placeholder="用户ID" class="px-3 py-2 border rounded-md w-28" />
+                    <button id="reco-btn" class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                        <i class="fa fa-thumbs-up mr-1"></i>获取推荐
+                    </button>
+                </div>
+                <div class="relative">
+                    <button id="export-btn" class="bg-secondary hover:bg-secondary/90 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                        <i class="fa fa-file-excel-o mr-2"></i>导出报告 ▼
+                    </button>
+                    <div id="export-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-10 border border-gray-200">
+                        <div class="py-1">
+                            <button onclick="exportReport('excel')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fa fa-file-excel-o mr-2 text-green-600"></i>导出Excel报告
+                            </button>
+                            <button onclick="exportReport('pdf')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fa fa-file-pdf-o mr-2 text-red-600"></i>导出PDF报告
+                            </button>
+                            <button onclick="showExportHistory()" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fa fa-history mr-2 text-blue-600"></i>导出历史
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <label class="inline-flex items-center gap-2 cursor-pointer">
+                    <span class="text-gray-600">导入数据</span>
+                    <input id="import-file" type="file" accept=".json,.csv" class="hidden">
+                    <span id="import-trigger" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded">选择文件</span>
+                </label>
+                <button id="import-submit" class="bg-gray-700 hover:bg-black text-white px-4 py-2 rounded">上传导入</button>
+                <button id="fill-sample" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">加载示例数据</button>
+                <button id="load-5000" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">加载5000条数据</button>
+                <button id="load-50000" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded">加载50000条数据</button>
+                <a href="/api/job/data/sample/csv" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded inline-flex items-center" download>
+                    <i class="fa fa-download mr-2"></i>下载CSV模板
+                </a>
+            </div>
+        </div>
+        
+        <!-- 动态分析状态 -->
+        <div class="bg-white rounded-xl p-6 card-shadow mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">动态分析状态</h3>
+                <div class="flex space-x-2">
+                    <button onclick="getLatestAnalysis()" class="bg-blue-500 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
+                        <i class="fa fa-refresh mr-1"></i>获取最新分析
+                    </button>
+                    <button onclick="showAnalysisHistory()" class="bg-gray-500 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm">
+                        <i class="fa fa-history mr-1"></i>分析历史
+                    </button>
+                </div>
+            </div>
+            <div id="analysis-status" class="text-sm text-gray-600 mb-4">
+                等待分析...
+            </div>
+            
+            <!-- 导出状态 -->
+            <div class="border-t pt-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h4 class="text-md font-semibold text-gray-700">导出状态</h4>
+                    <div class="flex space-x-2">
+                        <button onclick="refreshExportList()" class="bg-green-500 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">
+                            <i class="fa fa-refresh mr-1"></i>刷新列表
+                        </button>
+                    </div>
+                </div>
+                <div id="export-status" class="text-sm text-gray-600 mb-4">
+                    等待导出...
+                </div>
+                <div id="export-list" class="space-y-2 max-h-40 overflow-y-auto">
+                    <!-- 导出文件列表将在这里显示 -->
+                </div>
             </div>
         </div>
         
@@ -202,6 +285,66 @@
                 </div>
                 <div class="mt-4 p-4 bg-gray-50 rounded-lg" id="skill-result">
                     <p class="text-gray-500 text-center">暂无有效技能数据，请先爬取职位数据</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 更多大数据可视化 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- 需求预测 -->
+            <div class="bg-white rounded-xl p-6 card-shadow">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">未来需求预测</h3>
+                <div class="h-80">
+                    <canvas id="forecast-chart"></canvas>
+                </div>
+                <div class="mt-4 p-4 bg-gray-50 rounded-lg" id="forecast-result">
+                    <p class="text-gray-500 text-center">点击上方“需求预测”加载数据</p>
+                </div>
+            </div>
+            
+            <!-- 成功率预测散点 -->
+            <div class="bg-white rounded-xl p-6 card-shadow">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">成功率预测散点</h3>
+                <div class="h-80">
+                    <canvas id="success-chart"></canvas>
+                </div>
+                <div class="mt-4 p-4 bg-gray-50 rounded-lg" id="success-result">
+                    <p class="text-gray-500 text-center">点击上方“成功率预测”加载数据</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- 聚类画像（气泡） -->
+            <div class="bg-white rounded-xl p-6 card-shadow">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">护工聚类画像</h3>
+                <div class="h-80">
+                    <canvas id="cluster-chart"></canvas>
+                </div>
+                <div class="mt-4 p-4 bg-gray-50 rounded-lg" id="cluster-result">
+                    <p class="text-gray-500 text-center">点击上方“聚类画像”加载数据</p>
+                </div>
+            </div>
+            
+            <!-- 推荐结果表格 -->
+            <div class="bg-white rounded-xl p-6 card-shadow">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">个性化推荐TOP5</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm" id="reco-table">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left">护工ID</th>
+                                <th class="px-4 py-2 text-left">姓名</th>
+                                <th class="px-4 py-2 text-left">评分</th>
+                                <th class="px-4 py-2 text-left">时薪</th>
+                                <th class="px-4 py-2 text-left">推荐分</th>
+                                <th class="px-4 py-2 text-left">理由</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reco-tbody">
+                            <tr><td class="px-4 py-6 text-center text-gray-500" colspan="6">输入用户ID并点击“获取推荐”</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -276,6 +419,9 @@
         // 图表实例
         let salaryChart = null;
         let skillChart = null;
+        let forecastChart = null;
+        let successChart = null;
+        let clusterChart = null;
         
         document.addEventListener('DOMContentLoaded', function() {
             // 检查管理员登录状态
@@ -289,6 +435,19 @@
             
             // 加载初始数据
             loadInitialData();
+            
+            // 自动检测数据状态
+            setTimeout(async () => {
+                try {
+                    const res = await fetch('/api/job/analysis/salary');
+                    const data = await res.json();
+                    if (!data.success || data.data.total_avg === 0) {
+                        console.log('检测到没有数据，建议加载5000条示例数据');
+                    }
+                } catch (e) {
+                    console.log('检测数据状态失败');
+                }
+            }, 1000);
         });
         
         // 检查管理员登录状态
@@ -316,10 +475,10 @@
             salaryChart = new Chart(salaryCtx, {
                 type: 'bar',
                 data: {
-                    labels: ['广州', '北京', '上海', '深圳', '杭州'],
+                    labels: ['—'],
                     datasets: [{
                         label: '平均薪资 (元/月)',
-                        data: [0, 0, 0, 0, 0],
+                        data: [0],
                         backgroundColor: 'rgba(22, 93, 255, 0.8)',
                         borderColor: 'rgba(22, 93, 255, 1)',
                         borderWidth: 1
@@ -368,6 +527,44 @@
                     }
                 }
             });
+
+            // 需求预测折线
+            const forecastCtx = document.getElementById('forecast-chart').getContext('2d');
+            forecastChart = new Chart(forecastCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '预测需求',
+                        data: [],
+                        borderColor: 'rgba(114, 46, 209, 0.9)',
+                        backgroundColor: 'rgba(114, 46, 209, 0.15)',
+                        tension: 0.25,
+                        fill: true
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // 成功率预测散点
+            const successCtx = document.getElementById('success-chart').getContext('2d');
+            successChart = new Chart(successCtx, {
+                type: 'scatter',
+                data: { datasets: [{ label: '预测 vs 实际', data: [], backgroundColor: 'rgba(54, 207, 201, 0.8)' }] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { x: { title: { display: true, text: '实际成功率' } }, y: { title: { display: true, text: '预测成功率' } } }
+                }
+            });
+
+            // 聚类画像（气泡）
+            const clusterCtx = document.getElementById('cluster-chart').getContext('2d');
+            clusterChart = new Chart(clusterCtx, {
+                type: 'bubble',
+                data: { datasets: [{ label: '聚类画像', data: [], backgroundColor: 'rgba(22, 93, 255, 0.6)' }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
         }
         
         // 绑定事件监听器
@@ -391,14 +588,32 @@
             document.getElementById('start-crawl').addEventListener('click', async function() {
                 const pages = document.getElementById('crawl-pages').value;
                 const city = document.getElementById('crawl-city').value;
+                const cityKw = document.getElementById('crawl-city').selectedOptions[0].text;
                 
                 if (!pages || !city) {
                     alert('请填写完整的爬取配置');
                     return;
                 }
                 
-                await startCrawl(pages, city);
-                document.getElementById('crawl-modal').classList.add('hidden');
+                // 显示加载状态
+                const startBtn = this;
+                const originalText = startBtn.textContent;
+                startBtn.textContent = '爬取中...';
+                startBtn.disabled = true;
+                
+                try {
+                    await startCrawl(pages, city, cityKw);
+                    document.getElementById('crawl-modal').classList.add('hidden');
+                    // 爬取完成后刷新数据统计
+                    setTimeout(() => {
+                        loadDataSummary();
+                    }, 2000);
+                } catch (error) {
+                    console.error('爬取失败:', error);
+                } finally {
+                    startBtn.textContent = originalText;
+                    startBtn.disabled = false;
+                }
             });
             
             // 薪资分析
@@ -413,8 +628,123 @@
             
             // 导出报告
             document.getElementById('export-btn').addEventListener('click', function() {
-                exportReport();
+                toggleExportMenu();
             });
+            
+            // 动态分析
+            document.getElementById('dynamic-analysis-btn').addEventListener('click', function() {
+                triggerDynamicAnalysis();
+            });
+
+            // 导入：触发文件选择
+            document.getElementById('import-trigger').addEventListener('click', function(){
+                document.getElementById('import-file').click();
+            });
+            // 导入：上传
+            document.getElementById('import-submit').addEventListener('click', async function(){
+                const fileInput = document.getElementById('import-file');
+                if (!fileInput.files || !fileInput.files.length) { alert('请先选择JSON或CSV文件'); return; }
+                const fd = new FormData();
+                fd.append('file', fileInput.files[0]);
+                try {
+                    const res = await fetch('/api/job/data/import', { method: 'POST', body: fd });
+                    const data = await res.json();
+                    if (data && data.success) {
+                        alert(`导入成功：${data.data.count} 条`);
+                    } else {
+                        alert(`导入失败：${(data && data.message) || '未知错误'}`);
+                    }
+                } catch (e) {
+                    alert('导入失败，网络错误');
+                }
+            });
+            // 示例数据
+            document.getElementById('fill-sample').addEventListener('click', async function(){
+                try {
+                    const res = await fetch('/api/job/data/sample');
+                    const json = await res.json();
+                    if (json && json.success) {
+                        // 直接落盘为导入文件：调用导入接口
+                        const blob = new Blob([JSON.stringify(json.data, null, 2)], {type: 'application/json'});
+                        const fd = new FormData();
+                        fd.append('file', new File([blob], 'sample_jobs.json', {type: 'application/json'}));
+                        const res2 = await fetch('/api/job/data/import', { method: 'POST', body: fd });
+                        const json2 = await res2.json();
+                        if (json2 && json2.success) {
+                            alert(`已加载示例数据：${json2.data.count} 条`);
+                        } else { alert('示例数据导入失败'); }
+                    }
+                } catch (e) {
+                    alert('示例数据加载失败');
+                }
+            });
+
+            // 加载5000条数据
+            document.getElementById('load-5000').addEventListener('click', async function(){
+                if (!confirm('确定要加载5000条护工招聘数据吗？这可能需要几秒钟时间。')) {
+                    return;
+                }
+                
+                const button = this;
+                const originalText = button.textContent;
+                button.textContent = '加载中...';
+                button.disabled = true;
+                
+                try {
+                    const res = await fetch('/api/job/data/load-5000', { method: 'POST' });
+                    const json = await res.json();
+                    if (json && json.success) {
+                        alert(`成功加载${json.data.count}条数据！\n涉及城市：${json.data.cities}个\n涉及公司：${json.data.companies}个`);
+                        // 自动刷新数据统计
+                        loadDataSummary();
+                    } else {
+                        alert(`加载失败：${json.message || '未知错误'}`);
+                    }
+                } catch (e) {
+                    alert('5000条数据加载失败，网络错误');
+                } finally {
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }
+            });
+
+            // 加载50000条数据
+            document.getElementById('load-50000').addEventListener('click', async function(){
+                if (!confirm('确定要加载50000条护工招聘数据吗？这可能需要较长时间，请耐心等待。')) {
+                    return;
+                }
+                
+                const button = this;
+                const originalText = button.textContent;
+                button.textContent = '加载中...';
+                button.disabled = true;
+                
+                try {
+                    const res = await fetch('/api/job/data/load-50000', { method: 'POST' });
+                    const json = await res.json();
+                    if (json && json.success) {
+                        alert(`成功加载${json.data.count}条数据！\n涉及城市：${json.data.cities}个\n涉及公司：${json.data.companies}个\n数据类型：${json.data.data_type}`);
+                        // 自动刷新数据统计
+                        loadDataSummary();
+                    } else {
+                        alert(`加载失败：${json.message || '未知错误'}`);
+                    }
+                } catch (e) {
+                    alert('50000条数据加载失败，网络错误');
+                } finally {
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }
+            });
+
+            // 需求预测
+            document.getElementById('forecast-btn').addEventListener('click', handleForecast);
+            // 成功率预测
+            document.getElementById('success-predict-btn').addEventListener('click', handleSuccessPrediction);
+            // 聚类画像
+            document.getElementById('cluster-btn').addEventListener('click', handleClusterAnalysis);
+            // 推荐
+            document.getElementById('reco-btn').addEventListener('click', handleRecommendations);
             
             // 点击弹窗外部关闭
             document.getElementById('crawl-modal').addEventListener('click', function(e) {
@@ -427,35 +757,109 @@
         // 加载初始数据
         async function loadInitialData() {
             try {
-                // 这里可以加载一些基础统计数据
+                // 加载真实的数据统计
+                await loadDataSummary();
+                
+                // 初始化动态分析功能
+                await getLatestAnalysis();
+                await refreshExportList();
+            } catch (error) {
+                console.error('加载初始数据失败:', error);
+                // 如果加载失败，显示默认值
                 updateStatistics({
                     total_jobs: 0,
                     avg_salary: 0,
                     hot_cities: 0,
                     skill_types: 0
                 });
+            }
+        }
+
+        // 加载数据统计摘要
+        async function loadDataSummary() {
+            try {
+                // 从薪资分析API获取基础统计
+                const salaryRes = await fetch('/api/job/analysis/salary');
+                const salaryData = await salaryRes.json();
+                
+                // 从技能分析API获取技能统计
+                const skillRes = await fetch('/api/job/analysis/skills');
+                const skillData = await skillRes.json();
+                
+                // 从护工分布API获取地域统计
+                const distRes = await fetch('/api/bigdata/analysis/caregiver-distribution');
+                const distData = await distRes.json();
+                
+                // 计算统计数据
+                const totalJobs = distData.success ? distData.data.total_jobs : 0;
+                const avgSalary = salaryData.success ? Math.round(salaryData.data.total_avg) : 0;
+                const hotCities = distData.success ? distData.data.cities_count : 0;
+                const skillTypes = skillData.success ? Object.keys(skillData.data.skill_counts).length : 0;
+                
+                // 更新页面显示
+                updateStatistics({
+                    total_jobs: totalJobs,
+                    avg_salary: avgSalary,
+                    hot_cities: hotCities,
+                    skill_types: skillTypes
+                });
+                
+                console.log('数据统计加载完成:', {
+                    total_jobs: totalJobs,
+                    avg_salary: avgSalary,
+                    hot_cities: hotCities,
+                    skill_types: skillTypes
+                });
+                
             } catch (error) {
-                console.error('加载初始数据失败:', error);
+                console.error('加载数据统计失败:', error);
+                // 显示默认值
+                updateStatistics({
+                    total_jobs: 0,
+                    avg_salary: 0,
+                    hot_cities: 0,
+                    skill_types: 0
+                });
+            }
+        }
+
+        // 从大数据仪表盘获取汇总统计
+        async function loadBigdataStatistics() {
+            try {
+                const res = await fetch('/api/bigdata/dashboard');
+                const json = await res.json();
+                if (json && json.success && json.data && json.data.summary) {
+                    const s = json.data.summary;
+                    updateStatistics({
+                        total_jobs: s.total_appointments ?? 0,
+                        avg_salary: s.avg_rating ? (s.avg_rating * 1000) : 0,
+                        hot_cities: 4,
+                        skill_types: 4
+                    });
+                }
+            } catch (e) {
+                console.warn('大数据统计获取失败', e);
             }
         }
         
         // 开始爬取
-        async function startCrawl(pages, city) {
+        async function startCrawl(pages, city, cityKw) {
             try {
-                const token = localStorage.getItem('admin_token');
                 const response = await fetch('/api/job/crawl/start', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ pages, city })
+                    body: JSON.stringify({ 
+                        pages: parseInt(pages), 
+                        city: city,
+                        city_kw: cityKw
+                    })
                 });
                 
                 const data = await response.json();
                 if (data.success) {
-                    alert('爬取任务已启动，请稍后查看结果');
-                    // 可以在这里添加进度显示
+                    alert(`爬取完成！\n获取数据：${data.data.count}条\n文件：${data.data.file}\n${data.data.used_fallback ? '（使用了备用数据）' : ''}`);
                 } else {
                     alert(`爬取失败: ${data.message || '未知错误'}`);
                 }
@@ -465,22 +869,29 @@
             }
         }
         
-        // 执行薪资分析
+        // 执行薪资分析（使用真实数据）
         async function performSalaryAnalysis() {
             try {
-                const token = localStorage.getItem('admin_token');
-                const response = await fetch('/api/job/analysis/salary', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                
+                const response = await fetch('/api/job/analysis/salary');
                 const data = await response.json();
-                if (data.success) {
-                    updateSalaryChart(data.data);
+                if (data && data.success) {
+                    const cityAvg = data.data.city_avg || {};
+                    const totalAvg = data.data.total_avg || 0;
+                    
+                    // 准备图表数据
+                    const cities = Object.keys(cityAvg);
+                    const salaries = Object.values(cityAvg);
+                    
+                    // 更新图表
+                    salaryChart.data.labels = cities.length ? cities : ['暂无数据'];
+                    salaryChart.data.datasets[0].data = salaries.length ? salaries : [0];
+                    salaryChart.data.datasets[0].label = '平均薪资 (元/月)';
+                    salaryChart.update();
+                    
+                    // 更新结果显示
                     updateSalaryResult(data.data);
                 } else {
-                    alert(`分析失败: ${data.message || '未知错误'}`);
+                    alert(`薪资分析失败: ${(data && data.message) || '未知错误'}`);
                 }
             } catch (error) {
                 console.error('薪资分析失败:', error);
@@ -488,22 +899,28 @@
             }
         }
         
-        // 执行技能分析
+        // 执行技能分析（使用真实数据）
         async function performSkillAnalysis() {
             try {
-                const token = localStorage.getItem('admin_token');
-                const response = await fetch('/api/job/analysis/skills', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                
+                const response = await fetch('/api/job/analysis/skills');
                 const data = await response.json();
-                if (data.success) {
-                    updateSkillChart(data.data);
+                if (data && data.success) {
+                    const skillCounts = data.data.skill_counts || {};
+                    
+                    // 准备图表数据
+                    const skills = Object.keys(skillCounts);
+                    const counts = Object.values(skillCounts);
+                    
+                    // 更新图表
+                    skillChart.data.labels = skills.length ? skills : ['暂无数据'];
+                    skillChart.data.datasets[0].data = counts.length ? counts : [0];
+                    skillChart.data.datasets[0].label = '技能需求统计';
+                    skillChart.update();
+                    
+                    // 更新结果显示
                     updateSkillResult(data.data);
                 } else {
-                    alert(`分析失败: ${data.message || '未知错误'}`);
+                    alert(`技能分析失败: ${(data && data.message) || '未知错误'}`);
                 }
             } catch (error) {
                 console.error('技能分析失败:', error);
@@ -511,24 +928,39 @@
             }
         }
         
-        // 更新薪资图表
-        function updateSalaryChart(data) {
-            const cities = Object.keys(data.city_avg);
-            const salaries = Object.values(data.city_avg);
-            
-            salaryChart.data.labels = cities;
-            salaryChart.data.datasets[0].data = salaries;
-            salaryChart.update();
+        // 根据市场趋势结果更新薪资面板
+        function updateSalaryResultFromTrends(arr) {
+            const resultEl = document.getElementById('salary-result');
+            if (!arr || !arr.length) {
+                resultEl.innerHTML = '<p class="text-gray-500 text-center">暂无有效薪资趋势数据</p>';
+                return;
+            }
+            const avg = Math.round(arr.reduce((s, i) => s + (i.avg_salary || 0), 0) / arr.length * 100) / 100;
+            const max = Math.max(...arr.map(i => i.avg_salary || 0));
+            const min = Math.min(...arr.map(i => i.avg_salary || 0));
+            resultEl.innerHTML = `
+                <div class="space-y-2">
+                    <p class="text-sm font-medium text-gray-700">平均薪资趋势均值：<span class="text-success font-bold">${avg}</span></p>
+                    <p class="text-xs text-gray-600">最高：${max}，最低：${min}</p>
+                </div>
+            `;
         }
         
-        // 更新技能图表
-        function updateSkillChart(data) {
-            const skills = Object.keys(data.skill_counts);
-            const counts = Object.values(data.skill_counts);
-            
-            skillChart.data.labels = skills;
-            skillChart.data.datasets[0].data = counts;
-            skillChart.update();
+        function updateSkillResultFromDistribution(map) {
+            const resultEl = document.getElementById('skill-result');
+            const entries = Object.entries(map || {});
+            if (!entries.length) {
+                resultEl.innerHTML = '<p class="text-gray-500 text-center">暂无地域分布数据</p>';
+                return;
+            }
+            resultEl.innerHTML = `
+                <div class="space-y-2">
+                    <p class="text-sm font-medium text-gray-700 mb-2">地域分布统计：</p>
+                    <div class="space-y-1">
+                        ${entries.map(([name, cnt]) => `<p class=\"text-xs text-gray-600\">${name}：${cnt} 条</p>`).join('')}
+                    </div>
+                </div>
+            `;
         }
         
         // 更新薪资结果
@@ -570,9 +1002,522 @@
         }
         
         // 导出报告
-        function exportReport() {
-            alert('导出报告功能开发中...');
-            // 这里可以实现导出Excel或PDF报告的功能
+        async function exportReport() {
+            try {
+                // 显示加载状态
+                const exportBtn = document.getElementById('export-btn');
+                const originalText = exportBtn.innerHTML;
+                exportBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>生成报告中...';
+                exportBtn.disabled = true;
+                
+                // 获取所有分析数据
+                const [salaryRes, skillRes, distRes] = await Promise.all([
+                    fetch('/api/job/analysis/salary'),
+                    fetch('/api/job/analysis/skills'),
+                    fetch('/api/bigdata/analysis/caregiver-distribution')
+                ]);
+                
+                const salaryData = await salaryRes.json();
+                const skillData = await skillRes.json();
+                const distData = await distRes.json();
+                
+                // 生成报告数据
+                const reportData = {
+                    title: '护工招聘数据分析报告',
+                    generated_at: new Date().toLocaleString('zh-CN'),
+                    summary: {
+                        total_jobs: distData.success ? distData.data.total_jobs : 0,
+                        avg_salary: salaryData.success ? salaryData.data.total_avg : 0,
+                        cities_count: distData.success ? distData.data.cities_count : 0,
+                        companies_count: distData.success ? distData.data.companies_count : 0
+                    },
+                    salary_analysis: salaryData.success ? salaryData.data : {},
+                    skill_analysis: skillData.success ? skillData.data : {},
+                    location_distribution: distData.success ? distData.data.location_distribution : {},
+                    job_type_distribution: distData.success ? distData.data.job_type_distribution : {},
+                    salary_distribution: distData.success ? distData.data.salary_distribution : {}
+                };
+                
+                // 创建并下载JSON报告
+                const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `护工招聘数据分析报告_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                alert('报告导出成功！');
+                
+            } catch (error) {
+                console.error('导出报告失败:', error);
+                alert('导出报告失败，请重试');
+            } finally {
+                // 恢复按钮状态
+                const exportBtn = document.getElementById('export-btn');
+                exportBtn.innerHTML = '<i class="fa fa-file-excel-o mr-2"></i>导出报告';
+                exportBtn.disabled = false;
+            }
+        }
+
+        // ==================== 动态分析功能 ====================
+        
+        // 触发动态分析
+        async function triggerDynamicAnalysis() {
+            try {
+                const statusDiv = document.getElementById('analysis-status');
+                statusDiv.innerHTML = '<div class="text-blue-600"><i class="fa fa-spinner fa-spin mr-2"></i>正在触发动态分析...</div>';
+                
+                const response = await fetch('/api/bigdata/dynamic/trigger', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({})
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    statusDiv.innerHTML = `<div class="text-green-600"><i class="fa fa-check mr-2"></i>动态分析触发成功</div>`;
+                    
+                    // 自动获取最新分析结果
+                    setTimeout(() => {
+                        getLatestAnalysis();
+                    }, 2000);
+                } else {
+                    statusDiv.innerHTML = `<div class="text-red-600"><i class="fa fa-times mr-2"></i>动态分析触发失败: ${result.message}</div>`;
+                }
+            } catch (error) {
+                console.error('触发动态分析失败:', error);
+                document.getElementById('analysis-status').innerHTML = 
+                    `<div class="text-red-600"><i class="fa fa-times mr-2"></i>触发失败: ${error.message}</div>`;
+            }
+        }
+        
+        // 获取最新分析结果
+        async function getLatestAnalysis() {
+            try {
+                const response = await fetch('/api/bigdata/dynamic/latest');
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    const data = result.data;
+                    const statusDiv = document.getElementById('analysis-status');
+                    
+                    statusDiv.innerHTML = `
+                        <div class="space-y-2">
+                            <div class="text-green-600"><i class="fa fa-check mr-2"></i>分析完成</div>
+                            <div class="text-sm text-gray-600">
+                                分析时间: ${new Date(data.analysis_timestamp).toLocaleString()}<br>
+                                数据版本: ${data.data_version}<br>
+                                触发源: ${data.trigger_source}<br>
+                                数据源: ${data.data_sources ? data.data_sources.join(', ') : '未知'}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('analysis-status').innerHTML = 
+                        '<div class="text-gray-500">暂无分析结果</div>';
+                }
+            } catch (error) {
+                console.error('获取最新分析失败:', error);
+                document.getElementById('analysis-status').innerHTML = 
+                    `<div class="text-red-600">获取失败: ${error.message}</div>`;
+            }
+        }
+        
+        // 显示分析历史
+        function showAnalysisHistory() {
+            // 显示分析历史模态框
+            showAnalysisHistoryModal();
+        }
+        
+        // 显示分析历史模态框
+        function showAnalysisHistoryModal() {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[80vh] overflow-hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold">分析历史</h3>
+                        <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="flex gap-2">
+                            <button onclick="loadAnalysisHistory('all')" class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg transition-colors">
+                                全部历史
+                            </button>
+                            <button onclick="loadAnalysisHistory('salary')" class="bg-secondary hover:bg-secondary/90 text-white px-4 py-2 rounded-lg transition-colors">
+                                薪资分析
+                            </button>
+                            <button onclick="loadAnalysisHistory('skill')" class="bg-accent hover:bg-accent/90 text-white px-4 py-2 rounded-lg transition-colors">
+                                技能分析
+                            </button>
+                            <button onclick="loadAnalysisHistory('dynamic')" class="bg-warning hover:bg-warning/90 text-white px-4 py-2 rounded-lg transition-colors">
+                                动态分析
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="analysis-history-list" class="max-h-96 overflow-y-auto">
+                        <div class="text-center py-8">
+                            <i class="fa fa-spinner fa-spin text-primary text-2xl mb-4"></i>
+                            <p class="text-gray-500">正在加载分析历史...</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-3 mt-4">
+                        <button onclick="this.closest('.fixed').remove()" 
+                                class="flex-1 border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg transition-colors">
+                            关闭
+                        </button>
+                        <button onclick="clearAnalysisHistory()" 
+                                class="flex-1 bg-danger hover:bg-danger/90 text-white px-4 py-2 rounded-lg transition-colors">
+                            清空历史
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // 加载分析历史
+            loadAnalysisHistory('all');
+        }
+        
+        // 加载分析历史
+        async function loadAnalysisHistory(type = 'all') {
+            try {
+                const response = await fetch(`/api/bigdata/analysis/history?type=${type}`);
+                const result = await response.json();
+                
+                const container = document.getElementById('analysis-history-list');
+                if (!container) return;
+                
+                if (result.success && result.data.length > 0) {
+                    container.innerHTML = result.data.map(history => `
+                        <div class="border border-gray-200 rounded-lg p-4 mb-3">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-semibold">${history.analysis_type}分析</h4>
+                                <span class="text-sm text-gray-500">${new Date(history.created_at).toLocaleString()}</span>
+                            </div>
+                            <div class="text-sm text-gray-600 mb-2">
+                                <div>分析参数: ${history.parameters || '默认参数'}</div>
+                                <div>数据量: ${history.data_count || 0} 条</div>
+                                <div>处理时间: ${history.processing_time || 0} 秒</div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="viewAnalysisResult('${history.id}')" 
+                                        class="bg-primary hover:bg-primary/90 text-white px-3 py-1 rounded text-sm transition-colors">
+                                    查看结果
+                                </button>
+                                <button onclick="downloadAnalysisResult('${history.id}')" 
+                                        class="bg-secondary hover:bg-secondary/90 text-white px-3 py-1 rounded text-sm transition-colors">
+                                    下载报告
+                                </button>
+                                <button onclick="deleteAnalysisHistory('${history.id}')" 
+                                        class="bg-danger hover:bg-danger/90 text-white px-3 py-1 rounded text-sm transition-colors">
+                                    删除
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = `
+                        <div class="text-center py-8">
+                            <i class="fa fa-history text-gray-400 text-4xl mb-4"></i>
+                            <p class="text-gray-500">暂无${type === 'all' ? '' : type}分析历史</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('加载分析历史失败:', error);
+                const container = document.getElementById('analysis-history-list');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="text-center py-8">
+                            <i class="fa fa-exclamation-triangle text-red-400 text-4xl mb-4"></i>
+                            <p class="text-red-500">加载分析历史失败</p>
+                        </div>
+                    `;
+                }
+            }
+        }
+        
+        // 查看分析结果
+        function viewAnalysisResult(historyId) {
+            window.open(`/admin/analysis-result.html?id=${historyId}`, '_blank');
+        }
+        
+        // 下载分析结果
+        function downloadAnalysisResult(historyId) {
+            window.open(`/api/bigdata/analysis/download/${historyId}`, '_blank');
+        }
+        
+        // 删除分析历史
+        async function deleteAnalysisHistory(historyId) {
+            if (!confirm('确定要删除这条分析历史吗？')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/bigdata/analysis/history/${historyId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('分析历史已删除');
+                    // 重新加载历史列表
+                    loadAnalysisHistory('all');
+                } else {
+                    alert(result.message || '删除失败');
+                }
+            } catch (error) {
+                console.error('删除分析历史失败:', error);
+                alert('删除失败，请稍后重试');
+            }
+        }
+        
+        // 清空分析历史
+        async function clearAnalysisHistory() {
+            if (!confirm('确定要清空所有分析历史吗？此操作不可恢复。')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/bigdata/analysis/history/clear', {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('分析历史已清空');
+                    // 重新加载历史列表
+                    loadAnalysisHistory('all');
+                } else {
+                    alert(result.message || '清空失败');
+                }
+            } catch (error) {
+                console.error('清空分析历史失败:', error);
+                alert('清空失败，请稍后重试');
+            }
+        }
+        
+        // ==================== 导出功能 ====================
+        
+        // 切换导出菜单
+        function toggleExportMenu() {
+            const menu = document.getElementById('export-menu');
+            menu.classList.toggle('hidden');
+        }
+        
+        // 点击其他地方关闭菜单
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('export-menu');
+            const button = event.target.closest('button');
+            if (!button || !button.onclick || button.onclick.toString().indexOf('toggleExportMenu') === -1) {
+                menu.classList.add('hidden');
+            }
+        });
+        
+        // 导出报告（新版本）
+        async function exportReport(format) {
+            try {
+                const statusDiv = document.getElementById('export-status');
+                statusDiv.innerHTML = `<div class="text-blue-600"><i class="fa fa-spinner fa-spin mr-2"></i>正在导出${format.toUpperCase()}报告...</div>`;
+                
+                const response = await fetch(`/api/bigdata/export/${format}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({})
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    statusDiv.innerHTML = `<div class="text-green-600"><i class="fa fa-check mr-2"></i>${format.toUpperCase()}报告导出成功: ${result.filename}</div>`;
+                    
+                    // 显示下载链接
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = `/api/bigdata/export/download/${result.filename}`;
+                    downloadLink.download = result.filename;
+                    downloadLink.className = 'inline-block mt-2 bg-blue-500 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm';
+                    downloadLink.innerHTML = '<i class="fa fa-download mr-1"></i>下载文件';
+                    downloadLink.onclick = () => {
+                        setTimeout(() => {
+                            refreshExportList();
+                        }, 1000);
+                    };
+                    
+                    statusDiv.appendChild(downloadLink);
+                    
+                    // 刷新导出列表
+                    setTimeout(() => {
+                        refreshExportList();
+                    }, 1000);
+                } else {
+                    statusDiv.innerHTML = `<div class="text-red-600"><i class="fa fa-times mr-2"></i>${format.toUpperCase()}报告导出失败: ${result.message}</div>`;
+                }
+            } catch (error) {
+                console.error('导出报告失败:', error);
+                document.getElementById('export-status').innerHTML = 
+                    `<div class="text-red-600"><i class="fa fa-times mr-2"></i>导出失败: ${error.message}</div>`;
+            }
+        }
+        
+        // 显示导出历史
+        async function showExportHistory() {
+            await refreshExportList();
+        }
+        
+        // 刷新导出列表
+        async function refreshExportList() {
+            try {
+                const response = await fetch('/api/bigdata/export/list');
+                const result = await response.json();
+                
+                const listDiv = document.getElementById('export-list');
+                
+                if (result.success && result.files.length > 0) {
+                    listDiv.innerHTML = result.files.map(file => `
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded border">
+                            <div class="flex-1">
+                                <div class="font-medium text-gray-900">${file.filename}</div>
+                                <div class="text-sm text-gray-500">
+                                    大小: ${(file.size / 1024).toFixed(1)} KB | 
+                                    修改时间: ${new Date(file.modified_time).toLocaleString()}
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <a href="/api/bigdata/export/download/${file.filename}" 
+                                   class="bg-blue-500 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
+                                    <i class="fa fa-download mr-1"></i>下载
+                                </a>
+                                <button onclick="deleteExportFile('${file.filename}')" 
+                                        class="bg-red-500 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">
+                                    <i class="fa fa-trash mr-1"></i>删除
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    listDiv.innerHTML = '<div class="text-gray-500 text-center py-4">暂无导出文件</div>';
+                }
+            } catch (error) {
+                console.error('获取导出列表失败:', error);
+                document.getElementById('export-list').innerHTML = 
+                    '<div class="text-red-500 text-center py-4">获取列表失败</div>';
+            }
+        }
+        
+        // 删除导出文件
+        async function deleteExportFile(filename) {
+            if (!confirm(`确定要删除文件 "${filename}" 吗？`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/bigdata/export/delete/${filename}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('文件删除成功');
+                    refreshExportList();
+                } else {
+                    alert(`删除失败: ${result.message}`);
+                }
+            } catch (error) {
+                console.error('删除文件失败:', error);
+                alert(`删除失败: ${error.message}`);
+            }
+        }
+
+        // —— 大数据：需求预测 ——
+        async function handleForecast() {
+            try {
+                const res = await fetch('/api/bigdata/analysis/demand-forecast');
+                const json = await res.json();
+                if (json && json.success) {
+                    const arr = (json.data && json.data.forecast) || [];
+                    const labels = arr.map(i => i.date);
+                    const values = arr.map(i => i.predicted_demand);
+                    forecastChart.data.labels = labels;
+                    forecastChart.data.datasets[0].data = values;
+                    forecastChart.update();
+                    const el = document.getElementById('forecast-result');
+                    el.innerHTML = `<p class="text-sm text-gray-700">模型准确率：${Math.round(((json.data.model_accuracy||0)*100))}%</p>`;
+                } else {
+                    alert('需求预测获取失败');
+                }
+            } catch (e) {
+                console.error(e); alert('网络错误');
+            }
+        }
+
+        // —— 大数据：成功率预测 ——
+        async function handleSuccessPrediction() {
+            try {
+                const res = await fetch('/api/bigdata/analysis/success-prediction');
+                const json = await res.json();
+                if (json && json.success) {
+                    const preds = (json.data && json.data.predictions) || [];
+                    successChart.data.datasets[0].data = preds.map(p => ({ x: p.actual_success_rate, y: p.predicted_success_rate }));
+                    successChart.update();
+                    document.getElementById('success-result').innerHTML = `<p class="text-sm text-gray-700">样本数：${preds.length}，模型准确率：${Math.round(((json.data.model_accuracy||0)*100))}%</p>`;
+                } else { alert('成功率预测获取失败'); }
+            } catch (e) { console.error(e); alert('网络错误'); }
+        }
+
+        // —— 大数据：聚类画像 ——
+        async function handleClusterAnalysis() {
+            try {
+                const res = await fetch('/api/bigdata/analysis/cluster-analysis');
+                const json = await res.json();
+                if (json && json.success) {
+                    const clusters = (json.data && json.data.clusters) || [];
+                    clusterChart.data.datasets[0].data = clusters.map(c => ({ x: c.avg_salary, y: c.avg_rating, r: Math.max(5, c.count/10) }));
+                    clusterChart.update();
+                    document.getElementById('cluster-result').innerHTML = `<p class="text-sm text-gray-700">轮廓系数：${(json.data.silhouette_score||0).toFixed(2)}</p>`;
+                } else { alert('聚类分析获取失败'); }
+            } catch (e) { console.error(e); alert('网络错误'); }
+        }
+
+        // —— 大数据：个性化推荐 ——
+        async function handleRecommendations() {
+            try {
+                const uid = document.getElementById('reco-user-id').value || '1';
+                const res = await fetch(`/api/bigdata/analysis/recommendations?user_id=${encodeURIComponent(uid)}`);
+                const json = await res.json();
+                if (json && json.success) {
+                    const list = (json.data && json.data.recommendations) || [];
+                    const tbody = document.getElementById('reco-tbody');
+                    if (!list.length) { tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">暂无推荐</td></tr>'; return; }
+                    tbody.innerHTML = list.map(r => `
+                        <tr class="border-b">
+                            <td class="px-4 py-2">${r.caregiver_id}</td>
+                            <td class="px-4 py-2">${r.name||''}</td>
+                            <td class="px-4 py-2">${r.rating??'-'}</td>
+                            <td class="px-4 py-2">${r.hourly_rate??'-'}</td>
+                            <td class="px-4 py-2">${(r.score*100).toFixed(1)}%</td>
+                            <td class="px-4 py-2">${r.reason||''}</td>
+                        </tr>
+                    `).join('');
+                } else { alert('获取推荐失败'); }
+            } catch (e) { console.error(e); alert('网络错误'); }
         }
     </script>
 </body>

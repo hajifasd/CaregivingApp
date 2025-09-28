@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>护工搜索简单测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-2xl font-bold mb-6">护工搜索简单测试</h1>
+        
+        <!-- 模拟用户登录 -->
+        <div class="bg-white p-4 rounded-lg shadow mb-4">
+            <h3 class="font-semibold mb-2">1. 模拟用户登录</h3>
+            <button onclick="simulateLogin()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                模拟登录
+            </button>
+            <div id="login-status" class="mt-2 text-sm"></div>
+        </div>
+        
+        <!-- 测试护工数据 -->
+        <div class="bg-white p-4 rounded-lg shadow mb-4">
+            <h3 class="font-semibold mb-2">2. 测试护工数据</h3>
+            <button onclick="testCaregiverData()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                检查护工数据
+            </button>
+            <div id="caregiver-data-status" class="mt-2 text-sm"></div>
+        </div>
+        
+        <!-- 测试搜索功能 -->
+        <div class="bg-white p-4 rounded-lg shadow mb-4">
+            <h3 class="font-semibold mb-2">3. 测试搜索功能</h3>
+            <div class="flex gap-2 mb-2">
+                <input type="text" id="search-keyword" placeholder="输入搜索关键词" 
+                       class="flex-1 p-2 border border-gray-300 rounded" value="张">
+                <button onclick="testSearch()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                    搜索
+                </button>
+            </div>
+            <div id="search-status" class="mt-2 text-sm"></div>
+            <div id="search-results" class="mt-2"></div>
+        </div>
+        
+        <!-- 调试信息 -->
+        <div class="bg-white p-4 rounded-lg shadow">
+            <h3 class="font-semibold mb-2">调试信息</h3>
+            <div id="debug-info" class="text-xs font-mono bg-gray-100 p-2 rounded max-h-40 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <script>
+        function addDebug(message) {
+            const debugDiv = document.getElementById('debug-info');
+            const timestamp = new Date().toLocaleTimeString();
+            debugDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            debugDiv.scrollTop = debugDiv.scrollHeight;
+        }
+        
+        function simulateLogin() {
+            addDebug('开始模拟用户登录...');
+            
+            const userInfo = {
+                id: 21,
+                name: '测试用户',
+                email: 'test@example.com'
+            };
+            
+            // 使用测试token
+            const testToken = 'test-token-for-search';
+            
+            localStorage.setItem('user_info', JSON.stringify(userInfo));
+            localStorage.setItem('user_token', testToken);
+            
+            addDebug('用户信息已设置到localStorage');
+            addDebug(`用户ID: ${userInfo.id}, 用户名: ${userInfo.name}`);
+            addDebug(`使用测试token: ${testToken.substring(0, 50)}...`);
+            
+            document.getElementById('login-status').innerHTML = 
+                '<span class="text-green-600">✅ 登录成功</span>';
+        }
+        
+        async function testCaregiverData() {
+            addDebug('开始测试护工数据...');
+            
+            try {
+                const response = await fetch('/api/test/caregivers');
+                const result = await response.json();
+                
+                addDebug(`护工数据API响应: ${JSON.stringify(result)}`);
+                
+                if (result.success) {
+                    document.getElementById('caregiver-data-status').innerHTML = 
+                        `<span class="text-green-600">✅ 护工数据正常，总数: ${result.data.total_caregivers}</span>`;
+                } else {
+                    document.getElementById('caregiver-data-status').innerHTML = 
+                        `<span class="text-red-600">❌ 护工数据异常: ${result.message}</span>`;
+                }
+            } catch (error) {
+                addDebug(`护工数据测试异常: ${error.message}`);
+                document.getElementById('caregiver-data-status').innerHTML = 
+                    `<span class="text-red-600">❌ 测试异常: ${error.message}</span>`;
+            }
+        }
+        
+        async function testSearch() {
+            const keyword = document.getElementById('search-keyword').value.trim();
+            if (!keyword) {
+                addDebug('请输入搜索关键词');
+                return;
+            }
+            
+            addDebug(`开始搜索护工: "${keyword}"`);
+            
+            const token = localStorage.getItem('user_token');
+            if (!token) {
+                addDebug('❌ 没有找到用户token');
+                document.getElementById('search-status').innerHTML = 
+                    '<span class="text-red-600">❌ 请先登录</span>';
+                return;
+            }
+            
+            addDebug(`使用token: ${token.substring(0, 20)}...`);
+            
+            try {
+                const url = `/api/user/caregivers/search?keyword=${encodeURIComponent(keyword)}`;
+                addDebug(`请求URL: ${url}`);
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                addDebug(`响应状态: ${response.status}`);
+                
+                const result = await response.json();
+                addDebug(`响应数据: ${JSON.stringify(result)}`);
+                
+                if (result.success) {
+                    document.getElementById('search-status').innerHTML = 
+                        `<span class="text-green-600">✅ 搜索成功，找到 ${result.data.length} 个护工</span>`;
+                    
+                    // 显示搜索结果
+                    const resultsDiv = document.getElementById('search-results');
+                    if (result.data.length > 0) {
+                        resultsDiv.innerHTML = `
+                            <div class="mt-2 space-y-2">
+                                ${result.data.map(caregiver => `
+                                    <div class="flex items-center p-2 bg-gray-50 rounded">
+                                        <img src="${caregiver.avatar}" alt="${caregiver.name}" class="w-8 h-8 rounded-full mr-3">
+                                        <div>
+                                            <div class="font-medium">${caregiver.name}</div>
+                                            <div class="text-sm text-gray-500">${caregiver.phone}</div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `;
+                    } else {
+                        resultsDiv.innerHTML = '<div class="text-gray-500">未找到匹配的护工</div>';
+                    }
+                } else {
+                    document.getElementById('search-status').innerHTML = 
+                        `<span class="text-red-600">❌ 搜索失败: ${result.message}</span>`;
+                }
+            } catch (error) {
+                addDebug(`搜索异常: ${error.message}`);
+                document.getElementById('search-status').innerHTML = 
+                    `<span class="text-red-600">❌ 搜索异常: ${error.message}</span>`;
+            }
+        }
+        
+        // 页面加载时自动执行
+        document.addEventListener('DOMContentLoaded', function() {
+            addDebug('页面加载完成');
+            simulateLogin();
+            testCaregiverData();
+        });
+    </script>
+</body>
+</html>

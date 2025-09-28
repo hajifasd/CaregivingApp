@@ -1,0 +1,34 @@
+[
+  {
+    "title": "护工/照护员",
+    "company": "安心养老服务中心",
+    "location": "北京",
+    "salary": "6k-8k/月",
+    "source": "sample",
+    "crawl_time": "2025-09-23T17:16:08.271174"
+  },
+  {
+    "title": "医院陪护",
+    "company": "康复护理机构",
+    "location": "上海",
+    "salary": "180-220/天",
+    "source": "sample",
+    "crawl_time": "2025-09-23T17:16:08.271174"
+  },
+  {
+    "title": "居家护理",
+    "company": "颐养家政",
+    "location": "广州",
+    "salary": "7k-9k/月",
+    "source": "sample",
+    "crawl_time": "2025-09-23T17:16:08.271174"
+  },
+  {
+    "title": "老年护理员",
+    "company": "善护养老",
+    "location": "深圳",
+    "salary": "6.5k-8.5k/月",
+    "source": "sample",
+    "crawl_time": "2025-09-23T17:16:08.271174"
+  }
+]

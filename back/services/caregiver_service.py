@@ -140,6 +140,16 @@ class CaregiverService:
                 caregiver.experience_years = data['experience_years']
             if 'hourly_rate' in data:
                 caregiver.hourly_rate = data['hourly_rate']
+            if 'id_card' in data:
+                caregiver.id_card = data['id_card']
+            if 'emergency_contact' in data:
+                caregiver.emergency_contact = data['emergency_contact']
+            if 'email' in data:
+                caregiver.email = data['email']
+            if 'id_file' in data:
+                caregiver.id_file = data['id_file']
+            if 'cert_file' in data:
+                caregiver.cert_file = data['cert_file']
             
             db.session.commit()
             return caregiver.to_dict()
@@ -154,25 +164,177 @@ class CaregiverService:
         """获取护工仪表盘数据"""
         try:
             from extensions import db
+            from models.business import Appointment, Employment
+            from datetime import datetime, timedelta
             
             CaregiverModel = Caregiver.get_model(db)
+            AppointmentModel = Appointment.get_model(db)
+            EmploymentModel = Employment.get_model(db)
+            
             caregiver = CaregiverModel.query.get(caregiver_id)
             
             if not caregiver:
                 return {}
             
-            # 这里可以添加更多统计数据，目前返回基础数据
+            # 计算真实统计数据
+            now = datetime.now()
+            start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            
+            # 总工作机会（所有预约）
+            total_jobs = AppointmentModel.query.filter_by(caregiver_id=caregiver_id).count()
+            
+            # 进行中的预约
+            active_appointments = AppointmentModel.query.filter(
+                AppointmentModel.caregiver_id == caregiver_id,
+                AppointmentModel.status.in_(['confirmed', 'in_progress'])
+            ).count()
+            
+            # 本月收入计算（基于预约和聘用）
+            monthly_appointments = AppointmentModel.query.filter(
+                AppointmentModel.caregiver_id == caregiver_id,
+                AppointmentModel.status == 'completed',
+                AppointmentModel.completed_at >= start_of_month
+            ).all()
+            
+            monthly_employments = EmploymentModel.query.filter(
+                EmploymentModel.caregiver_id == caregiver_id,
+                EmploymentModel.status == 'active',
+                EmploymentModel.start_date <= now,
+                EmploymentModel.end_date >= start_of_month
+            ).all()
+            
+            # 计算本月收入
+            monthly_earnings = 0
+            for appointment in monthly_appointments:
+                if appointment.hourly_rate and appointment.duration_hours:
+                    monthly_earnings += appointment.hourly_rate * appointment.duration_hours
+            
+            for employment in monthly_employments:
+                if employment.hourly_rate and employment.frequency:
+                    # 估算本月收入（基于频率和时薪）
+                    days_in_month = (now - start_of_month).days
+                    estimated_sessions = (days_in_month / 7) * employment.frequency
+                    monthly_earnings += employment.hourly_rate * employment.duration_per_session * estimated_sessions
+            
+            # 计算平均评分
+            avg_rating = caregiver.rating or 0
+            
+            # 本月完成的服务数量
+            completed_this_month = AppointmentModel.query.filter(
+                AppointmentModel.caregiver_id == caregiver_id,
+                AppointmentModel.status == 'completed',
+                AppointmentModel.completed_at >= start_of_month
+            ).count()
+            
+            # 总评价数量
+            total_reviews = caregiver.review_count or 0
+            
+            # 计算更多统计指标
+            # 本周收入
+            start_of_week = now - timedelta(days=now.weekday())
+            weekly_appointments = AppointmentModel.query.filter(
+                AppointmentModel.caregiver_id == caregiver_id,
+                AppointmentModel.status == 'completed',
+                AppointmentModel.completed_at >= start_of_week
+            ).all()
+            
+            weekly_earnings = 0
+            for appointment in weekly_appointments:
+                if appointment.hourly_rate and appointment.duration_hours:
+                    weekly_earnings += appointment.hourly_rate * appointment.duration_hours
+            
+            # 今日收入
+            start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            today_appointments = AppointmentModel.query.filter(
+                AppointmentModel.caregiver_id == caregiver_id,
+                AppointmentModel.status == 'completed',
+                AppointmentModel.completed_at >= start_of_day
+            ).all()
+            
+            today_earnings = 0
+            for appointment in today_appointments:
+                if appointment.hourly_rate and appointment.duration_hours:
+                    today_earnings += appointment.hourly_rate * appointment.duration_hours
+            
+            # 待处理预约
+            pending_appointments = AppointmentModel.query.filter(
+                AppointmentModel.caregiver_id == caregiver_id,
+                AppointmentModel.status == 'pending'
+            ).count()
+            
+            # 本月工作时长
+            monthly_hours = 0
+            for appointment in monthly_appointments:
+                if appointment.duration_hours:
+                    monthly_hours += appointment.duration_hours
+            
+            # 平均每次服务时长
+            avg_service_duration = monthly_hours / len(monthly_appointments) if monthly_appointments else 0
+            
+            # 客户满意度（基于评分）
+            satisfaction_rate = (avg_rating / 5.0) * 100 if avg_rating > 0 else 0
+            
+            # 工作完成率
+            total_appointments_this_month = AppointmentModel.query.filter(
+                AppointmentModel.caregiver_id == caregiver_id,
+                AppointmentModel.created_at >= start_of_month
+            ).count()
+            completion_rate = (completed_this_month / total_appointments_this_month * 100) if total_appointments_this_month > 0 else 0
+            
+            # 收入趋势（最近7天）
+            daily_earnings = []
+            for i in range(7):
+                day_start = (now - timedelta(days=i)).replace(hour=0, minute=0, second=0, microsecond=0)
+                day_end = day_start + timedelta(days=1)
+                
+                day_appointments = AppointmentModel.query.filter(
+                    AppointmentModel.caregiver_id == caregiver_id,
+                    AppointmentModel.status == 'completed',
+                    AppointmentModel.completed_at >= day_start,
+                    AppointmentModel.completed_at < day_end
+                ).all()
+                
+                day_earnings = 0
+                for appointment in day_appointments:
+                    if appointment.hourly_rate and appointment.duration_hours:
+                        day_earnings += appointment.hourly_rate * appointment.duration_hours
+                
+                daily_earnings.append({
+                    'date': day_start.strftime('%Y-%m-%d'),
+                    'earnings': round(day_earnings, 2)
+                })
+            
+            daily_earnings.reverse()  # 按时间正序排列
+            
             return {
-                'total_jobs': 0,  # 总工作机会
-                'active_appointments': 0,  # 进行中预约
-                'monthly_earnings': 0,  # 本月收入
-                'rating': caregiver.rating or 0,  # 平均评分
+                'total_jobs': total_jobs,
+                'active_appointments': active_appointments,
+                'pending_appointments': pending_appointments,
+                'monthly_earnings': round(monthly_earnings, 2),
+                'weekly_earnings': round(weekly_earnings, 2),
+                'today_earnings': round(today_earnings, 2),
+                'rating': round(avg_rating, 1),
+                'completed_this_month': completed_this_month,
+                'total_reviews': total_reviews,
+                'monthly_hours': round(monthly_hours, 1),
+                'avg_service_duration': round(avg_service_duration, 1),
+                'satisfaction_rate': round(satisfaction_rate, 1),
+                'completion_rate': round(completion_rate, 1),
+                'daily_earnings_trend': daily_earnings,
                 'caregiver_info': caregiver.to_dict()
             }
             
         except Exception as e:
             print(f"获取护工仪表盘数据失败: {e}")
-            return {}
+            return {
+                'total_jobs': 0,
+                'active_appointments': 0,
+                'monthly_earnings': 0,
+                'rating': 0,
+                'completed_this_month': 0,
+                'total_reviews': 0,
+                'caregiver_info': {}
+            }
     
     @staticmethod
     def approve_caregiver(caregiver_id: int) -> bool:
@@ -343,3 +505,65 @@ class CaregiverService:
         except Exception as e:
             print(f"搜索护工失败: {e}")
             return []
+    
+    def get_caregiver_reviews(self, caregiver_id: int, limit: int = 50, offset: int = 0) -> Dict[str, Any]:
+        """
+        获取护工的评价列表
+        
+        Args:
+            caregiver_id: 护工ID
+            limit: 限制数量
+            offset: 偏移量
+            
+        Returns:
+            评价列表和统计信息
+        """
+        try:
+            if not self.db:
+                return {
+                    "success": False,
+                    "data": [],
+                    "total": 0,
+                    "message": "数据库未设置"
+                }
+            
+            # 导入评价模型
+            from models.review import Review
+            ReviewModel = Review.get_model(self.db)
+            
+            # 获取护工的评价
+            query = ReviewModel.query.filter_by(caregiver_id=caregiver_id)
+            total = query.count()
+            reviews = query.order_by(ReviewModel.created_at.desc()).offset(offset).limit(limit).all()
+            
+            # 转换为前端需要的格式
+            result = []
+            for review in reviews:
+                # 获取用户信息
+                user = self.user_model.query.get(review.user_id)
+                user_name = user.name if user else '匿名用户'
+                
+                result.append({
+                    'id': review.id,
+                    'user_name': user_name,
+                    'rating': review.rating,
+                    'comment': review.comment,
+                    'created_at': review.created_at.strftime('%Y-%m-%d %H:%M:%S') if review.created_at else '未知',
+                    'service_type': review.service_type
+                })
+            
+            return {
+                "success": True,
+                "data": result,
+                "total": total,
+                "message": "获取成功"
+            }
+            
+        except Exception as e:
+            print(f"获取护工评价失败: {e}")
+            return {
+                "success": False,
+                "data": [],
+                "total": 0,
+                "message": f"获取失败: {str(e)}"
+            }

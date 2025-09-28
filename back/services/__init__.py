@@ -10,11 +10,13 @@ from .caregiver_service import CaregiverService
 from .appointment_service import AppointmentService
 from .employment_service import EmploymentService
 from .message_service import MessageService
+from .job_service import JobService
 
 __all__ = [
     'UserService',
     'CaregiverService', 
     'AppointmentService',
     'EmploymentService',
-    'MessageService'
+    'MessageService',
+    'JobService'
 ] 

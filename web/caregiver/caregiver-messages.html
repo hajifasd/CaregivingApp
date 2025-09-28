@@ -3,34 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>护理助手 - 护工消息中心</title>
+    <title>护理助手 - 护工端</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- 引入护工端专用认证守卫 -->
+    <script src="/js/caregiver-auth-guard.js"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script src="/js/chat-manager.js"></script>
+    <script src="/js/caregiver-common.js"></script>
+    <!-- 引入通知管理器 -->
+    <script src="/js/notification-manager.js"></script>
+    <!-- 引入消息格式工具 -->
+    <script src="/js/message-format-utils.js"></script>
+    <!-- 引入统一聊天管理器 -->
+    <script src="/js/unified-chat-manager.js"></script>
+    <!-- 引入消息加载工具 -->
+    <script src="/js/message-loader.js"></script>
+    <style>
+        :root {
+            --primary: #165DFF;
+            --primary-light: #4080FF;
+            --primary-dark: #0E42D2;
+            --success: #00B42A;
+            --warning: #FF7D00;
+            --danger: #F53F3F;
+            --neutral-dark: #1D2129;
+            --neutral-light: #F7F8FA;
+        }
+        .bg-primary { background-color: var(--primary); }
+        .text-primary { color: var(--primary); }
+        .border-primary { border-color: var(--primary); }
+        .bg-success { background-color: var(--success); }
+        .text-success { color: var(--success); }
+        .bg-warning { background-color: var(--warning); }
+        .text-warning { color: var(--warning); }
+        .bg-danger { background-color: var(--danger); }
+        .text-danger { color: var(--danger); }
+    </style>
 </head>
 <body class="bg-gray-50">
     <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center">
-                <i class="fa fa-heartbeat text-white text-xl"></i>
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                    <i class="fa fa-hands-helping text-white text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-primary">护理助手</h1>
             </div>
-            <h1 class="text-xl font-bold text-blue-600">护理助手</h1>
         </div>
         
-        <div id="connection-status" class="text-xs px-2 py-1 rounded bg-green-100 text-green-700">
-            已连接
+        <div class="flex items-center gap-6">
+            <div class="relative">
+                <input type="text" placeholder="搜索消息..." 
+                    class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 w-64">
+                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            </div>
         </div>
         
         <div class="flex items-center gap-4">
-            <button id="logout-btn" onclick="logout()" class="text-sm text-gray-500 hover:text-blue-600">登出</button>
+            <button class="p-2 rounded-full hover:bg-gray-100 relative">
+                <i class="fa fa-bell text-gray-600"></i>
+                <span class="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full"></span>
+            </button>
+            
+            <div class="flex items-center gap-3">
+                <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-9 h-9 rounded-full object-cover border-2 border-primary/20">
+                <div class="hidden md:block">
+                    <p class="text-sm font-medium" id="caregiver-name">用户</p>
+                    <p class="text-xs text-gray-500">专业护工</p>
+                </div>
+                <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-primary">登出</button>
+            </div>
         </div>
     </header>
     
+    <!-- 主导航菜单 -->
     <nav class="bg-white border-b border-gray-200 px-6">
         <div class="flex items-center space-x-8">
-            <a href="/caregiver/dashboard" class="py-4 px-2 text-gray-500 hover:text-blue-600">工作台</a>
-            <a href="/caregiver/messages" class="py-4 px-2 text-blue-600 border-b-2 border-blue-600">消息中心</a>
+            <a href="/caregiver/dashboard" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-tachometer mr-2"></i>工作台
+            </a>
+            <a href="/caregiver/profile" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-user mr-2"></i>个人信息
+            </a>
+            <a href="/caregiver/hire-info" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-briefcase mr-2"></i>聘用信息
+            </a>
+            <a href="/caregiver/job-opportunities" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-handshake mr-2"></i>工作申请
+            </a>
+            <a href="/caregiver/jobs" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-briefcase mr-2"></i>工作机会
+            </a>
+            <a href="/caregiver/appointments" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-calendar-check-o mr-2"></i>我的预约
+            </a>
+            <a href="/caregiver/schedule" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-calendar mr-2"></i>工作安排
+            </a>
+            <a href="/caregiver/earnings" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-chart-line mr-2"></i>收入统计
+            </a>
+            <a href="/caregiver/location" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-map-marker mr-2"></i>位置服务
+            </a>
+            <a href="/caregiver/reviews" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-star mr-2"></i>评价管理
+            </a>
+            <a href="/caregiver/messages" class="py-4 px-2 text-primary border-b-2 border-primary">
+                <i class="fa fa-comments mr-2"></i>消息中心
+            </a>
+            <a href="/caregiver/settings" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-cog mr-2"></i>设置
+            </a>
         </div>
     </nav>
     
@@ -78,45 +162,111 @@
     </main>
     
     <script>
-        // 护工端消息数据
-        const messagesData = [
-            {
-                id: 1,
-                contactId: 'user_001',
-                type: 'user',
-                sender: '张阿姨',
-                avatar: 'https://picsum.photos/id/64/50/50',
-                content: '李护工，明天上午9点的护理服务请准时到达',
-                time: '10:30',
-                unread: true
-            },
-            {
-                id: 2,
-                contactId: 'system',
-                type: 'system',
-                sender: '系统通知',
-                avatar: 'https://picsum.photos/id/100/50/50',
-                content: '您的新预约已确认，用户张阿姨，时间：明天上午9:00-11:00',
-                time: '09:15',
-                unread: false
-            }
-        ];
-        
-        const recentContactsData = [
-            {
-                id: 'user_001',
-                name: '张阿姨',
-                avatar: 'https://picsum.photos/id/64/50/50',
-                lastMessage: '明天上午9点的护理服务请准时到达',
-                time: '10:30'
-            }
-        ];
+        // 用户端消息数据
+        let messagesData = [];
+        let recentContactsData = [];
         
         document.addEventListener('DOMContentLoaded', function() {
-            generateMessagesList();
-            generateRecentContacts();
+            // 加载用户信息
+            CaregiverCommon.loadUserInfo();
+            
+            // 统一聊天管理器已在加载时自动初始化
+            if (window.unifiedChatManager) {
+                console.log('✅ 统一聊天管理器已初始化');
+            } else {
+                console.warn('⚠️ 统一聊天管理器未找到');
+            }
+            
+            loadMessagesData();
+            loadRecentContacts();
             bindEvents();
         });
+        
+        // 加载消息数据
+        async function loadMessagesData() {
+            try {
+                // 使用统一的消息加载工具
+                if (window.messageLoader) {
+                    await window.messageLoader.loadConversations('messages-container', {
+                        limit: 20,
+                        offset: 0
+                    });
+                } else {
+                    // 备用方案：使用旧API
+                    const response = await fetch('/api/caregiver/messages', {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (result.success) {
+                            messagesData = result.data || [];
+                            generateMessagesList();
+                        } else {
+                            console.error('加载消息失败:', result.message);
+                            showEmptyState();
+                        }
+                    } else {
+                        console.error('加载消息失败:', response.statusText);
+                        showEmptyState();
+                    }
+                }
+            } catch (error) {
+                console.error('加载消息失败:', error);
+                showEmptyState();
+            }
+        }
+        
+        // 加载最近联系人
+        async function loadRecentContacts() {
+            try {
+                const response = await fetch('/api/caregiver/contacts', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        recentContactsData = result.data || [];
+                        generateRecentContacts();
+                    } else {
+                        console.error('加载联系人失败:', result.message);
+                        showEmptyContacts();
+                    }
+                } else {
+                    console.error('加载联系人失败:', response.statusText);
+                    showEmptyContacts();
+                }
+            } catch (error) {
+                console.error('加载联系人失败:', error);
+                showEmptyContacts();
+            }
+        }
+        
+        // 显示空状态
+        function showEmptyState() {
+            const container = document.getElementById('messages-container');
+            container.innerHTML = `
+                <div class="p-6 text-center text-gray-500">
+                    <i class="fa fa-comments text-4xl mb-4"></i>
+                    <p>暂无消息</p>
+                </div>
+            `;
+        }
+        
+        // 显示空联系人
+        function showEmptyContacts() {
+            const container = document.getElementById('recent-contacts');
+            container.innerHTML = `
+                <div class="text-center text-gray-500 py-4">
+                    <p>暂无联系人</p>
+                </div>
+            `;
+        }
         
         function generateMessagesList() {
             const container = document.getElementById('messages-container');
@@ -163,21 +313,146 @@
             modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
             modal.innerHTML = `
                 <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-6">
-                    <h3 class="text-lg font-bold mb-4">主动联系用户</h3>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2">选择用户</label>
-                        <select id="user-select" class="w-full p-3 border border-gray-300 rounded-lg">
-                            <option value="">请选择用户...</option>
-                            <option value="user_001">张阿姨 - 老年护理需求</option>
-                        </select>
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold">主动联系用户</h3>
+                        <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700">
+                            <i class="fa fa-times text-xl"></i>
+                        </button>
                     </div>
-                    <div class="flex justify-end gap-3">
-                        <button onclick="this.closest('.fixed').remove()" class="px-4 py-2 text-gray-600 border rounded-lg">取消</button>
-                        <button onclick="startActiveContact()" class="px-6 py-2 bg-blue-600 text-white rounded-lg">开始联系</button>
+                    
+                    <div class="mb-4">
+                        <div class="relative">
+                            <input type="text" id="user-search" placeholder="搜索用户姓名或电话..." 
+                                   class="w-full p-3 border border-gray-300 rounded-lg pl-10">
+                            <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        </div>
+                    </div>
+                    
+                    <div id="user-list" class="max-h-96 overflow-y-auto">
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="fa fa-spinner fa-spin text-2xl mb-2"></i>
+                            <p>正在加载用户列表...</p>
+                        </div>
                     </div>
                 </div>
             `;
+            
             document.body.appendChild(modal);
+            
+            // 加载用户列表
+            loadUserList();
+            
+            // 绑定搜索事件
+            const searchInput = modal.querySelector('#user-search');
+            searchInput.addEventListener('input', (e) => {
+                searchUsers(e.target.value);
+            });
+        }
+        
+        // 加载用户列表
+        async function loadUserList() {
+            try {
+                const response = await fetch('/api/caregiver/contacts', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        displayUserList(result.data);
+                    } else {
+                        showError('加载用户列表失败: ' + result.message);
+                    }
+                } else {
+                    showError('加载用户列表失败');
+                }
+            } catch (error) {
+                console.error('加载用户列表失败:', error);
+                showError('加载用户列表失败');
+            }
+        }
+        
+        // 搜索用户
+        async function searchUsers(keyword) {
+            try {
+                const response = await fetch(`/api/caregiver/contacts?keyword=${encodeURIComponent(keyword)}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        displayUserList(result.data);
+                    }
+                }
+            } catch (error) {
+                console.error('搜索用户失败:', error);
+            }
+        }
+        
+        // 显示用户列表
+        function displayUserList(users) {
+            const container = document.getElementById('user-list');
+            
+            if (users.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fa fa-users text-4xl mb-4"></i>
+                        <p>暂无可联系的用户</p>
+                        <p class="text-sm">系统中暂无用户注册</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = users.map(user => `
+                <div class="flex items-center gap-4 p-4 hover:bg-gray-50 rounded-lg cursor-pointer border-b border-gray-100 last:border-b-0"
+                     onclick="selectUser('${user.id}', '${user.name}', '${user.avatar}')">
+                    <img src="${user.avatar}" alt="${user.name}" class="w-12 h-12 rounded-full object-cover">
+                    <div class="flex-1">
+                        <h4 class="font-medium text-gray-900">${user.name}</h4>
+                        <p class="text-sm text-gray-500">${user.phone}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                        <span class="text-xs text-gray-500">在线</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // 选择用户
+        function selectUser(userId, userName, userAvatar) {
+            if (window.unifiedChatManager) {
+                const contact = {
+                    id: userId,
+                    contactId: `user_${userId}`,
+                    name: userName,
+                    avatar: userAvatar,
+                    type: 'user',
+                    online: true
+                };
+                
+                window.unifiedChatManager.openChat(contact);
+            }
+            
+            // 关闭模态框
+            document.querySelector('.fixed').remove();
+        }
+        
+        // 显示错误信息
+        function showError(message) {
+            const container = document.getElementById('user-list');
+            container.innerHTML = `
+                <div class="text-center py-8 text-red-500">
+                    <i class="fa fa-exclamation-triangle text-2xl mb-2"></i>
+                    <p>${message}</p>
+                </div>
+            `;
         }
         
         function startActiveContact() {
@@ -205,10 +480,21 @@
         }
         
         function openChat(contactId, contactName, contactAvatar) {
-            if (typeof chatManager !== 'undefined' && chatManager.openChat) {
-                chatManager.openChat(contactId, contactName, contactAvatar);
+            console.log('护工打开聊天:', contactId, contactName);
+            
+            if (window.unifiedChatManager) {
+                const contact = {
+                    id: contactId.replace(/^(user_|caregiver_)/, ''),
+                    contactId: contactId,
+                    name: contactName,
+                    avatar: contactAvatar,
+                    type: contactId.startsWith('user_') ? 'user' : 'caregiver',
+                    online: true // 默认在线状态
+                };
+                
+                window.unifiedChatManager.openChat(contact);
             } else {
-                alert('聊天功能正在初始化，请稍后再试');
+                console.warn('统一聊天管理器未初始化');
             }
         }
         
@@ -218,9 +504,10 @@
         
         function logout() {
             if (confirm('确定要登出吗？')) {
-                localStorage.removeItem('caregiverInfo');
-                localStorage.removeItem('token');
-                window.location.href = '/caregiver/register';
+                localStorage.removeItem('caregiver_token');
+                localStorage.removeItem('caregiver_info');
+                document.cookie = 'caregiver_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                window.location.href = '/caregiver/';
             }
         }
     </script>

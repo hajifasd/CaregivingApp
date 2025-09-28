@@ -31,6 +31,8 @@ class Caregiver:
             id = db.Column(db.Integer, primary_key=True)
             name = db.Column(db.String(100), nullable=False)
             phone = db.Column(db.String(20), unique=True, nullable=False)
+            id_file = db.Column(db.String(200))  # 身份证文件
+            cert_file = db.Column(db.String(200))  # 证书文件
             password_hash = db.Column(db.String(256), nullable=False)
             
             # 审核状态字段
@@ -51,6 +53,11 @@ class Caregiver:
             status = db.Column(db.String(20), default="pending")
             available = db.Column(db.Boolean, default=True)
             
+            # 个人信息字段
+            id_card = db.Column(db.String(20))  # 身份证号
+            emergency_contact = db.Column(db.String(100))  # 紧急联系人
+            email = db.Column(db.String(100))  # 邮箱
+            
             # 暂停相关字段
             suspended_at = db.Column(db.DateTime, index=True)
             suspension_reason = db.Column(db.String(500))
@@ -61,6 +68,8 @@ class Caregiver:
                     "id": self.id,
                     "name": self.name,
                     "phone": self.phone,
+                    "id_file": self.id_file,
+                    "cert_file": self.cert_file,
                     "is_approved": self.is_approved,
                     "created_at": self.created_at.strftime("%Y-%m-%d %H:%M"),
                     "approved_at": self.approved_at.strftime("%Y-%m-%d %H:%M") if self.approved_at else None,
@@ -77,7 +86,11 @@ class Caregiver:
                     "status": self.status,
                     "available": self.available,
                     "suspended_at": self.suspended_at.strftime("%Y-%m-%d %H:%M") if self.suspended_at else None,
-                    "suspension_reason": self.suspension_reason
+                    "suspension_reason": self.suspension_reason,
+                    # 个人信息字段
+                    "id_card": self.id_card,
+                    "emergency_contact": self.emergency_contact,
+                    "email": self.email
                 }
 
             def set_password(self, password: str):

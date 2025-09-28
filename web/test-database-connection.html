@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据库连接测试页面</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8 text-center">数据库连接测试页面</h1>
+        
+        <!-- 数据库状态 -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">数据库状态</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="text-center">
+                    <div class="text-2xl font-bold" id="db-status">检查中...</div>
+                    <div class="text-sm text-gray-600">连接状态</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold" id="table-count">-</div>
+                    <div class="text-sm text-gray-600">表数量</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold" id="message-count">-</div>
+                    <div class="text-sm text-gray-600">消息数量</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 测试控制 -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">测试控制</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="text-lg font-medium mb-3">数据库操作测试</h3>
+                    <div class="space-y-2">
+                        <button onclick="testDatabaseConnection()" class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                            测试数据库连接
+                        </button>
+                        <button onclick="testMessageService()" class="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                            测试消息服务
+                        </button>
+                        <button onclick="testSaveMessage()" class="w-full bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                            测试保存消息
+                        </button>
+                        <button onclick="testGetMessages()" class="w-full bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">
+                            测试获取消息
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-lg font-medium mb-3">消息数据测试</h3>
+                    <div class="space-y-2">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">发送者ID:</label>
+                            <input type="number" id="sender-id" value="1" class="w-full p-2 border rounded">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">接收者ID:</label>
+                            <input type="number" id="recipient-id" value="2" class="w-full p-2 border rounded">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">消息内容:</label>
+                            <textarea id="message-content" class="w-full p-2 border rounded" rows="2">这是一条测试消息</textarea>
+                        </div>
+                        <button onclick="testCustomMessage()" class="w-full bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600">
+                            测试自定义消息
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 测试结果 -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">测试结果</h2>
+            <div id="test-results" class="bg-gray-50 p-4 rounded text-sm font-mono h-64 overflow-y-auto">
+                <div class="text-gray-500">等待测试...</div>
+            </div>
+        </div>
+        
+        <!-- 数据库信息 -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h2 class="text-xl font-semibold mb-4">数据库信息</h2>
+            <div id="database-info" class="bg-gray-50 p-4 rounded text-sm font-mono h-48 overflow-y-auto">
+                <div class="text-gray-500">点击"测试数据库连接"查看信息...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const testResults = document.getElementById('test-results');
+        const databaseInfo = document.getElementById('database-info');
+        
+        // 添加日志
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const colorClass = {
+                'success': 'text-green-600',
+                'error': 'text-red-600',
+                'warning': 'text-yellow-600',
+                'info': 'text-blue-600'
+            }[type] || 'text-gray-600';
+            
+            const logDiv = document.createElement('div');
+            logDiv.innerHTML = `<span class="text-gray-400">[${timestamp}]</span> <span class="${colorClass}">${message}</span>`;
+            testResults.appendChild(logDiv);
+            testResults.scrollTop = testResults.scrollHeight;
+        }
+        
+        // 更新数据库状态
+        function updateDatabaseStatus() {
+            // 这里可以添加实时状态检查
+            document.getElementById('db-status').textContent = '已连接';
+            document.getElementById('db-status').className = 'text-2xl font-bold text-green-600';
+        }
+        
+        // 测试数据库连接
+        async function testDatabaseConnection() {
+            addLog('🔌 测试数据库连接...', 'info');
+            
+            try {
+                const response = await fetch('/api/test/database', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    addLog('✅ 数据库连接成功', 'success');
+                    databaseInfo.innerHTML = `<pre>${JSON.stringify(data.data, null, 2)}</pre>`;
+                    updateDatabaseStatus();
+                } else {
+                    addLog('❌ 数据库连接失败: ' + data.message, 'error');
+                    databaseInfo.innerHTML = `<div class="text-red-600">错误: ${data.message}</div>`;
+                }
+                
+            } catch (error) {
+                addLog('❌ 数据库连接测试失败: ' + error.message, 'error');
+                databaseInfo.innerHTML = `<div class="text-red-600">错误: ${error.message}</div>`;
+            }
+        }
+        
+        // 测试消息服务
+        async function testMessageService() {
+            addLog('📨 测试消息服务...', 'info');
+            
+            try {
+                const response = await fetch('/api/test/message-service', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    addLog('✅ 消息服务测试成功', 'success');
+                    addLog(`📊 服务状态: ${JSON.stringify(data.data)}`, 'info');
+                } else {
+                    addLog('❌ 消息服务测试失败: ' + data.message, 'error');
+                }
+                
+            } catch (error) {
+                addLog('❌ 消息服务测试失败: ' + error.message, 'error');
+            }
+        }
+        
+        // 测试保存消息
+        async function testSaveMessage() {
+            addLog('💾 测试保存消息...', 'info');
+            
+            const messageData = {
+                sender_id: 1,
+                sender_type: 'user',
+                sender_name: '测试用户',
+                recipient_id: 2,
+                recipient_type: 'caregiver',
+                content: '这是一条测试消息',
+                message_type: 'text'
+            };
+            
+            try {
+                const response = await fetch('/api/test/save-message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(messageData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    addLog('✅ 消息保存成功', 'success');
+                    addLog(`📝 保存的消息: ${JSON.stringify(data.data)}`, 'info');
+                } else {
+                    addLog('❌ 消息保存失败: ' + data.message, 'error');
+                }
+                
+            } catch (error) {
+                addLog('❌ 消息保存测试失败: ' + error.message, 'error');
+            }
+        }
+        
+        // 测试获取消息
+        async function testGetMessages() {
+            addLog('📥 测试获取消息...', 'info');
+            
+            try {
+                const response = await fetch('/api/test/get-messages?user_id=1&user_type=user&contact_id=2&contact_type=caregiver', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    addLog('✅ 消息获取成功', 'success');
+                    addLog(`📊 获取到 ${data.data.length} 条消息`, 'info');
+                    if (data.data.length > 0) {
+                        addLog(`📝 最新消息: ${JSON.stringify(data.data[0])}`, 'info');
+                    }
+                } else {
+                    addLog('❌ 消息获取失败: ' + data.message, 'error');
+                }
+                
+            } catch (error) {
+                addLog('❌ 消息获取测试失败: ' + error.message, 'error');
+            }
+        }
+        
+        // 测试自定义消息
+        async function testCustomMessage() {
+            addLog('📝 测试自定义消息...', 'info');
+            
+            const senderId = document.getElementById('sender-id').value;
+            const recipientId = document.getElementById('recipient-id').value;
+            const content = document.getElementById('message-content').value;
+            
+            const messageData = {
+                sender_id: parseInt(senderId),
+                sender_type: 'user',
+                sender_name: '测试用户',
+                recipient_id: parseInt(recipientId),
+                recipient_type: 'caregiver',
+                content: content,
+                message_type: 'text'
+            };
+            
+            try {
+                const response = await fetch('/api/test/save-message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(messageData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    addLog('✅ 自定义消息保存成功', 'success');
+                    addLog(`📝 消息ID: ${data.data.id}`, 'info');
+                } else {
+                    addLog('❌ 自定义消息保存失败: ' + data.message, 'error');
+                }
+                
+            } catch (error) {
+                addLog('❌ 自定义消息测试失败: ' + error.message, 'error');
+            }
+        }
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog('📋 数据库连接测试页面已加载', 'info');
+            updateDatabaseStatus();
+        });
+    </script>
+</body>
+</html>

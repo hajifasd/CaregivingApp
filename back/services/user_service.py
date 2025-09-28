@@ -86,4 +86,41 @@ class UserService:
             user.approved_at = datetime.now(timezone.utc)
             db.session.commit()
             return True
-        return False 
+        return False
+    
+    @staticmethod
+    def update_user_profile(user_id: int, profile_data: Dict[str, Any]) -> bool:
+        """更新用户个人资料"""
+        try:
+            UserModel = User.get_model(db)
+            user = UserModel.query.get(user_id)
+            
+            if not user:
+                return False
+            
+            # 更新允许的字段，映射前端字段到数据库字段
+            field_mapping = {
+                'name': 'name',
+                'phone': 'phone', 
+                'email': 'email',
+                'gender': 'gender',
+                'birth_date': 'birth_date',
+                'address': 'address',
+                'emergency_contact': 'emergency_contact',
+                'emergency_phone': 'emergency_contact_phone',  # 数据库字段名不同
+                'special_needs': 'special_needs'
+            }
+            
+            for frontend_field, value in profile_data.items():
+                if frontend_field in field_mapping:
+                    db_field = field_mapping[frontend_field]
+                    if hasattr(user, db_field):
+                        setattr(user, db_field, value)
+            
+            db.session.commit()
+            return True
+            
+        except Exception as e:
+            print(f"更新用户资料失败: {str(e)}")
+            db.session.rollback()
+            return False 

@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>护理助手 -/* 用户端</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+        <!-- 引入认证守卫 -->
+    <script src="/js/caregiver-auth-guard.js"></script>
+    <script src="/js/config.js"></script>
+    <script src="/js/caregiver-common.js"></script>
+    <script src="/js/avatar-manager.js"></script>
+    <style>
+        :root {
+            --primary: #165DFF;
+            --primary-light: #4080FF;
+            --primary-dark: #0E42D2;
+            --success: #00B42A;
+            --warning: #FF7D00;
+            --danger: #F53F3F;
+            --neutral-dark: #1D2129;
+            --neutral-light: #F7F8FA;
+        }
+        .bg-primary { background-color: var(--primary); }
+        .text-primary { color: var(--primary); }
+        .border-primary { border-color: var(--primary); }
+        .bg-success { background-color: var(--success); }
+        .text-success { color: var(--success); }
+        .bg-warning { background-color: var(--warning); }
+        .text-warning { color: var(--warning); }
+        .bg-danger { background-color: var(--danger); }
+        .text-danger { color: var(--danger); }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 顶部导航栏 -->
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                    <i class="fa fa-hands-helping text-white text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-primary">护理助手</h1>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-6">
+            <div class="relative">
+                <input type="text" placeholder="搜索工作机会..." 
+                    class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 w-64">
+                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <button class="p-2 rounded-full hover:bg-gray-100 relative">
+                <i class="fa fa-bell text-gray-600"></i>
+                <span class="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full"></span>
+            </button>
+            
+            <div class="flex items-center gap-3">
+                <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-9 h-9 rounded-full object-cover border-2 border-primary/20">
+                <div class="hidden md:block">
+                    <p class="text-sm font-medium" id="caregiver-name">用户</p>
+                    <p class="text-xs text-gray-500">专业护工</p>
+                </div>
+                <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-primary">登出</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主导航菜单 -->
+    <nav class="bg-white border-b border-gray-200 px-6">
+        <div class="flex items-center space-x-8">
+            <a href="/caregiver/dashboard" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-tachometer mr-2"></i>工作台
+            </a>
+            <a href="/caregiver/profile" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-user mr-2"></i>个人信息
+            </a>
+            <a href="/caregiver/hire-info" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-briefcase mr-2"></i>聘用信息
+            </a>
+            <a href="/caregiver/job-opportunities" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-handshake mr-2"></i>工作申请
+            </a>
+            <a href="/caregiver/jobs" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-briefcase mr-2"></i>工作机会
+            </a>
+            <a href="/caregiver/appointments" class="py-4 px-2 text-primary border-b-2 border-primary hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-calendar-check-o mr-2"></i>我的预约
+            </a>
+            <a href="/caregiver/schedule" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-calendar mr-2"></i>工作安排
+            </a>
+            <a href="/caregiver/earnings" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-chart-line mr-2"></i>收入统计
+            </a>
+            <a href="/caregiver/location" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-map-marker mr-2"></i>位置服务
+            </a>
+            <a href="/caregiver/reviews" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-star mr-2"></i>评价管理
+            </a>
+            <a href="/caregiver/messages" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-comments mr-2"></i>消息中心
+            </a>
+            <a href="/caregiver/settings" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-cog mr-2"></i>设置
+            </a>
+        </div>
+    </nav>
+    
+    <!-- 页面内容 -->
+    <main class="p-6 bg-gray-50">
+        <div class="max-w-6xl mx-auto">
+            <!-- 统计卡片 -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-primary/10 rounded-lg">
+                            <i class="fa fa-calendar text-primary text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">总预约数</p>
+                            <p class="text-2xl font-bold text-gray-800" id="total-appointments">0</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-warning/10 rounded-lg">
+                            <i class="fa fa-clock text-warning text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">待确认</p>
+                            <p class="text-2xl font-bold text-gray-800" id="pending-appointments">0</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-success/10 rounded-lg">
+                            <i class="fa fa-check text-success text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">进行中</p>
+                            <p class="text-2xl font-bold text-gray-800" id="active-appointments">0</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-danger/10 rounded-lg">
+                            <i class="fa fa-times text-danger text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">已完成</p>
+                            <p class="text-2xl font-bold text-gray-800" id="completed-appointments">0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 筛选和搜索 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <div class="flex-1">
+                        <div class="relative">
+                            <input type="text" id="search-input" placeholder="搜索预约..." 
+                                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <select id="filter-status" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            <option value="">全部状态</option>
+                            <option value="pending">待确认</option>
+                            <option value="confirmed">已确认</option>
+                            <option value="in_progress">进行中</option>
+                            <option value="completed">已完成</option>
+                            <option value="cancelled">已取消</option>
+                        </select>
+                        <button id="search-btn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                            <i class="fa fa-search mr-2"></i>搜索
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 预约列表 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-bold text-gray-800">预约列表</h3>
+                </div>
+                
+                <div id="appointments-list">
+                    <!-- 预约列表将通过JavaScript动态加载 -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 预约详情模态框 -->
+    <div id="appointment-detail-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xl font-bold text-gray-800">预约详情</h3>
+                        <button id="close-appointment-modal" class="text-gray-400 hover:text-gray-600">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div id="appointment-detail-content">
+                        <!-- 预约详情内容将通过JavaScript动态加载 -->
+                    </div>
+                    
+                    <div class="flex justify-end gap-4 mt-6">
+                        <button id="close-appointment-btn" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                            关闭
+                        </button>
+                        <button id="confirm-appointment-btn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors hidden">
+                            确认预约
+                        </button>
+                        <button id="cancel-appointment-btn" class="px-4 py-2 bg-danger text-white rounded-lg hover:bg-danger/90 transition-colors hidden">
+                            取消预约
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentAppointments = [];
+
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 加载用户信息
+            CaregiverCommon.loadUserInfo();
+            checkAuth();
+            loadAppointments();
+            setupEventListeners();
+        });
+        
+        // 加载预约数据
+        async function loadAppointments() {
+            try {
+                const response = await fetch('/api/caregiver/appointments', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        currentAppointments = result.data || [];
+                        displayAppointments();
+                    } else {
+                        console.error('加载预约失败:', result.message);
+                        showEmptyAppointments();
+                    }
+                } else {
+                    console.error('加载预约失败:', response.statusText);
+                    showEmptyAppointments();
+                }
+            } catch (error) {
+                console.error('加载预约失败:', error);
+                showEmptyAppointments();
+            }
+        }
+        
+        // 显示空预约状态
+        function showEmptyAppointments() {
+            const container = document.getElementById('appointments-container');
+            container.innerHTML = `
+                <div class="p-6 text-center text-gray-500">
+                    <i class="fa fa-calendar-check-o text-4xl mb-4"></i>
+                    <p>暂无预约</p>
+                </div>
+            `;
+        }
+
+        // 检查认证状态
+        function checkAuth() {
+            const caregiverInfo = localStorage.getItem('caregiver_info');
+            if (!caregiverInfo) {
+                window.location.href = '/';
+                return;
+            }
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 搜索按钮
+            document.getElementById('search-btn').addEventListener('click', function() {
+                performSearch();
+            });
+
+            // 搜索输入框回车
+            document.getElementById('search-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+
+            // 状态筛选
+            document.getElementById('filter-status').addEventListener('change', function() {
+                performSearch();
+            });
+
+            // 关闭模态框
+            document.getElementById('close-appointment-modal').addEventListener('click', function() {
+                document.getElementById('appointment-detail-modal').classList.add('hidden');
+            });
+
+            document.getElementById('close-appointment-btn').addEventListener('click', function() {
+                document.getElementById('appointment-detail-modal').classList.add('hidden');
+            });
+
+            // 确认预约
+            document.getElementById('confirm-appointment-btn').addEventListener('click', function() {
+                confirmAppointment();
+            });
+
+            // 取消预约
+            document.getElementById('cancel-appointment-btn').addEventListener('click', function() {
+                cancelAppointment();
+            });
+
+            // 退出登录
+            document.getElementById('logout-btn').addEventListener('click', function() {
+                localStorage.removeItem('caregiver_info');
+                window.location.href = '/caregiver/';
+            });
+        }
+
+        // 加载预约列表
+        async function loadAppointments() {
+            try {
+                const response = await fetch('/api/caregiver/appointments', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentAppointments = data.appointments || [];
+                    displayAppointments(currentAppointments);
+                    updateStatistics(currentAppointments);
+                } else {
+                    showNotification('加载预约列表失败', 'error');
+                }
+            } catch (error) {
+                console.error('加载预约列表失败:', error);
+                showNotification('加载预约列表失败，请重试', 'error');
+            }
+        }
+
+        // 执行搜索
+        function performSearch() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const status = document.getElementById('filter-status').value;
+
+            let filteredAppointments = currentAppointments;
+
+            if (searchTerm) {
+                filteredAppointments = filteredAppointments.filter(app => 
+                    app.patient_name.toLowerCase().includes(searchTerm) ||
+                    app.service_type.toLowerCase().includes(searchTerm) ||
+                    app.location.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            if (status) {
+                filteredAppointments = filteredAppointments.filter(app => app.status === status);
+            }
+
+            displayAppointments(filteredAppointments);
+        }
+
+        // 显示预约列表
+        function displayAppointments(appointments) {
+            const appointmentsList = document.getElementById('appointments-list');
+            
+            if (appointments.length === 0) {
+                appointmentsList.innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="fa fa-calendar text-4xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-500 text-lg">暂无预约</p>
+                    </div>
+                `;
+                return;
+            }
+
+            appointmentsList.innerHTML = appointments.map(appointment => `
+                <div class="p-6 border-b border-gray-200 hover:bg-gray-50 transition-colors">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-4 mb-3">
+                                <h4 class="text-lg font-bold text-gray-800">${appointment.service_type}</h4>
+                                <span class="px-2 py-1 text-xs rounded-full ${
+                                    appointment.status === 'pending' ? 'bg-warning/10 text-warning' :
+                                    appointment.status === 'confirmed' ? 'bg-primary/10 text-primary' :
+                                    appointment.status === 'in_progress' ? 'bg-success/10 text-success' :
+                                    appointment.status === 'completed' ? 'bg-gray-100 text-gray-600' :
+                                    'bg-danger/10 text-danger'
+                                }">
+                                    ${appointment.status === 'pending' ? '待确认' :
+                                      appointment.status === 'confirmed' ? '已确认' :
+                                      appointment.status === 'in_progress' ? '进行中' :
+                                      appointment.status === 'completed' ? '已完成' : '已取消'}
+                                </span>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                                <div>
+                                    <p class="text-sm text-gray-600">患者姓名</p>
+                                    <p class="font-medium text-gray-800">${appointment.patient_name}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600">预约时间</p>
+                                    <p class="font-medium text-gray-800">${appointment.appointment_time}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600">服务地点</p>
+                                    <p class="font-medium text-gray-800">${appointment.location}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600">服务时长</p>
+                                    <p class="font-medium text-gray-800">${appointment.duration}小时</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center gap-4 text-sm text-gray-500">
+                                <span><i class="fa fa-money mr-1"></i>¥${appointment.hourly_rate}/小时</span>
+                                <span><i class="fa fa-calendar mr-1"></i>${appointment.created_date}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-col gap-2">
+                            <button onclick="viewAppointmentDetail(${appointment.id})" class="px-3 py-1 text-primary border border-primary rounded hover:bg-primary/10 transition-colors">
+                                查看详情
+                            </button>
+                            ${appointment.status === 'pending' ? `
+                                <button onclick="confirmAppointment(${appointment.id})" class="px-3 py-1 bg-success text-white rounded hover:bg-success/90 transition-colors">
+                                    确认预约
+                                </button>
+                            ` : ''}
+                            ${appointment.status === 'confirmed' || appointment.status === 'in_progress' ? `
+                                <button onclick="cancelAppointment(${appointment.id})" class="px-3 py-1 bg-danger text-white rounded hover:bg-danger/90 transition-colors">
+                                    取消预约
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 更新统计信息
+        function updateStatistics(appointments) {
+            const total = appointments.length;
+            const pending = appointments.filter(app => app.status === 'pending').length;
+            const active = appointments.filter(app => app.status === 'in_progress').length;
+            const completed = appointments.filter(app => app.status === 'completed').length;
+
+            document.getElementById('total-appointments').textContent = total;
+            document.getElementById('pending-appointments').textContent = pending;
+            document.getElementById('active-appointments').textContent = active;
+            document.getElementById('completed-appointments').textContent = completed;
+        }
+
+        // 查看预约详情
+        async function viewAppointmentDetail(appointmentId) {
+            try {
+                const response = await fetch(`/api/caregiver/appointments/${appointmentId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const appointment = await response.json();
+                    displayAppointmentDetail(appointment);
+                    document.getElementById('appointment-detail-modal').classList.remove('hidden');
+                } else {
+                    showNotification('获取预约详情失败', 'error');
+                }
+            } catch (error) {
+                console.error('获取预约详情失败:', error);
+                showNotification('获取预约详情失败，请重试', 'error');
+            }
+        }
+
+        // 显示预约详情
+        function displayAppointmentDetail(appointment) {
+            const content = document.getElementById('appointment-detail-content');
+            content.innerHTML = `
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="text-lg font-bold text-gray-800 mb-2">${appointment.service_type}</h4>
+                        <p class="text-gray-600">${appointment.description}</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">患者姓名</label>
+                            <p class="text-gray-800">${appointment.patient_name}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">联系电话</label>
+                            <p class="text-gray-800">${appointment.patient_phone}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">预约时间</label>
+                            <p class="text-gray-800">${appointment.appointment_time}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">服务时长</label>
+                            <p class="text-gray-800">${appointment.duration}小时</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">服务地点</label>
+                            <p class="text-gray-800">${appointment.location}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">时薪</label>
+                            <p class="text-lg font-bold text-primary">¥${appointment.hourly_rate}/小时</p>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">预约状态</label>
+                        <span class="px-3 py-1 text-sm rounded-full ${
+                            appointment.status === 'pending' ? 'bg-warning/10 text-warning' :
+                            appointment.status === 'confirmed' ? 'bg-primary/10 text-primary' :
+                            appointment.status === 'in_progress' ? 'bg-success/10 text-success' :
+                            appointment.status === 'completed' ? 'bg-gray-100 text-gray-600' :
+                            'bg-danger/10 text-danger'
+                        }">
+                            ${appointment.status === 'pending' ? '待确认' :
+                              appointment.status === 'confirmed' ? '已确认' :
+                              appointment.status === 'in_progress' ? '进行中' :
+                              appointment.status === 'completed' ? '已完成' : '已取消'}
+                        </span>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">特殊要求</label>
+                        <p class="text-gray-800">${appointment.special_requirements || '无'}</p>
+                    </div>
+                </div>
+            `;
+
+            // 根据状态显示不同的操作按钮
+            const confirmBtn = document.getElementById('confirm-appointment-btn');
+            const cancelBtn = document.getElementById('cancel-appointment-btn');
+
+            confirmBtn.classList.add('hidden');
+            cancelBtn.classList.add('hidden');
+
+            if (appointment.status === 'pending') {
+                confirmBtn.classList.remove('hidden');
+            } else if (appointment.status === 'confirmed' || appointment.status === 'in_progress') {
+                cancelBtn.classList.remove('hidden');
+            }
+        }
+
+        // 确认预约
+        async function confirmAppointment(appointmentId) {
+            try {
+                const response = await fetch(`/api/caregiver/appointments/${appointmentId}/confirm`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    showNotification('预约确认成功', 'success');
+                    document.getElementById('appointment-detail-modal').classList.add('hidden');
+                    loadAppointments(); // 重新加载预约列表
+                } else {
+                    const error = await response.json();
+                    showNotification(error.message || '确认预约失败', 'error');
+                }
+            } catch (error) {
+                console.error('确认预约失败:', error);
+                showNotification('确认预约失败，请重试', 'error');
+            }
+        }
+
+        // 取消预约
+        async function cancelAppointment(appointmentId) {
+            if (!confirm('确定要取消这个预约吗？')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/caregiver/appointments/${appointmentId}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    showNotification('预约已取消', 'success');
+                    document.getElementById('appointment-detail-modal').classList.add('hidden');
+                    loadAppointments(); // 重新加载预约列表
+                } else {
+                    const error = await response.json();
+                    showNotification(error.message || '取消预约失败', 'error');
+                }
+            } catch (error) {
+                console.error('取消预约失败:', error);
+                showNotification('取消预约失败，请重试', 'error');
+            }
+        }
+
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+                type === 'success' ? 'bg-success text-white' :
+                type === 'error' ? 'bg-danger text-white' :
+                type === 'warning' ? 'bg-warning text-white' :
+                'bg-primary text-white'
+            }`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // 全局函数，供HTML调用
+        window.viewAppointmentDetail = viewAppointmentDetail;
+        window.confirmAppointment = confirmAppointment;
+        window.cancelAppointment = cancelAppointment;
+    </script>
+</body>
+</html>

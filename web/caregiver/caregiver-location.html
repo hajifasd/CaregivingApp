@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>护理助手 - 护工端</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+        <!-- 引入认证守卫 -->
+    <script src="/js/caregiver-auth-guard.js"></script>
+    <script src="/js/config.js"></script>
+    <script src="/js/caregiver-common.js"></script>
+    <script src="/js/location-manager.js"></script>
+    <style>
+        :root {
+            --primary: #165DFF;
+            --primary-light: #4080FF;
+            --primary-dark: #0E42D2;
+            --success: #00B42A;
+            --warning: #FF7D00;
+            --danger: #F53F3F;
+            --neutral-dark: #1D2129;
+            --neutral-light: #F7F8FA;
+        }
+        .bg-primary { background-color: var(--primary); }
+        .text-primary { color: var(--primary); }
+        .border-primary { border-color: var(--primary); }
+        .bg-success { background-color: var(--success); }
+        .text-success { color: var(--success); }
+        .bg-warning { background-color: var(--warning); }
+        .text-warning { color: var(--warning); }
+        .bg-danger { background-color: var(--danger); }
+        .text-danger { color: var(--danger); }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 顶部导航栏 -->
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                    <i class="fa fa-hands-helping text-white text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-primary">护理助手</h1>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-6">
+            <div class="relative">
+                <input type="text" placeholder="搜索工作机会..." 
+                    class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 w-64">
+                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <button class="p-2 rounded-full hover:bg-gray-100 relative">
+                <i class="fa fa-bell text-gray-600"></i>
+                <span class="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full"></span>
+            </button>
+            
+            <div class="flex items-center gap-3">
+                <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-9 h-9 rounded-full object-cover border-2 border-primary/20">
+                <div class="hidden md:block">
+                    <p class="text-sm font-medium" id="caregiver-name">用户</p>
+                    <p class="text-xs text-gray-500">专业护工</p>
+                </div>
+                <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-primary">登出</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主导航菜单 -->
+    <nav class="bg-white border-b border-gray-200 px-6">
+        <div class="flex items-center space-x-8">
+            <a href="/caregiver/dashboard" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-tachometer mr-2"></i>工作台
+            </a>
+            <a href="/caregiver/profile" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-user mr-2"></i>个人信息
+            </a>
+            <a href="/caregiver/hire-info" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-briefcase mr-2"></i>聘用信息
+            </a>
+            <a href="/caregiver/job-opportunities" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-handshake mr-2"></i>工作申请
+            </a>
+            <a href="/caregiver/jobs" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-briefcase mr-2"></i>工作机会
+            </a>
+            <a href="/caregiver/appointments" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-calendar-check-o mr-2"></i>我的预约
+            </a>
+            <a href="/caregiver/schedule" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-calendar mr-2"></i>工作安排
+            </a>
+            <a href="/caregiver/earnings" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-chart-line mr-2"></i>收入统计
+            </a>
+            <a href="/caregiver/location" class="py-4 px-2 text-primary border-b-2 border-primary hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-map-marker mr-2"></i>位置服务
+            </a>
+            <a href="/caregiver/reviews" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-star mr-2"></i>评价管理
+            </a>
+            <a href="/caregiver/messages" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-comments mr-2"></i>消息中心
+            </a>
+            <a href="/caregiver/settings" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-cog mr-2"></i>设置
+            </a>
+        </div>
+    </nav>
+    
+    <!-- 页面内容 -->
+    <main class="p-6 bg-gray-50">
+        <div class="max-w-6xl mx-auto">
+            <!-- 位置状态 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-gray-800">当前位置</h2>
+                    <div class="flex items-center gap-2">
+                        <span id="location-status" class="px-3 py-1 text-sm rounded-full bg-warning/10 text-warning">
+                            <i class="fa fa-circle mr-1"></i>未获取位置
+                        </span>
+                    </div>
+                </div>
+                
+                <div id="current-location" class="text-center py-8">
+                    <i class="fa fa-map-marker text-4xl text-gray-400 mb-4"></i>
+                    <p class="text-gray-500">点击下方按钮获取当前位置</p>
+                </div>
+                
+                <div class="flex justify-center gap-4 mt-6">
+                    <button id="get-location-btn" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                        <i class="fa fa-location-arrow mr-2"></i>获取当前位置
+                    </button>
+                    <button id="share-location-btn" class="px-6 py-2 bg-success text-white rounded-lg hover:bg-success/90 transition-colors" disabled>
+                        <i class="fa fa-share mr-2"></i>开始分享位置
+                    </button>
+                    <button id="stop-sharing-btn" class="px-6 py-2 bg-danger text-white rounded-lg hover:bg-danger/90 transition-colors" disabled>
+                        <i class="fa fa-stop mr-2"></i>停止分享
+                    </button>
+                </div>
+            </div>
+
+            <!-- 位置历史 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-gray-800">位置历史</h3>
+                    <button id="clear-history-btn" class="px-4 py-2 text-danger border border-danger rounded-lg hover:bg-danger/10 transition-colors">
+                        <i class="fa fa-trash mr-2"></i>清空历史
+                    </button>
+                </div>
+                
+                <div id="location-history">
+                    <!-- 位置历史将通过JavaScript动态加载 -->
+                </div>
+            </div>
+
+            <!-- 附近工作机会 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-gray-800">附近工作机会</h3>
+                    <button id="find-nearby-jobs-btn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                        <i class="fa fa-search mr-2"></i>查找附近工作
+                    </button>
+                </div>
+                
+                <div id="nearby-jobs">
+                    <!-- 附近工作机会将通过JavaScript动态加载 -->
+                </div>
+            </div>
+
+            <!-- 位置设置 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">位置设置</h3>
+                
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-medium text-gray-800">自动分享位置</h4>
+                            <p class="text-sm text-gray-600">工作时自动分享位置给雇主</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="auto-share-location" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                        </label>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-medium text-gray-800">位置精度</h4>
+                            <p class="text-sm text-gray-600">高精度位置获取（耗电更多）</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="high-accuracy" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                        </label>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-medium text-gray-800">位置提醒</h4>
+                            <p class="text-sm text-gray-600">到达工作地点时提醒</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="location-reminders" class="sr-only peer" checked>
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let currentLocation = null;
+        let isSharingLocation = false;
+        let locationHistory = [];
+
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            loadLocationHistory();
+            setupEventListeners();
+            initializeLocationManager();
+        });
+
+        // 检查认证状态
+        function checkAuth() {
+            const caregiverInfo = localStorage.getItem('caregiver_info');
+            if (!caregiverInfo) {
+                window.location.href = '/';
+                return;
+            }
+        }
+
+        // 初始化位置管理器
+        function initializeLocationManager() {
+            if (window.LocationManager) {
+                window.LocationManager.init();
+            }
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 获取当前位置
+            document.getElementById('get-location-btn').addEventListener('click', function() {
+                getCurrentLocation();
+            });
+
+            // 开始分享位置
+            document.getElementById('share-location-btn').addEventListener('click', function() {
+                startSharingLocation();
+            });
+
+            // 停止分享位置
+            document.getElementById('stop-sharing-btn').addEventListener('click', function() {
+                stopSharingLocation();
+            });
+
+            // 清空位置历史
+            document.getElementById('clear-history-btn').addEventListener('click', function() {
+                clearLocationHistory();
+            });
+
+            // 查找附近工作
+            document.getElementById('find-nearby-jobs-btn').addEventListener('click', function() {
+                findNearbyJobs();
+            });
+
+            // 退出登录
+            document.getElementById('logout-btn').addEventListener('click', function() {
+                localStorage.removeItem('caregiver_info');
+                window.location.href = '/caregiver/';
+            });
+        }
+
+        // 获取当前位置
+        async function getCurrentLocation() {
+            if (!navigator.geolocation) {
+                showNotification('您的浏览器不支持地理位置服务', 'error');
+                return;
+            }
+
+            const button = document.getElementById('get-location-btn');
+            button.disabled = true;
+            button.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>获取中...';
+
+            try {
+                const position = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        enableHighAccuracy: document.getElementById('high-accuracy').checked,
+                        timeout: 10000,
+                        maximumAge: 300000
+                    });
+                });
+
+                currentLocation = {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                    accuracy: position.coords.accuracy,
+                    timestamp: new Date().toISOString()
+                };
+
+                updateLocationDisplay();
+                addLocationToHistory(currentLocation);
+                updateLocationStatus('success', '位置已获取');
+
+            } catch (error) {
+                console.error('获取位置失败:', error);
+                let errorMessage = '获取位置失败';
+                
+                if (error.code === 1) {
+                    errorMessage = '用户拒绝了位置请求';
+                } else if (error.code === 2) {
+                    errorMessage = '位置信息不可用';
+                } else if (error.code === 3) {
+                    errorMessage = '获取位置超时';
+                }
+                
+                showNotification(errorMessage, 'error');
+                updateLocationStatus('error', '获取位置失败');
+            } finally {
+                button.disabled = false;
+                button.innerHTML = '<i class="fa fa-location-arrow mr-2"></i>获取当前位置';
+            }
+        }
+
+        // 更新位置显示
+        function updateLocationDisplay() {
+            if (!currentLocation) return;
+
+            const locationContainer = document.getElementById('current-location');
+            locationContainer.innerHTML = `
+                <div class="text-center">
+                    <i class="fa fa-map-marker text-4xl text-primary mb-4"></i>
+                    <p class="text-lg font-medium text-gray-800 mb-2">当前位置</p>
+                    <p class="text-gray-600 mb-2">纬度: ${currentLocation.latitude.toFixed(6)}</p>
+                    <p class="text-gray-600 mb-2">经度: ${currentLocation.longitude.toFixed(6)}</p>
+                    <p class="text-sm text-gray-500">精度: ±${Math.round(currentLocation.accuracy)}米</p>
+                </div>
+            `;
+
+            // 启用分享按钮
+            document.getElementById('share-location-btn').disabled = false;
+        }
+
+        // 开始分享位置
+        async function startSharingLocation() {
+            if (!currentLocation) {
+                showNotification('请先获取当前位置', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/caregiver/share-location', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    },
+                    body: JSON.stringify({
+                        latitude: currentLocation.latitude,
+                        longitude: currentLocation.longitude,
+                        accuracy: currentLocation.accuracy
+                    })
+                });
+
+                if (response.ok) {
+                    isSharingLocation = true;
+                    updateSharingButtons();
+                    showNotification('位置分享已开始', 'success');
+                    updateLocationStatus('success', '正在分享位置');
+                } else {
+                    const error = await response.json();
+                    showNotification(error.message || '开始分享位置失败', 'error');
+                }
+            } catch (error) {
+                console.error('开始分享位置失败:', error);
+                showNotification('开始分享位置失败，请重试', 'error');
+            }
+        }
+
+        // 停止分享位置
+        async function stopSharingLocation() {
+            try {
+                const response = await fetch('/api/caregiver/stop-sharing-location', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    isSharingLocation = false;
+                    updateSharingButtons();
+                    showNotification('位置分享已停止', 'success');
+                    updateLocationStatus('success', '位置已获取');
+                } else {
+                    const error = await response.json();
+                    showNotification(error.message || '停止分享位置失败', 'error');
+                }
+            } catch (error) {
+                console.error('停止分享位置失败:', error);
+                showNotification('停止分享位置失败，请重试', 'error');
+            }
+        }
+
+        // 更新分享按钮状态
+        function updateSharingButtons() {
+            const shareBtn = document.getElementById('share-location-btn');
+            const stopBtn = document.getElementById('stop-sharing-btn');
+
+            if (isSharingLocation) {
+                shareBtn.disabled = true;
+                stopBtn.disabled = false;
+            } else {
+                shareBtn.disabled = false;
+                stopBtn.disabled = true;
+            }
+        }
+
+        // 更新位置状态
+        function updateLocationStatus(type, message) {
+            const statusElement = document.getElementById('location-status');
+            const iconClass = type === 'success' ? 'fa-check-circle' : 
+                             type === 'error' ? 'fa-times-circle' : 'fa-circle';
+            const bgClass = type === 'success' ? 'bg-success/10 text-success' :
+                           type === 'error' ? 'bg-danger/10 text-danger' : 'bg-warning/10 text-warning';
+
+            statusElement.className = `px-3 py-1 text-sm rounded-full ${bgClass}`;
+            statusElement.innerHTML = `<i class="fa ${iconClass} mr-1"></i>${message}`;
+        }
+
+        // 添加位置到历史
+        function addLocationToHistory(location) {
+            locationHistory.unshift({
+                ...location,
+                id: Date.now(),
+                address: '位置地址（需要反向地理编码）'
+            });
+
+            // 限制历史记录数量
+            if (locationHistory.length > 50) {
+                locationHistory = locationHistory.slice(0, 50);
+            }
+
+            saveLocationHistory();
+            displayLocationHistory();
+        }
+
+        // 加载位置历史
+        function loadLocationHistory() {
+            const saved = localStorage.getItem('caregiver_location_history');
+            if (saved) {
+                locationHistory = JSON.parse(saved);
+                displayLocationHistory();
+            }
+        }
+
+        // 保存位置历史
+        function saveLocationHistory() {
+            localStorage.setItem('caregiver_location_history', JSON.stringify(locationHistory));
+        }
+
+        // 显示位置历史
+        function displayLocationHistory() {
+            const historyContainer = document.getElementById('location-history');
+
+            if (locationHistory.length === 0) {
+                historyContainer.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fa fa-history text-4xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-500">暂无位置历史</p>
+                    </div>
+                `;
+                return;
+            }
+
+            historyContainer.innerHTML = locationHistory.slice(0, 10).map(location => `
+                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg mb-3">
+                    <div class="flex items-center gap-4">
+                        <div class="p-2 bg-primary/10 rounded-lg">
+                            <i class="fa fa-map-marker text-primary"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-800">${location.address}</p>
+                            <p class="text-sm text-gray-600">
+                                ${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}
+                            </p>
+                            <p class="text-xs text-gray-500">
+                                ${new Date(location.timestamp).toLocaleString('zh-CN')}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="viewLocationOnMap(${location.latitude}, ${location.longitude})" 
+                                class="px-3 py-1 text-primary border border-primary rounded hover:bg-primary/10 transition-colors">
+                            查看地图
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 清空位置历史
+        function clearLocationHistory() {
+            if (confirm('确定要清空所有位置历史吗？')) {
+                locationHistory = [];
+                saveLocationHistory();
+                displayLocationHistory();
+                showNotification('位置历史已清空', 'success');
+            }
+        }
+
+        // 查找附近工作
+        async function findNearbyJobs() {
+            if (!currentLocation) {
+                showNotification('请先获取当前位置', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/jobs/nearby?lat=${currentLocation.latitude}&lng=${currentLocation.longitude}&radius=5000`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    displayNearbyJobs(data.jobs || []);
+                } else {
+                    showNotification('查找附近工作失败', 'error');
+                }
+            } catch (error) {
+                console.error('查找附近工作失败:', error);
+                showNotification('查找附近工作失败，请重试', 'error');
+            }
+        }
+
+        // 显示附近工作
+        function displayNearbyJobs(jobs) {
+            const jobsContainer = document.getElementById('nearby-jobs');
+
+            if (jobs.length === 0) {
+                jobsContainer.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fa fa-briefcase text-4xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-500">附近暂无工作机会</p>
+                    </div>
+                `;
+                return;
+            }
+
+            jobsContainer.innerHTML = jobs.map(job => `
+                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg mb-3">
+                    <div class="flex-1">
+                        <h4 class="font-medium text-gray-800 mb-1">${job.title}</h4>
+                        <p class="text-sm text-gray-600 mb-2">${job.description}</p>
+                        <div class="flex items-center gap-4 text-sm text-gray-500">
+                            <span><i class="fa fa-map-marker mr-1"></i>${job.location}</span>
+                            <span><i class="fa fa-money mr-1"></i>¥${job.salary}/小时</span>
+                            <span><i class="fa fa-ruler mr-1"></i>${job.distance}km</span>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <button onclick="viewJobDetails(${job.id})" class="px-3 py-1 text-primary border border-primary rounded hover:bg-primary/10 transition-colors">
+                            查看详情
+                        </button>
+                        <button onclick="applyForJob(${job.id})" class="px-3 py-1 bg-primary text-white rounded hover:bg-primary/90 transition-colors">
+                            申请工作
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 在地图上查看位置
+        function viewLocationOnMap(lat, lng) {
+            const mapUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+            window.open(mapUrl, '_blank');
+        }
+
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+                type === 'success' ? 'bg-success text-white' :
+                type === 'error' ? 'bg-danger text-white' :
+                type === 'warning' ? 'bg-warning text-white' :
+                'bg-primary text-white'
+            }`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // 全局函数，供HTML调用
+        window.viewLocationOnMap = viewLocationOnMap;
+        window.viewJobDetails = function(jobId) {
+            window.location.href = `/caregiver/jobs#job-${jobId}`;
+        };
+        window.applyForJob = function(jobId) {
+            // 申请工作的逻辑
+            showNotification('工作申请功能待实现', 'info');
+        };
+    </script>
+</body>
+</html>

@@ -3,16 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>护理助手 - 聘用护工</title>
+    <title>护理助手 -/* 用户端</title>
     <!-- 引入Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入Font Awesome -->
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     
     <!-- 引入用户登出功能 -->
+        <!-- 引入认证守卫 -->
+    <script src="/js/user-auth-guard.js"></script>
     <script src="/js/user-logout.js"></script>
     <!-- 引入用户信息加载器 -->
     <script src="/js/user-info-loader.js"></script>
+    <!-- 引入头像管理器 -->
+    <script src="../js/avatar-manager.js"></script>
     
     <!-- 配置Tailwind自定义主题 -->
     <script>
@@ -118,7 +122,7 @@
                     <li class="inline-flex items-center">
                         <a href="/user/caregivers" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-primary">
                             <i class="fa fa-home mr-2"></i>
-                            护工列表
+                           /* 用户列表
                         </a>
                     </li>
                     <li>
@@ -137,10 +141,10 @@
             <p class="text-gray-600 text-lg">与专业护工建立正式的聘用关系，享受优质护理服务</p>
         </div>
         
-        <!-- 护工信息卡片 -->
+        <!--/* 用户信息卡片 -->
         <div class="bg-white rounded-xl overflow-hidden card-shadow mb-8">
             <div class="relative">
-                <img id="caregiver-avatar" src="https://picsum.photos/id/26/400/200" alt="护工工作照" class="w-full h-48 object-cover">
+                <img id="caregiver-avatar" src="/uploads/avatars/default-caregiver.png" alt="护工工作照" class="w-full h-48 object-cover">
                 <div class="absolute top-3 right-3 bg-success text-white text-xs px-2 py-1 rounded-full">
                     可立即聘用
                 </div>
@@ -150,7 +154,7 @@
             </div>
             <div class="p-5">
                 <div class="flex items-center justify-between mb-3">
-                    <h4 class="font-bold text-lg" id="caregiver-name">李敏 护工</h4>
+                    <h4 class="font-bold text-lg" id="caregiver-name">李敏/* 用户</h4>
                     <div class="flex items-center">
                         <i class="fa fa-star text-warning mr-1"></i>
                         <span class="text-sm font-medium" id="caregiver-rating">4.8</span>
@@ -256,7 +260,7 @@
                     <div class="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center mx-auto mb-3">
                         <i class="fa fa-comments text-secondary text-xl"></i>
                     </div>
-                    <h4 class="font-semibold text-gray-800 mb-2">2. 护工确认</h4>
+                    <h4 class="font-semibold text-gray-800 mb-2">2./* 用户确认</h4>
                     <p class="text-sm text-gray-600">护工查看申请并确认是否接受</p>
                 </div>
                 <div class="text-center">
@@ -291,7 +295,7 @@
     </div>
     
     <script>
-        // 护工数据（从后端API获取）
+        // 用户数据（从后端API获取）
         let caregiverData = {};
         
         // 页面初始化
@@ -375,7 +379,7 @@
                             caregiverData[caregiver.caregiver_id] = {
                                 id: caregiver.caregiver_id,
                                 name: caregiver.name || '护工',
-                                avatar: caregiver.avatar_url || 'https://picsum.photos/id/64/400/300',
+                                avatar: window.AvatarManager.getAvatarUrl(caregiver.avatar_url, 'caregiver', 'large'),
                                 rating: caregiver.rating || 5.0,
                                 skills: caregiver.skills ? caregiver.skills.split(',').map(s => s.trim()) : ['护理服务'],
                                 experience: caregiver.work_time || '全职',
@@ -416,7 +420,7 @@
             
             // 更新页面信息
             document.getElementById('caregiver-avatar').src = caregiver.avatar;
-            document.getElementById('caregiver-name').textContent = caregiver.name + ' 护工';
+            document.getElementById('caregiver-name').textContent = caregiver.name + '/* 用户';
             document.getElementById('caregiver-phone').textContent = caregiver.phone;
             document.getElementById('caregiver-price').textContent = caregiver.price;
             document.getElementById('caregiver-rating').textContent = caregiver.rating;

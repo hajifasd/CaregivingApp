@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>护理助手 - 护工端</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+        <!-- 引入认证守卫 -->
+    <script src="/js/caregiver-auth-guard.js"></script>
+    <script src="/js/config.js"></script>
+    <script src="/js/caregiver-common.js"></script>
+    <script src="/js/avatar-manager.js"></script>
+    <style>
+        :root {
+            --primary: #165DFF;
+            --primary-light: #4080FF;
+            --primary-dark: #0E42D2;
+            --success: #00B42A;
+            --warning: #FF7D00;
+            --danger: #F53F3F;
+            --neutral-dark: #1D2129;
+            --neutral-light: #F7F8FA;
+        }
+        .bg-primary { background-color: var(--primary); }
+        .text-primary { color: var(--primary); }
+        .border-primary { border-color: var(--primary); }
+        .bg-success { background-color: var(--success); }
+        .text-success { color: var(--success); }
+        .bg-warning { background-color: var(--warning); }
+        .text-warning { color: var(--warning); }
+        .bg-danger { background-color: var(--danger); }
+        .text-danger { color: var(--danger); }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 顶部导航栏 -->
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                    <i class="fa fa-hands-helping text-white text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-primary">护理助手</h1>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-6">
+            <div class="relative">
+                <input type="text" placeholder="搜索工作机会..." 
+                    class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 w-64">
+                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <button class="p-2 rounded-full hover:bg-gray-100 relative">
+                <i class="fa fa-bell text-gray-600"></i>
+                <span class="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full"></span>
+            </button>
+            
+            <div class="flex items-center gap-3">
+                <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-9 h-9 rounded-full object-cover border-2 border-primary/20">
+                <div class="hidden md:block">
+                    <p class="text-sm font-medium" id="caregiver-name">用户</p>
+                    <p class="text-xs text-gray-500">专业护工</p>
+                </div>
+                <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-primary">登出</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主导航菜单 -->
+    <nav class="bg-white border-b border-gray-200 px-6">
+        <div class="flex items-center space-x-8">
+            <a href="/caregiver/dashboard" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-tachometer mr-2"></i>工作台
+            </a>
+            <a href="/caregiver/profile" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-user mr-2"></i>个人信息
+            </a>
+            <a href="/caregiver/hire-info" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-briefcase mr-2"></i>聘用信息
+            </a>
+            <a href="/caregiver/job-opportunities" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-handshake mr-2"></i>工作申请
+            </a>
+            <a href="/caregiver/jobs" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-briefcase mr-2"></i>工作机会
+            </a>
+            <a href="/caregiver/appointments" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-calendar-check-o mr-2"></i>我的预约
+            </a>
+            <a href="/caregiver/schedule" class="py-4 px-2 text-primary border-b-2 border-primary hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-calendar mr-2"></i>工作安排
+            </a>
+            <a href="/caregiver/earnings" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-chart-line mr-2"></i>收入统计
+            </a>
+            <a href="/caregiver/location" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-map-marker mr-2"></i>位置服务
+            </a>
+            <a href="/caregiver/reviews" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-star mr-2"></i>评价管理
+            </a>
+            <a href="/caregiver/messages" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-comments mr-2"></i>消息中心
+            </a>
+            <a href="/caregiver/settings" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-cog mr-2"></i>设置
+            </a>
+        </div>
+    </nav>
+    
+    <!-- 页面内容 -->
+    <main class="p-6 bg-gray-50">
+        <div class="max-w-6xl mx-auto">
+            <!-- 日历视图 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-bold text-gray-800">工作日程</h2>
+                    <div class="flex items-center gap-4">
+                        <button id="prev-month" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                            <i class="fa fa-chevron-left"></i>
+                        </button>
+                        <span id="current-month" class="text-lg font-medium text-gray-800">2024年1月</span>
+                        <button id="next-month" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                            <i class="fa fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 日历网格 -->
+                <div id="calendar-grid" class="grid grid-cols-7 gap-1">
+                    <!-- 日历将通过JavaScript动态生成 -->
+                </div>
+            </div>
+
+            <!-- 今日安排 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">今日安排</h3>
+                <div id="today-schedule">
+                    <!-- 今日安排将通过JavaScript动态加载 -->
+                </div>
+            </div>
+
+            <!-- 本周统计 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-primary/10 rounded-lg">
+                            <i class="fa fa-clock text-primary text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">本周工作时长</p>
+                            <p class="text-2xl font-bold text-gray-800" id="weekly-hours">0小时</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-success/10 rounded-lg">
+                            <i class="fa fa-check text-success text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">本周完成服务</p>
+                            <p class="text-2xl font-bold text-gray-800" id="weekly-completed">0次</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-warning/10 rounded-lg">
+                            <i class="fa fa-calendar text-warning text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">本周预约数</p>
+                            <p class="text-2xl font-bold text-gray-800" id="weekly-appointments">0个</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 时间表 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">时间表</h3>
+                <div id="schedule-timeline">
+                    <!-- 时间表将通过JavaScript动态加载 -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let currentDate = new Date();
+        let scheduleData = [];
+
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 加载用户信息
+            CaregiverCommon.loadUserInfo();
+            checkAuth();
+            loadSchedule();
+            setupEventListeners();
+            renderCalendar();
+        });
+        
+        // 加载工作安排数据
+        async function loadSchedule() {
+            try {
+                const response = await fetch('/api/caregiver/schedule', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        scheduleData = result.data || [];
+                        renderCalendar();
+                    } else {
+                        console.error('加载工作安排失败:', result.message);
+                        showEmptySchedule();
+                    }
+                } else {
+                    console.error('加载工作安排失败:', response.statusText);
+                    showEmptySchedule();
+                }
+            } catch (error) {
+                console.error('加载工作安排失败:', error);
+                showEmptySchedule();
+            }
+        }
+        
+        // 显示空工作安排状态
+        function showEmptySchedule() {
+            const container = document.getElementById('schedule-container');
+            if (container) {
+                container.innerHTML = `
+                    <div class="p-6 text-center text-gray-500">
+                        <i class="fa fa-calendar text-4xl mb-4"></i>
+                        <p>暂无工作安排</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 检查认证状态
+        function checkAuth() {
+            const caregiverInfo = localStorage.getItem('caregiver_info');
+            if (!caregiverInfo) {
+                window.location.href = '/';
+                return;
+            }
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 月份导航
+            document.getElementById('prev-month').addEventListener('click', function() {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+                renderCalendar();
+                loadSchedule();
+            });
+
+            document.getElementById('next-month').addEventListener('click', function() {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+                renderCalendar();
+                loadSchedule();
+            });
+
+            // 退出登录
+            document.getElementById('logout-btn').addEventListener('click', function() {
+                localStorage.removeItem('caregiver_info');
+                window.location.href = '/caregiver/';
+            });
+        }
+
+        // 加载工作安排
+        async function loadSchedule() {
+            try {
+                const response = await fetch('/api/caregiver/schedule', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    scheduleData = data.schedule || [];
+                    updateTodaySchedule();
+                    updateWeeklyStats();
+                    renderScheduleTimeline();
+                } else {
+                    showNotification('加载工作安排失败', 'error');
+                }
+            } catch (error) {
+                console.error('加载工作安排失败:', error);
+                showNotification('加载工作安排失败，请重试', 'error');
+            }
+        }
+
+        // 渲染日历
+        function renderCalendar() {
+            const calendarGrid = document.getElementById('calendar-grid');
+            const currentMonth = document.getElementById('current-month');
+            
+            // 更新月份显示
+            currentMonth.textContent = `${currentDate.getFullYear()}年${currentDate.getMonth() + 1}月`;
+            
+            // 清空日历
+            calendarGrid.innerHTML = '';
+            
+            // 添加星期标题
+            const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+            weekDays.forEach(day => {
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'p-2 text-center font-medium text-gray-600 bg-gray-50';
+                dayHeader.textContent = day;
+                calendarGrid.appendChild(dayHeader);
+            });
+            
+            // 获取月份第一天和最后一天
+            const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+            const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+            const startDate = new Date(firstDay);
+            startDate.setDate(startDate.getDate() - firstDay.getDay());
+            
+            // 生成42个日期格子（6周）
+            for (let i = 0; i < 42; i++) {
+                const date = new Date(startDate);
+                date.setDate(startDate.getDate() + i);
+                
+                const dayCell = document.createElement('div');
+                dayCell.className = 'p-2 min-h-[80px] border border-gray-200 hover:bg-gray-50 transition-colors';
+                
+                // 判断是否是当前月份
+                const isCurrentMonth = date.getMonth() === currentDate.getMonth();
+                const isToday = date.toDateString() === new Date().toDateString();
+                
+                dayCell.innerHTML = `
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-sm ${isCurrentMonth ? 'text-gray-800' : 'text-gray-400'} ${isToday ? 'font-bold' : ''}">
+                            ${date.getDate()}
+                        </span>
+                        ${isToday ? '<span class="w-2 h-2 bg-primary rounded-full"></span>' : ''}
+                    </div>
+                    <div class="space-y-1" id="schedule-${date.toISOString().split('T')[0]}">
+                        <!-- 该日期的安排将通过JavaScript动态加载 -->
+                    </div>
+                `;
+                
+                calendarGrid.appendChild(dayCell);
+            }
+            
+            // 加载每个日期的安排
+            loadDailySchedules();
+        }
+
+        // 加载每日安排
+        function loadDailySchedules() {
+            const dateCells = document.querySelectorAll('[id^="schedule-"]');
+            dateCells.forEach(cell => {
+                const dateStr = cell.id.replace('schedule-', '');
+                const daySchedules = scheduleData.filter(item => 
+                    item.date === dateStr
+                );
+                
+                if (daySchedules.length > 0) {
+                    cell.innerHTML = daySchedules.slice(0, 2).map(schedule => `
+                        <div class="text-xs p-1 bg-primary/10 text-primary rounded truncate">
+                            ${schedule.time} ${schedule.title}
+                        </div>
+                    `).join('');
+                    
+                    if (daySchedules.length > 2) {
+                        cell.innerHTML += `<div class="text-xs text-gray-500">+${daySchedules.length - 2}更多</div>`;
+                    }
+                }
+            });
+        }
+
+        // 更新今日安排
+        function updateTodaySchedule() {
+            const today = new Date().toISOString().split('T')[0];
+            const todaySchedules = scheduleData.filter(item => item.date === today);
+            
+            const todaySchedule = document.getElementById('today-schedule');
+            
+            if (todaySchedules.length === 0) {
+                todaySchedule.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fa fa-calendar text-4xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-500">今日暂无安排</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            todaySchedule.innerHTML = todaySchedules.map(schedule => `
+                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg mb-3">
+                    <div class="flex items-center gap-4">
+                        <div class="p-2 bg-primary/10 rounded-lg">
+                            <i class="fa fa-clock text-primary"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-gray-800">${schedule.title}</h4>
+                            <p class="text-sm text-gray-600">${schedule.time} - ${schedule.location}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-1 text-xs rounded-full ${
+                            schedule.status === 'pending' ? 'bg-warning/10 text-warning' :
+                            schedule.status === 'confirmed' ? 'bg-primary/10 text-primary' :
+                            schedule.status === 'in_progress' ? 'bg-success/10 text-success' :
+                            'bg-gray-100 text-gray-600'
+                        }">
+                            ${schedule.status === 'pending' ? '待确认' :
+                              schedule.status === 'confirmed' ? '已确认' :
+                              schedule.status === 'in_progress' ? '进行中' : '已完成'}
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 更新本周统计
+        function updateWeeklyStats() {
+            const now = new Date();
+            const startOfWeek = new Date(now);
+            startOfWeek.setDate(now.getDate() - now.getDay());
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+            
+            const weeklySchedules = scheduleData.filter(item => {
+                const itemDate = new Date(item.date);
+                return itemDate >= startOfWeek && itemDate <= endOfWeek;
+            });
+            
+            const totalHours = weeklySchedules.reduce((sum, item) => sum + (item.duration || 0), 0);
+            const completedCount = weeklySchedules.filter(item => item.status === 'completed').length;
+            const totalAppointments = weeklySchedules.length;
+            
+            document.getElementById('weekly-hours').textContent = `${totalHours}小时`;
+            document.getElementById('weekly-completed').textContent = `${completedCount}次`;
+            document.getElementById('weekly-appointments').textContent = `${totalAppointments}个`;
+        }
+
+        // 渲染时间表
+        function renderScheduleTimeline() {
+            const timeline = document.getElementById('schedule-timeline');
+            const hours = Array.from({length: 24}, (_, i) => i);
+            
+            timeline.innerHTML = hours.map(hour => {
+                const hourSchedules = scheduleData.filter(item => {
+                    const itemHour = new Date(`2000-01-01T${item.time}`).getHours();
+                    return itemHour === hour;
+                });
+                
+                return `
+                    <div class="flex items-center border-b border-gray-200 py-2">
+                        <div class="w-16 text-sm text-gray-600">${hour.toString().padStart(2, '0')}:00</div>
+                        <div class="flex-1 ml-4">
+                            ${hourSchedules.length > 0 ? hourSchedules.map(schedule => `
+                                <div class="inline-block px-3 py-1 bg-primary/10 text-primary text-sm rounded mr-2 mb-1">
+                                    ${schedule.title}
+                                </div>
+                            `).join('') : '<span class="text-gray-400">无安排</span>'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+                type === 'success' ? 'bg-success text-white' :
+                type === 'error' ? 'bg-danger text-white' :
+                type === 'warning' ? 'bg-warning text-white' :
+                'bg-primary text-white'
+            }`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

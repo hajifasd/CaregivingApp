@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>护理助手 - 用户端</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --secondary: #6b7280;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+        
+        .text-primary { color: var(--primary); }
+        .bg-primary { background-color: var(--primary); }
+        .border-primary { border-color: var(--primary); }
+        .text-success { color: var(--success); }
+        .bg-success { background-color: var(--success); }
+        .text-warning { color: var(--warning); }
+        .bg-warning { background-color: var(--warning); }
+        .text-danger { color: var(--danger); }
+        .bg-danger { background-color: var(--danger); }
+        
+        .star-rating {
+            display: flex;
+            gap: 0.25rem;
+        }
+        
+        .star {
+            cursor: pointer;
+            font-size: 2rem;
+            color: #d1d5db;
+            transition: color 0.2s;
+        }
+        
+        .star:hover,
+        .star.active {
+            color: var(--warning);
+        }
+        
+        .card-shadow {
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 头部 -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="/user/appointments" class="text-gray-600 hover:text-gray-900 mr-4">
+                        <i class="fa fa-arrow-left"></i>
+                    </a>
+                    <h1 class="text-xl font-semibold text-gray-900">服务评价</h1>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <img src="/uploads/avatars/default-user.png" alt="用户头像" class="w-8 h-8 rounded-full object-cover border-2 border-primary/20">
+                    <span class="text-sm font-medium text-gray-700" id="user-name">用户</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要内容 -->
+    <main class="max-w-4xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <!-- 预约信息卡片 -->
+        <div class="bg-white rounded-lg card-shadow p-6 mb-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">预约信息</h2>
+            <div id="appointment-info" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- 预约信息将通过JavaScript加载 -->
+            </div>
+        </div>
+
+        <!-- 评价表单 -->
+        <div class="bg-white rounded-lg card-shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-6">请为本次服务进行评价</h2>
+            
+            <form id="review-form" class="space-y-6">
+                <!-- 评分 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-3">服务评分</label>
+                    <div class="star-rating" id="star-rating">
+                        <i class="fa fa-star star" data-rating="1"></i>
+                        <i class="fa fa-star star" data-rating="2"></i>
+                        <i class="fa fa-star star" data-rating="3"></i>
+                        <i class="fa fa-star star" data-rating="4"></i>
+                        <i class="fa fa-star star" data-rating="5"></i>
+                    </div>
+                    <input type="hidden" id="rating" name="rating" value="0" required>
+                    <p class="text-sm text-gray-500 mt-2">请点击星星进行评分</p>
+                </div>
+
+                <!-- 评价内容 -->
+                <div>
+                    <label for="content" class="block text-sm font-medium text-gray-700 mb-2">评价内容</label>
+                    <textarea 
+                        id="content" 
+                        name="content" 
+                        rows="4" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                        placeholder="请详细描述您的服务体验..."
+                        required
+                    ></textarea>
+                </div>
+
+                <!-- 服务类型 -->
+                <div>
+                    <label for="service_type" class="block text-sm font-medium text-gray-700 mb-2">服务类型</label>
+                    <select 
+                        id="service_type" 
+                        name="service_type" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                        required
+                    >
+                        <option value="">请选择服务类型</option>
+                        <option value="老年护理">老年护理</option>
+                        <option value="康复护理">康复护理</option>
+                        <option value="日常照料">日常照料</option>
+                        <option value="医疗陪护">医疗陪护</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+
+                <!-- 提交按钮 -->
+                <div class="flex justify-end space-x-4">
+                    <button 
+                        type="button" 
+                        onclick="history.back()" 
+                        class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                        取消
+                    </button>
+                    <button 
+                        type="submit" 
+                        class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
+                    >
+                        提交评价
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- 加载提示 -->
+    <div id="loading" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen">
+            <div class="bg-white rounded-lg p-6 text-center">
+                <i class="fa fa-spinner fa-spin text-2xl text-primary mb-4"></i>
+                <p>提交中...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentRating = 0;
+        let appointmentId = null;
+        let appointmentData = null;
+
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            loadAppointmentInfo();
+            setupEventListeners();
+        });
+
+        // 检查认证状态
+        function checkAuth() {
+            const userInfo = localStorage.getItem('user_info');
+            if (!userInfo) {
+                window.location.href = '/user/login';
+                return;
+            }
+            
+            const user = JSON.parse(userInfo);
+            document.getElementById('user-name').textContent = user.name || '用户';
+        }
+
+        // 加载预约信息
+        async function loadAppointmentInfo() {
+            try {
+                // 从URL参数获取预约ID
+                const urlParams = new URLSearchParams(window.location.search);
+                appointmentId = urlParams.get('id');
+                
+                if (!appointmentId) {
+                    showNotification('缺少预约ID参数', 'error');
+                    setTimeout(() => history.back(), 2000);
+                    return;
+                }
+
+                const response = await fetch(`/api/user/appointments/${appointmentId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('user_token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        appointmentData = result.data;
+                        displayAppointmentInfo(appointmentData);
+                    } else {
+                        showNotification(result.message || '获取预约信息失败', 'error');
+                    }
+                } else {
+                    showNotification('获取预约信息失败', 'error');
+                }
+            } catch (error) {
+                console.error('加载预约信息失败:', error);
+                showNotification('加载预约信息失败', 'error');
+            }
+        }
+
+        // 显示预约信息
+        function displayAppointmentInfo(appointment) {
+            const container = document.getElementById('appointment-info');
+            container.innerHTML = `
+                <div>
+                    <p class="text-sm text-gray-600">护工姓名</p>
+                    <p class="font-medium text-gray-900">${appointment.caregiver_name || '未知护工'}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-600">服务类型</p>
+                    <p class="font-medium text-gray-900">${appointment.service_type || '未知'}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-600">服务日期</p>
+                    <p class="font-medium text-gray-900">${appointment.date || '未知'}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-600">服务时间</p>
+                    <p class="font-medium text-gray-900">${appointment.start_time || '未知'} - ${appointment.end_time || '未知'}</p>
+                </div>
+            `;
+
+            // 设置服务类型默认值
+            if (appointment.service_type) {
+                document.getElementById('service_type').value = appointment.service_type;
+            }
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 星星评分
+            const stars = document.querySelectorAll('.star');
+            stars.forEach((star, index) => {
+                star.addEventListener('click', () => setRating(index + 1));
+                star.addEventListener('mouseenter', () => highlightStars(index + 1));
+            });
+
+            // 鼠标离开星星区域
+            document.getElementById('star-rating').addEventListener('mouseleave', () => {
+                highlightStars(currentRating);
+            });
+
+            // 表单提交
+            document.getElementById('review-form').addEventListener('submit', submitReview);
+        }
+
+        // 设置评分
+        function setRating(rating) {
+            currentRating = rating;
+            document.getElementById('rating').value = rating;
+            highlightStars(rating);
+        }
+
+        // 高亮星星
+        function highlightStars(rating) {
+            const stars = document.querySelectorAll('.star');
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.classList.add('active');
+                } else {
+                    star.classList.remove('active');
+                }
+            });
+        }
+
+        // 提交评价
+        async function submitReview(e) {
+            e.preventDefault();
+            
+            if (currentRating === 0) {
+                showNotification('请选择评分', 'warning');
+                return;
+            }
+
+            const formData = new FormData(e.target);
+            const data = {
+                rating: currentRating,
+                content: formData.get('content'),
+                service_type: formData.get('service_type')
+            };
+
+            if (!data.content.trim()) {
+                showNotification('请输入评价内容', 'warning');
+                return;
+            }
+
+            try {
+                document.getElementById('loading').classList.remove('hidden');
+
+                const response = await fetch(`/api/user/appointments/${appointmentId}/review`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('user_token')}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showNotification('评价提交成功', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/user/appointments';
+                    }, 2000);
+                } else {
+                    showNotification(result.message || '评价提交失败', 'error');
+                }
+            } catch (error) {
+                console.error('提交评价失败:', error);
+                showNotification('提交评价失败，请重试', 'error');
+            } finally {
+                document.getElementById('loading').classList.add('hidden');
+            }
+        }
+
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+                type === 'success' ? 'bg-success text-white' :
+                type === 'error' ? 'bg-danger text-white' :
+                type === 'warning' ? 'bg-warning text-white' :
+                'bg-primary text-white'
+            }`;
+            notification.textContent = message;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
+

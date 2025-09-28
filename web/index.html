@@ -238,9 +238,9 @@
                 <h2 class="tab-title">用户端</h2>
                 <form id="user-login-form">
                     <div class="form-group">
-                        <label class="form-label">手机号/邮箱</label>
-                        <input type="text" class="form-input" placeholder="请输入账号" required>
-                        <div class="error-message" id="user-account-error">请输入账号</div>
+                        <label class="form-label">手机号</label>
+                        <input type="text" class="form-input" placeholder="请输入手机号" required>
+                        <div class="error-message" id="user-account-error">请输入手机号</div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">密码</label>
@@ -324,7 +324,7 @@
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            email: accountInput.value.trim(),
+                            phone: accountInput.value.trim(),
                             password: passwordInput.value
                         })
                     });
@@ -336,7 +336,13 @@
                         localStorage.setItem('user_info', JSON.stringify(data.data.user));
                         // 同时存储到cookie，确保页面跳转时能携带token
                         document.cookie = `user_token=${data.data.token}; path=/; max-age=7200`; // 2小时过期
-                        window.location.href = '/user/user-dashboard.html';
+                        
+                        console.log('用户登录成功，准备跳转...');
+                        // 确保localStorage更新完成后再跳转
+                        setTimeout(() => {
+                            console.log('跳转到用户仪表板...');
+                            window.location.href = '/user/user-dashboard.html';
+                        }, 1000);
                     } else {
                         alert(data.message || '登录失败');
                     }
@@ -372,11 +378,23 @@
                     
                     const data = await response.json();
                     if (data.success) {
+                        // 存储护工token和信息
                         localStorage.setItem('caregiver_token', data.data.token);
+                        localStorage.setItem('caregiver_info', JSON.stringify(data.data.caregiver));
+                        localStorage.setItem('caregiver_id', data.data.caregiver.id);
+                        
                         // 同时存储到cookie，确保页面跳转时能携带token
                         document.cookie = `caregiver_token=${data.data.token}; path=/; max-age=7200`; // 2小时过期
+                        
+                        console.log('护工登录成功，存储信息:', {
+                            token: data.data.token,
+                            caregiver: data.data.caregiver,
+                            user_type: 'caregiver'
+                        });
+                        
                         // 跳转到护工仪表板
                         setTimeout(() => {
+                            console.log('准备跳转到护工仪表板...');
                             window.location.href = '/caregiver/caregiver-dashboard.html';
                         }, 1000);
                     } else {

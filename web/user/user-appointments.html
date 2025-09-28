@@ -10,7 +10,11 @@
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     
     <!-- 引入用户登出功能 -->
+        <!-- 引入认证守卫 -->
+    <script src="/js/user-auth-guard.js"></script>
     <script src="/js/user-logout.js"></script>
+    <!-- 引入用户搜索管理器 -->
+    <script src="../js/user-search-manager.js"></script>
     <!-- 引入用户信息加载器 -->
     <script src="/js/user-info-loader.js"></script>
     
@@ -209,89 +213,13 @@
     </button>
     
     <script>
-        // 页面数据
-        const appointmentsData = [
-            {
-                id: 1,
-                caregiver: {
-                    name: '李敏',
-                    avatar: 'https://picsum.photos/id/26/50/50',
-                    id: 'CG20230567'
-                },
-                serviceType: '老年日常护理',
-                date: '2023-10-15',
-                startTime: '09:00',
-                endTime: '11:00',
-                duration: '2小时',
-                status: 'confirmed',
-                price: 180
-            },
-            {
-                id: 2,
-                caregiver: {
-                    name: '王芳',
-                    avatar: 'https://picsum.photos/id/91/50/50',
-                    id: 'CG20230421'
-                },
-                serviceType: '母婴护理咨询',
-                date: '2023-10-18',
-                startTime: '14:00',
-                endTime: '16:00',
-                duration: '2小时',
-                status: 'pending',
-                price: 220
-            },
-            {
-                id: 3,
-                caregiver: {
-                    name: '张伟',
-                    avatar: 'https://picsum.photos/id/177/50/50',
-                    id: 'CG20230678'
-                },
-                serviceType: '术后康复护理',
-                date: '2023-10-20',
-                startTime: '08:00',
-                endTime: '12:00',
-                duration: '4小时',
-                status: 'in-progress',
-                price: 260
-            },
-            {
-                id: 4,
-                caregiver: {
-                    name: '刘丽',
-                    avatar: 'https://picsum.photos/id/237/50/50',
-                    id: 'CG20230789'
-                },
-                serviceType: '老年心理护理',
-                date: '2023-10-12',
-                startTime: '15:00',
-                endTime: '17:00',
-                duration: '2小时',
-                status: 'completed',
-                price: 200
-            },
-            {
-                id: 5,
-                caregiver: {
-                    name: '陈华',
-                    avatar: 'https://picsum.photos/id/238/50/50',
-                    id: 'CG20230890'
-                },
-                serviceType: '产后修复指导',
-                date: '2023-10-10',
-                startTime: '10:00',
-                endTime: '12:00',
-                duration: '2小时',
-                status: 'cancelled',
-                price: 240
-            }
-        ];
+        // 页面数据 - 动态加载
+        let appointmentsData = [];
         
         // 页面初始化
         document.addEventListener('DOMContentLoaded', function() {
-            // 生成预约列表
-            generateAppointmentsList();
+            // 加载预约数据
+            loadAppointmentsData();
             
             // 绑定返回顶部按钮
             bindBackToTop();
@@ -300,15 +228,75 @@
             bindFilterEvents();
         });
         
+        // 加载预约数据
+        async function loadAppointmentsData() {
+            try {
+                const token = localStorage.getItem('user_token') || getCookie('user_token');
+                if (!token) {
+                    console.warn('用户未登录，无法加载预约数据');
+                    showEmptyState();
+                    return;
+                }
+                
+                const response = await fetch('/api/user/appointments', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        appointmentsData = data.data || [];
+                        console.log('预约数据加载成功:', appointmentsData);
+                        generateAppointmentsList();
+                    } else {
+                        console.error('获取预约数据失败:', data.message);
+                        showEmptyState();
+                    }
+                } else {
+                    console.error('获取预约数据失败:', response.status);
+                    showEmptyState();
+                }
+            } catch (error) {
+                console.error('加载预约数据失败:', error);
+                showEmptyState();
+            }
+        }
+        
+        // 显示空状态
+        function showEmptyState() {
+            const container = document.getElementById('appointments-container');
+            if (container) {
+                container.innerHTML = `
+                    <div class="text-center py-16">
+                        <i class="fa fa-calendar text-gray-400 text-6xl mb-4"></i>
+                        <h3 class="text-xl font-semibold text-gray-600 mb-2">暂无预约记录</h3>
+                        <p class="text-gray-500 mb-6">您还没有任何预约记录</p>
+                        <a href="/user/caregivers" class="inline-block bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-lg transition-colors">
+                            <i class="fa fa-plus mr-2"></i>立即预约
+                        </a>
+                    </div>
+                `;
+            }
+        }
+        
         // 生成预约列表
         function generateAppointmentsList() {
             const container = document.getElementById('appointments-container');
+            
+            if (!appointmentsData || appointmentsData.length === 0) {
+                showEmptyState();
+                return;
+            }
             
             container.innerHTML = appointmentsData.map(appointment => `
                 <tr class="border-b border-gray-100 hover:bg-gray-50">
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-3">
-                            <img src="${appointment.caregiver.avatar}" alt="${appointment.caregiver.name}护工" class="w-10 h-10 rounded-full object-cover">
+                            <img src="${window.AvatarManager ? window.AvatarManager.getAvatarUrl(appointment.caregiver.avatar, 'caregiver', 'small') : '/uploads/avatars/default-caregiver.png'}" 
+                                 alt="${appointment.caregiver.name}护工" 
+                                 class="w-10 h-10 rounded-full object-cover">
                             <div>
                                 <p class="font-medium">${appointment.caregiver.name}</p>
                                 <p class="text-sm text-gray-500">ID: ${appointment.caregiver.id}</p>
@@ -437,7 +425,7 @@
         
         // 写评价
         function writeReview(id) {
-            window.location.href = `/user/appointments?id=${id}&action=review`;
+            window.location.href = `/user/user-review.html?id=${id}`;
         }
         
         // 绑定返回顶部按钮

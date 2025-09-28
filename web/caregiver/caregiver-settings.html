@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>护理助手 - 护工端</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+        <!-- 引入认证守卫 -->
+    <script src="/js/caregiver-auth-guard.js"></script>
+    <script src="/js/config.js"></script>
+    <script src="/js/caregiver-common.js"></script>
+    <script src="/js/avatar-manager.js"></script>
+    <style>
+        :root {
+            --primary: #165DFF;
+            --primary-light: #4080FF;
+            --primary-dark: #0E42D2;
+            --success: #00B42A;
+            --warning: #FF7D00;
+            --danger: #F53F3F;
+            --neutral-dark: #1D2129;
+            --neutral-light: #F7F8FA;
+        }
+        .bg-primary { background-color: var(--primary); }
+        .text-primary { color: var(--primary); }
+        .border-primary { border-color: var(--primary); }
+        .bg-success { background-color: var(--success); }
+        .text-success { color: var(--success); }
+        .bg-warning { background-color: var(--warning); }
+        .text-warning { color: var(--warning); }
+        .bg-danger { background-color: var(--danger); }
+        .text-danger { color: var(--danger); }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 顶部导航栏 -->
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                    <i class="fa fa-hands-helping text-white text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-primary">护理助手</h1>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-6">
+            <div class="relative">
+                <input type="text" placeholder="搜索工作机会..." 
+                    class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 w-64">
+                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <button class="p-2 rounded-full hover:bg-gray-100 relative">
+                <i class="fa fa-bell text-gray-600"></i>
+                <span class="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full"></span>
+            </button>
+            
+            <div class="flex items-center gap-3">
+                <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-9 h-9 rounded-full object-cover border-2 border-primary/20">
+                <div class="hidden md:block">
+                    <p class="text-sm font-medium" id="caregiver-name">用户</p>
+                    <p class="text-xs text-gray-500">专业护工</p>
+                </div>
+                <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-primary">登出</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主导航菜单 -->
+    <nav class="bg-white border-b border-gray-200 px-6">
+        <div class="flex items-center space-x-8">
+            <a href="/caregiver/dashboard" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-tachometer mr-2"></i>工作台
+            </a>
+            <a href="/caregiver/profile" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-user mr-2"></i>个人信息
+            </a>
+            <a href="/caregiver/hire-info" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-briefcase mr-2"></i>聘用信息
+            </a>
+            <a href="/caregiver/job-opportunities" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-handshake mr-2"></i>工作申请
+            </a>
+            <a href="/caregiver/jobs" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-briefcase mr-2"></i>工作机会
+            </a>
+            <a href="/caregiver/appointments" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-calendar-check-o mr-2"></i>我的预约
+            </a>
+            <a href="/caregiver/schedule" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-calendar mr-2"></i>工作安排
+            </a>
+            <a href="/caregiver/earnings" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-chart-line mr-2"></i>收入统计
+            </a>
+            <a href="/caregiver/location" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-map-marker mr-2"></i>位置服务
+            </a>
+            <a href="/caregiver/reviews" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-star mr-2"></i>评价管理
+            </a>
+            <a href="/caregiver/messages" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-comments mr-2"></i>消息中心
+            </a>
+            <a href="/caregiver/settings" class="py-4 px-2 text-primary border-b-2 border-primary hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-cog mr-2"></i>设置
+            </a>
+        </div>
+    </nav>
+    
+    <!-- 页面内容 -->
+    <main class="p-6 bg-gray-50">
+        <div class="max-w-4xl mx-auto">
+            <!-- 账户设置 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-6">账户设置</h2>
+                
+                <div class="space-y-6">
+                    <!-- 密码修改 -->
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-800 mb-4">修改密码</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">当前密码</label>
+                                <input type="password" id="current-password" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">新密码</label>
+                                <input type="password" id="new-password" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">确认新密码</label>
+                                <input type="password" id="confirm-password" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            </div>
+                            <div class="flex items-end">
+                                <button id="change-password-btn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                                    修改密码
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 手机号修改 -->
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-800 mb-4">修改手机号</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">当前手机号</label>
+                                <input type="text" id="current-phone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" readonly>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">新手机号</label>
+                                <input type="text" id="new-phone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">验证码</label>
+                                <div class="flex gap-2">
+                                    <input type="text" id="verification-code" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
+                                    <button id="send-code-btn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                                        发送验证码
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="flex items-end">
+                                <button id="change-phone-btn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                                    修改手机号
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 通知设置 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-6">通知设置</h2>
+                
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-medium text-gray-800">工作机会通知</h4>
+                            <p class="text-sm text-gray-600">新工作机会时通知我</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="job-notifications" class="sr-only peer" checked>
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                        </label>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-medium text-gray-800">预约通知</h4>
+                            <p class="text-sm text-gray-600">新预约时通知我</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="appointment-notifications" class="sr-only peer" checked>
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                        </label>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-medium text-gray-800">消息通知</h4>
+                            <p class="text-sm text-gray-600">新消息时通知我</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="message-notifications" class="sr-only peer" checked>
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                        </label>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-medium text-gray-800">评价通知</h4>
+                            <p class="text-sm text-gray-600">收到新评价时通知我</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="review-notifications" class="sr-only peer" checked>
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 隐私设置 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-6">隐私设置</h2>
+                
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-medium text-gray-800">位置分享</h4>
+                            <p class="text-sm text-gray-600">允许雇主查看我的位置</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="location-sharing" class="sr-only peer" checked>
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                        </label>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-medium text-gray-800">在线状态</h4>
+                            <p class="text-sm text-gray-600">显示我的在线状态</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="online-status" class="sr-only peer" checked>
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                        </label>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-medium text-gray-800">个人信息可见性</h4>
+                            <p class="text-sm text-gray-600">允许其他用户查看我的基本信息</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="profile-visibility" class="sr-only peer" checked>
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 系统设置 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-6">系统设置</h2>
+                
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-medium text-gray-800">自动登录</h4>
+                            <p class="text-sm text-gray-600">记住登录状态</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="auto-login" class="sr-only peer" checked>
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                        </label>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-medium text-gray-800">数据同步</h4>
+                            <p class="text-sm text-gray-600">自动同步数据到云端</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="data-sync" class="sr-only peer" checked>
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                        </label>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-medium text-gray-800">缓存清理</h4>
+                            <p class="text-sm text-gray-600">清理应用缓存数据</p>
+                        </div>
+                        <button id="clear-cache-btn" class="px-4 py-2 bg-warning text-white rounded-lg hover:bg-warning/90 transition-colors">
+                            清理缓存
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 危险操作 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-6">危险操作</h2>
+                
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-medium text-gray-800">注销账户</h4>
+                            <p class="text-sm text-gray-600">永久删除您的账户和所有数据</p>
+                        </div>
+                        <button id="delete-account-btn" class="px-4 py-2 bg-danger text-white rounded-lg hover:bg-danger/90 transition-colors">
+                            注销账户
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 保存设置按钮 -->
+            <div class="flex justify-end mt-6">
+                <button id="save-settings-btn" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                    保存设置
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            loadSettings();
+            setupEventListeners();
+        });
+
+        // 检查认证状态
+        function checkAuth() {
+            const caregiverInfo = localStorage.getItem('caregiver_info');
+            if (!caregiverInfo) {
+                window.location.href = '/';
+                return;
+            }
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 修改密码
+            document.getElementById('change-password-btn').addEventListener('click', function() {
+                changePassword();
+            });
+
+            // 发送验证码
+            document.getElementById('send-code-btn').addEventListener('click', function() {
+                sendVerificationCode();
+            });
+
+            // 修改手机号
+            document.getElementById('change-phone-btn').addEventListener('click', function() {
+                changePhone();
+            });
+
+            // 清理缓存
+            document.getElementById('clear-cache-btn').addEventListener('click', function() {
+                clearCache();
+            });
+
+            // 注销账户
+            document.getElementById('delete-account-btn').addEventListener('click', function() {
+                deleteAccount();
+            });
+
+            // 保存设置
+            document.getElementById('save-settings-btn').addEventListener('click', function() {
+                saveSettings();
+            });
+
+            // 退出登录
+            document.getElementById('logout-btn').addEventListener('click', function() {
+                localStorage.removeItem('caregiver_info');
+                window.location.href = '/caregiver/';
+            });
+        }
+
+        // 加载设置
+        async function loadSettings() {
+            try {
+                const response = await fetch('/api/caregiver/settings', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    populateSettings(data);
+                } else {
+                    showNotification('加载设置失败', 'error');
+                }
+            } catch (error) {
+                console.error('加载设置失败:', error);
+                showNotification('加载设置失败，请重试', 'error');
+            }
+        }
+
+        // 填充设置
+        function populateSettings(settings) {
+            // 填充当前手机号
+            document.getElementById('current-phone').value = settings.phone || '';
+
+            // 填充通知设置
+            document.getElementById('job-notifications').checked = settings.notifications?.job_notifications || true;
+            document.getElementById('appointment-notifications').checked = settings.notifications?.appointment_notifications || true;
+            document.getElementById('message-notifications').checked = settings.notifications?.message_notifications || true;
+            document.getElementById('review-notifications').checked = settings.notifications?.review_notifications || true;
+
+            // 填充隐私设置
+            document.getElementById('location-sharing').checked = settings.privacy?.location_sharing || true;
+            document.getElementById('online-status').checked = settings.privacy?.online_status || true;
+            document.getElementById('profile-visibility').checked = settings.privacy?.profile_visibility || true;
+
+            // 填充系统设置
+            document.getElementById('auto-login').checked = settings.system?.auto_login || true;
+            document.getElementById('data-sync').checked = settings.system?.data_sync || true;
+        }
+
+        // 修改密码
+        async function changePassword() {
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                showNotification('请填写所有密码字段', 'warning');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showNotification('新密码和确认密码不匹配', 'warning');
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                showNotification('新密码长度至少6位', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/caregiver/change-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    },
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword
+                    })
+                });
+
+                if (response.ok) {
+                    showNotification('密码修改成功', 'success');
+                    // 清空密码字段
+                    document.getElementById('current-password').value = '';
+                    document.getElementById('new-password').value = '';
+                    document.getElementById('confirm-password').value = '';
+                } else {
+                    const error = await response.json();
+                    showNotification(error.message || '密码修改失败', 'error');
+                }
+            } catch (error) {
+                console.error('密码修改失败:', error);
+                showNotification('密码修改失败，请重试', 'error');
+            }
+        }
+
+        // 发送验证码
+        async function sendVerificationCode() {
+            const newPhone = document.getElementById('new-phone').value;
+
+            if (!newPhone) {
+                showNotification('请输入新手机号', 'warning');
+                return;
+            }
+
+            if (!/^1[3-9]\d{9}$/.test(newPhone)) {
+                showNotification('请输入有效的手机号', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/caregiver/send-verification-code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    },
+                    body: JSON.stringify({ phone: newPhone })
+                });
+
+                if (response.ok) {
+                    showNotification('验证码已发送', 'success');
+                    // 开始倒计时
+                    startCountdown();
+                } else {
+                    const error = await response.json();
+                    showNotification(error.message || '发送验证码失败', 'error');
+                }
+            } catch (error) {
+                console.error('发送验证码失败:', error);
+                showNotification('发送验证码失败，请重试', 'error');
+            }
+        }
+
+        // 开始倒计时
+        function startCountdown() {
+            const button = document.getElementById('send-code-btn');
+            let countdown = 60;
+            
+            button.disabled = true;
+            button.textContent = `${countdown}秒后重试`;
+            
+            const timer = setInterval(() => {
+                countdown--;
+                button.textContent = `${countdown}秒后重试`;
+                
+                if (countdown <= 0) {
+                    clearInterval(timer);
+                    button.disabled = false;
+                    button.textContent = '发送验证码';
+                }
+            }, 1000);
+        }
+
+        // 修改手机号
+        async function changePhone() {
+            const newPhone = document.getElementById('new-phone').value;
+            const verificationCode = document.getElementById('verification-code').value;
+
+            if (!newPhone || !verificationCode) {
+                showNotification('请填写手机号和验证码', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/caregiver/change-phone', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    },
+                    body: JSON.stringify({
+                        new_phone: newPhone,
+                        verification_code: verificationCode
+                    })
+                });
+
+                if (response.ok) {
+                    showNotification('手机号修改成功', 'success');
+                    // 更新当前手机号显示
+                    document.getElementById('current-phone').value = newPhone;
+                    document.getElementById('new-phone').value = '';
+                    document.getElementById('verification-code').value = '';
+                } else {
+                    const error = await response.json();
+                    showNotification(error.message || '手机号修改失败', 'error');
+                }
+            } catch (error) {
+                console.error('手机号修改失败:', error);
+                showNotification('手机号修改失败，请重试', 'error');
+            }
+        }
+
+        // 清理缓存
+        function clearCache() {
+            if (confirm('确定要清理缓存吗？这将清除所有本地数据。')) {
+                localStorage.clear();
+                sessionStorage.clear();
+                showNotification('缓存清理完成', 'success');
+            }
+        }
+
+        // 注销账户
+        function deleteAccount() {
+            if (confirm('确定要注销账户吗？此操作不可恢复，将永久删除您的账户和所有数据。')) {
+                if (confirm('请再次确认，您真的要注销账户吗？')) {
+                    deleteAccountConfirm();
+                }
+            }
+        }
+
+        // 确认注销账户
+        async function deleteAccountConfirm() {
+            try {
+                const response = await fetch('/api/caregiver/delete-account', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    showNotification('账户注销成功', 'success');
+                    localStorage.removeItem('caregiver_info');
+                    window.location.href = '/caregiver/';
+                } else {
+                    const error = await response.json();
+                    showNotification(error.message || '账户注销失败', 'error');
+                }
+            } catch (error) {
+                console.error('账户注销失败:', error);
+                showNotification('账户注销失败，请重试', 'error');
+            }
+        }
+
+        // 保存设置
+        async function saveSettings() {
+            const settings = {
+                notifications: {
+                    job_notifications: document.getElementById('job-notifications').checked,
+                    appointment_notifications: document.getElementById('appointment-notifications').checked,
+                    message_notifications: document.getElementById('message-notifications').checked,
+                    review_notifications: document.getElementById('review-notifications').checked
+                },
+                privacy: {
+                    location_sharing: document.getElementById('location-sharing').checked,
+                    online_status: document.getElementById('online-status').checked,
+                    profile_visibility: document.getElementById('profile-visibility').checked
+                },
+                system: {
+                    auto_login: document.getElementById('auto-login').checked,
+                    data_sync: document.getElementById('data-sync').checked
+                }
+            };
+
+            try {
+                const response = await fetch('/api/caregiver/settings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    },
+                    body: JSON.stringify(settings)
+                });
+
+                if (response.ok) {
+                    showNotification('设置保存成功', 'success');
+                } else {
+                    const error = await response.json();
+                    showNotification(error.message || '设置保存失败', 'error');
+                }
+            } catch (error) {
+                console.error('设置保存失败:', error);
+                showNotification('设置保存失败，请重试', 'error');
+            }
+        }
+
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+                type === 'success' ? 'bg-success text-white' :
+                type === 'error' ? 'bg-danger text-white' :
+                type === 'warning' ? 'bg-warning text-white' :
+                'bg-primary text-white'
+            }`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

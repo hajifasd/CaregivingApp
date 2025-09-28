@@ -3,14 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>护理助手 - 用户主页</title>
+    <title>护理助手 - 用户端</title>
     <!-- 引入Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入Font Awesome -->
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     
     <!-- 引入用户登出功能 -->
+        <!-- 引入认证守卫 -->
+    <script src="/js/user-auth-guard.js"></script>
     <script src="/js/user-logout.js"></script>
+    <!-- 引入功能管理器 -->
+    <script src="../js/payment-manager.js"></script>
+    <script src="../js/location-manager.js"></script>
+    <script src="../js/emergency-manager.js"></script>
+    <!-- 引入按钮功能检查器 -->
+    <script src="../js/button-functionality-checker.js"></script>
+    <!-- 引入用户搜索管理器 -->
+    <script src="../js/user-search-manager.js"></script>
     
     <!-- 配置Tailwind自定义主题 -->
     <script>
@@ -101,8 +111,9 @@
             <a href="/user/messages" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
                 消息中心
             </a>
-            <a href="#" class="py-4 px-2 text-danger hover:text-danger/80 hover:border-b-2 hover:border-danger/50">
-                紧急呼叫
+            <a href="#" class="py-4 px-2 text-danger hover:text-danger/80 hover:border-b-2 hover:border-danger/50" 
+               data-emergency-action="trigger-emergency">
+                <i class="fa fa-exclamation-triangle mr-2"></i>紧急呼叫
             </a>
         </div>
     </nav>
@@ -130,7 +141,7 @@
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="caregivers-container">
-                <!-- 护工卡片将通过JavaScript动态生成 -->
+                <!--/* 用户卡片将通过JavaScript动态生成 -->
             </div>
         </div>
         
@@ -155,28 +166,28 @@
     </button>
     
     <script>
-        // 页面数据
+        // 页面数据 - 动态加载
         const pageData = {
             stats: {
                 appointments: {
-                    total: 8,
-                    pending: 2,
-                    confirmed: 4,
-                    inProgress: 1,
-                    completed: 1
+                    total: 0,
+                    pending: 0,
+                    confirmed: 0,
+                    inProgress: 0,
+                    completed: 0
                 },
                 employments: {
-                    total: 3,
-                    active: 1,
-                    pending: 1,
-                    completed: 1
+                    total: 0,
+                    active: 0,
+                    pending: 0,
+                    completed: 0
                 },
                 rating: {
-                    average: 4.9,
+                    average: 0,
                     distribution: {
-                        '5': 80,
-                        '4': 15,
-                        '3': 5
+                        '5': 0,
+                        '4': 0,
+                        '3': 0
                     }
                 }
             },
@@ -270,6 +281,32 @@
                             <i class="fa fa-list mr-1"></i>查看全部
                         </button>
                     </div>
+                    
+                    <!-- 位置和附近护工功能 -->
+                    <div class="mt-4 p-4 bg-blue-50 rounded-lg">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="font-semibold text-blue-800">附近护工</h4>
+                            <div data-location-display class="text-sm text-blue-600">
+                                <div class="flex items-center gap-2">
+                                    <i class="fa fa-map-marker text-gray-400"></i>
+                                    <span>未获取位置</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors" 
+                                    data-location-action="get-current-location">
+                                <i class="fa fa-location-arrow mr-1"></i>获取位置
+                            </button>
+                            <button class="flex-1 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors" 
+                                    data-location-action="find-nearby-caregivers">
+                                <i class="fa fa-search mr-1"></i>查找附近
+                            </button>
+                        </div>
+                        <div id="nearby-caregivers" class="mt-3">
+                            <p class="text-sm text-gray-500 text-center py-4">点击"查找附近"查看附近的护工</p>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- 聘用统计卡片 -->
@@ -354,7 +391,7 @@
                     </div>
                     <div class="p-5">
                         <div class="flex items-center justify-between mb-3">
-                            <h4 class="font-bold text-lg">${caregiver.name} 护工</h4>
+                            <h4 class="font-bold text-lg">${caregiver.name}/* 用户</h4>
                             <div class="flex items-center">
                                 <i class="fa fa-star text-warning mr-1"></i>
                                 <span class="text-sm font-medium">${caregiver.rating}</span>
@@ -492,19 +529,111 @@
         // 加载页面数据
         async function loadPageData() {
             try {
-                // 这里应该调用实际的API
-                // const response = await fetch('/api/user/dashboard/stats');
-                // if (response.ok) {
-                //     const data = await response.json();
-                //     updatePageData(data);
-                // }
+                const token = localStorage.getItem('user_token') || getCookie('user_token');
+                if (!token) {
+                    console.warn('用户未登录，无法加载数据');
+                    return;
+                }
                 
-                // 模拟API延迟
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                // 加载用户统计数据
+                await loadUserStats();
+                
+                // 加载预约数据
+                await loadAppointmentsData();
+                
+                // 加载聘用数据
+                await loadEmploymentsData();
+                
+                // 更新页面显示
+                updatePageDisplay();
                 
             } catch (error) {
                 console.error('加载数据失败:', error);
+                showNotification('加载数据失败，请刷新页面重试', 'error');
             }
+        }
+        
+        // 加载用户统计数据
+        async function loadUserStats() {
+            try {
+                const token = localStorage.getItem('user_token') || getCookie('user_token');
+                const response = await fetch('/api/user/dashboard/stats', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        pageData.stats = data.data;
+                        console.log('用户统计数据加载成功:', pageData.stats);
+                    }
+                } else {
+                    console.warn('获取用户统计数据失败，使用默认值');
+                }
+            } catch (error) {
+                console.error('加载用户统计数据失败:', error);
+            }
+        }
+        
+        // 加载聘用数据
+        async function loadEmploymentsData() {
+            try {
+                const token = localStorage.getItem('user_token') || getCookie('user_token');
+                const response = await fetch('/api/user/employments', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        // 更新聘用统计数据
+                        const employments = data.data || [];
+                        pageData.stats.employments.total = employments.length;
+                        pageData.stats.employments.active = employments.filter(e => e.status === 'active').length;
+                        pageData.stats.employments.pending = employments.filter(e => e.status === 'pending').length;
+                        pageData.stats.employments.completed = employments.filter(e => e.status === 'completed').length;
+                    }
+                }
+            } catch (error) {
+                console.error('加载聘用数据失败:', error);
+            }
+        }
+        
+        // 更新页面显示
+        function updatePageDisplay() {
+            // 更新统计卡片
+            updateStatsCards();
+            
+            // 更新护工卡片
+            generateCaregiverCards();
+            
+            // 更新预约表格
+            generateAppointmentsTable();
+        }
+        
+        // 更新统计卡片
+        function updateStatsCards() {
+            const stats = pageData.stats;
+            
+            // 更新预约统计
+            document.getElementById('total-appointments').textContent = stats.appointments.total;
+            document.getElementById('pending-confirm').textContent = stats.appointments.pending;
+            document.getElementById('confirmed').textContent = stats.appointments.confirmed;
+            document.getElementById('in-progress').textContent = stats.appointments.inProgress;
+            document.getElementById('completed').textContent = stats.appointments.completed;
+            
+            // 更新聘用统计
+            document.getElementById('total-employments').textContent = stats.employments.total;
+            document.getElementById('active-employments').textContent = stats.employments.active;
+            document.getElementById('pending-employments').textContent = stats.employments.pending;
+            document.getElementById('completed-employments').textContent = stats.employments.completed;
+            
+            // 更新评价统计
+            document.getElementById('average-rating').textContent = stats.rating.average.toFixed(1);
         }
         
         // 启动实时更新
@@ -576,22 +705,43 @@
         async function cancelAppointment(id) {
             if (confirm('确定要取消这个预约吗？')) {
                 try {
-                    // 这里应该调用实际的取消API
-                    // await fetch(`/api/user/appointments/${id}`, { method: 'DELETE' });
+                    const token = localStorage.getItem('user_token') || getCookie('user_token');
+                    if (!token) {
+                        alert('请先登录');
+                        return;
+                    }
                     
-                    // 模拟API延迟
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    const response = await fetch(`/api/user/appointments/${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
                     
-                    alert('预约已取消');
-                    
-                    // 刷新页面数据
-                    loadPageData();
-                    
+                    if (response.ok) {
+                        alert('预约已取消');
+                        // 刷新页面数据
+                        loadAppointmentsData();
+                    } else {
+                        const result = await response.json();
+                        alert(result.message || '取消预约失败');
+                    }
                 } catch (error) {
-                    alert('取消预约失败');
                     console.error('取消预约失败:', error);
+                    alert('取消预约失败，请稍后重试');
                 }
             }
+        }
+        
+        // 联系护工
+        function contactCaregiver(caregiverId) {
+            window.location.href = `/user/messages?contact=${caregiverId}`;
+        }
+        
+        // 预约护工
+        function bookCaregiver(caregiverId) {
+            window.location.href = `/user/hire-caregiver.html?caregiver_id=${caregiverId}`;
         }
         
         // 绑定返回顶部按钮

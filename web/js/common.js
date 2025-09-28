@@ -566,7 +566,7 @@ function displaySearchResults(results, type) {
             searchContainer.innerHTML = results.map(caregiver => `
                 <div class="search-result-item caregiver-result">
                     <div class="result-avatar">
-                        <img src="${caregiver.avatar_url || 'https://picsum.photos/id/64/50/50'}" alt="${caregiver.name}">
+                        <img src="${window.AvatarManager.getAvatarUrl(caregiver.avatar_url, 'caregiver', 'small')}" alt="${caregiver.name}">
                     </div>
                     <div class="result-info">
                         <h4>${caregiver.name}</h4>

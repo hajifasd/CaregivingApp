@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>护理助手 - 用户仪表板</title>
+    <title>护理助手 - 用户端</title>
     <!-- 引入Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入Font Awesome -->
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     
+    <!-- 引入用户端专用认证守卫 -->
+    <script src="/js/user-auth-guard.js"></script>
     <!-- 引入用户登出功能 -->
     <script src="/js/user-logout.js"></script>
     <!-- 引入用户信息管理 -->
@@ -221,6 +223,9 @@
 
         // 页面加载完成后加载通知
         document.addEventListener('DOMContentLoaded', function() {
+            // 加载用户信息
+            loadUserInfo();
+            
             // 延迟加载通知，确保DOM已准备好
             setTimeout(() => {
                 loadNotifications();
@@ -230,7 +235,7 @@
         // 加载通知
         function loadNotifications() {
             // 从localStorage或JWT token中获取用户ID
-            const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            const userInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
             const userId = userInfo.id;
             
             if (!userId) {
@@ -301,7 +306,7 @@
 
         // 标记通知为已读
         function markNotificationRead(notificationId) {
-            const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            const userInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
             const userId = userInfo.id;
             
             if (!userId) {
@@ -334,7 +339,7 @@
 
         // 全部标记已读
         document.getElementById('mark-all-read').addEventListener('click', function() {
-            const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            const userInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
             const userId = userInfo.id;
             
             if (!userId) {

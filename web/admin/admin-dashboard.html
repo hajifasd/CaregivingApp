@@ -9,6 +9,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入Font Awesome -->
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- 引入系统监控 -->
+    <script src="../js/system-monitor.js"></script>
+    <!-- 引入管理端专用认证守卫 -->
+    <script src="/js/admin-auth-guard.js"></script>
+    <!-- 引入管理登出功能 -->
+    <script src="/js/admin-logout.js"></script>
     
     <!-- 配置Tailwind自定义主题 -->
     <script>
@@ -85,7 +91,7 @@
                 仪表盘
             </a>
             <a href="/admin/admin-caregivers.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
-                护工管理
+               /* 用户管理
             </a>
             <a href="/admin/admin-users.html" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
                 用户管理
@@ -182,7 +188,7 @@
         
         <!-- 功能模块导航 -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            <!-- 护工管理 -->
+            <!--/* 用户管理 -->
             <div class="bg-white rounded-xl p-6 card-shadow hover:shadow-lg transition-shadow">
                 <div class="text-center">
                     <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
@@ -220,6 +226,20 @@
                     <p class="text-gray-600 mb-4">分析就业趋势、岗位需求和市场动态</p>
                     <a href="/admin/admin-job-analysis.html" class="inline-block bg-accent hover:bg-accent/90 text-white px-6 py-2 rounded-lg transition-colors">
                         查看分析
+                    </a>
+                </div>
+            </div>
+            
+            <!-- 系统监控 -->
+            <div class="bg-white rounded-xl p-6 card-shadow hover:shadow-lg transition-shadow">
+                <div class="text-center">
+                    <div class="w-16 h-16 rounded-full bg-warning/10 flex items-center justify-center mx-auto mb-4">
+                        <i class="fa fa-heartbeat text-warning text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">系统监控</h3>
+                    <p class="text-gray-600 mb-4">实时监控系统状态和性能</p>
+                    <a href="#monitoring" class="inline-block bg-warning hover:bg-warning/90 text-white px-6 py-2 rounded-lg transition-colors">
+                        系统监控
                     </a>
                 </div>
             </div>
@@ -274,6 +294,118 @@
                 <span><i class="fa fa-arrow-up text-primary"></i> 顶部导航</span>
                 <span><i class="fa fa-shield text-primary"></i> 管理权限</span>
                 <span><i class="fa fa-cog text-primary"></i> 系统设置</span>
+            </div>
+        </div>
+        
+        <!-- 系统监控内容 -->
+        <div id="monitoring" class="hidden">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">系统监控</h2>
+                <p class="text-gray-600 text-lg">实时监控系统状态和性能指标</p>
+            </div>
+            
+            <!-- 服务状态 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <div class="text-center">
+                        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                            <i class="fa fa-server text-primary text-xl"></i>
+                        </div>
+                        <h3 class="font-semibold mb-2">服务器</h3>
+                        <div id="server-status" class="text-lg font-bold text-green-600">运行中</div>
+                        <div id="server-details" class="text-sm text-gray-600 mt-2"></div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <div class="text-center">
+                        <div class="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center mx-auto mb-3">
+                            <i class="fa fa-database text-secondary text-xl"></i>
+                        </div>
+                        <h3 class="font-semibold mb-2">数据库</h3>
+                        <div id="database-status" class="text-lg font-bold text-green-600">运行中</div>
+                        <div id="database-details" class="text-sm text-gray-600 mt-2"></div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <div class="text-center">
+                        <div class="w-12 h-12 rounded-full bg-warning/10 flex items-center justify-center mx-auto mb-3">
+                            <i class="fa fa-memory text-warning text-xl"></i>
+                        </div>
+                        <h3 class="font-semibold mb-2">Redis</h3>
+                        <div id="redis-status" class="text-lg font-bold text-green-600">运行中</div>
+                        <div id="redis-details" class="text-sm text-gray-600 mt-2"></div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <div class="text-center">
+                        <div class="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-3">
+                            <i class="fa fa-bolt text-accent text-xl"></i>
+                        </div>
+                        <h3 class="font-semibold mb-2">Spark</h3>
+                        <div id="spark-status" class="text-lg font-bold text-green-600">运行中</div>
+                        <div id="spark-details" class="text-sm text-gray-600 mt-2"></div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <div class="text-center">
+                        <div class="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-3">
+                            <i class="fa fa-hdd-o text-success text-xl"></i>
+                        </div>
+                        <h3 class="font-semibold mb-2">Hadoop</h3>
+                        <div id="hadoop-status" class="text-lg font-bold text-green-600">运行中</div>
+                        <div id="hadoop-details" class="text-sm text-gray-600 mt-2"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 性能指标 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <h3 class="font-semibold mb-4">CPU使用率</h3>
+                    <div id="cpu-chart"></div>
+                </div>
+                
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <h3 class="font-semibold mb-4">内存使用率</h3>
+                    <div id="memory-chart"></div>
+                </div>
+                
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <h3 class="font-semibold mb-4">磁盘使用率</h3>
+                    <div id="disk-chart"></div>
+                </div>
+                
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <h3 class="font-semibold mb-4">网络流量</h3>
+                    <div id="network-chart"></div>
+                </div>
+            </div>
+            
+            <!-- 系统告警 -->
+            <div class="bg-white rounded-xl p-6 card-shadow">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold">系统告警</h3>
+                    <div class="flex gap-2">
+                        <button class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg transition-colors" 
+                                data-monitor-action="refresh-status">
+                            <i class="fa fa-refresh mr-2"></i>刷新状态
+                        </button>
+                        <button class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors" 
+                                data-monitor-action="clear-alerts">
+                            <i class="fa fa-trash mr-2"></i>清除告警
+                        </button>
+                    </div>
+                </div>
+                <div id="system-alerts">
+                    <div class="text-center py-8">
+                        <i class="fa fa-check-circle text-green-500 text-4xl mb-4"></i>
+                        <p class="text-gray-500">系统运行正常，无告警</p>
+                    </div>
+                </div>
             </div>
         </div>
     </main>

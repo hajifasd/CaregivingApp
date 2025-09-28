@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>护理助手 - 护工端</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+        <!-- 引入认证守卫 -->
+    <script src="/js/caregiver-auth-guard.js"></script>
+    <script src="/js/config.js"></script>
+    <script src="/js/caregiver-common.js"></script>
+    <script src="/js/avatar-manager.js"></script>
+    <style>
+        :root {
+            --primary: #165DFF;
+            --primary-light: #4080FF;
+            --primary-dark: #0E42D2;
+            --success: #00B42A;
+            --warning: #FF7D00;
+            --danger: #F53F3F;
+            --neutral-dark: #1D2129;
+            --neutral-light: #F7F8FA;
+        }
+        .bg-primary { background-color: var(--primary); }
+        .text-primary { color: var(--primary); }
+        .border-primary { border-color: var(--primary); }
+        .bg-success { background-color: var(--success); }
+        .text-success { color: var(--success); }
+        .bg-warning { background-color: var(--warning); }
+        .text-warning { color: var(--warning); }
+        .bg-danger { background-color: var(--danger); }
+        .text-danger { color: var(--danger); }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 顶部导航栏 -->
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                    <i class="fa fa-hands-helping text-white text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-primary">护理助手</h1>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-6">
+            <div class="relative">
+                <input type="text" placeholder="搜索工作机会..." 
+                    class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 w-64">
+                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <button class="p-2 rounded-full hover:bg-gray-100 relative">
+                <i class="fa fa-bell text-gray-600"></i>
+                <span class="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full"></span>
+            </button>
+            
+            <div class="flex items-center gap-3">
+                <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-9 h-9 rounded-full object-cover border-2 border-primary/20">
+                <div class="hidden md:block">
+                    <p class="text-sm font-medium" id="caregiver-name">用户</p>
+                    <p class="text-xs text-gray-500">专业护工</p>
+                </div>
+                <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-primary">登出</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主导航菜单 -->
+    <nav class="bg-white border-b border-gray-200 px-6">
+        <div class="flex items-center space-x-8">
+            <a href="/caregiver/dashboard" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-tachometer mr-2"></i>工作台
+            </a>
+            <a href="/caregiver/profile" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-user mr-2"></i>个人信息
+            </a>
+            <a href="/caregiver/hire-info" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-briefcase mr-2"></i>聘用信息
+            </a>
+            <a href="/caregiver/job-opportunities" class="py-4 px-2 text-primary border-b-2 border-primary hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-handshake mr-2"></i>工作申请
+            </a>
+            <a href="/caregiver/jobs" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-briefcase mr-2"></i>工作机会
+            </a>
+            <a href="/caregiver/appointments" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-calendar-check-o mr-2"></i>我的预约
+            </a>
+            <a href="/caregiver/schedule" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-calendar mr-2"></i>工作安排
+            </a>
+            <a href="/caregiver/earnings" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-chart-line mr-2"></i>收入统计
+            </a>
+            <a href="/caregiver/location" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-map-marker mr-2"></i>位置服务
+            </a>
+            <a href="/caregiver/reviews" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-star mr-2"></i>评价管理
+            </a>
+            <a href="/caregiver/messages" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-comments mr-2"></i>消息中心
+            </a>
+            <a href="/caregiver/settings" class="py-4 px-2 text-gray-500 hover:text-primary hover:border-b-2 hover:border-primary/50">
+                <i class="fa fa-cog mr-2"></i>设置
+            </a>
+        </div>
+    </nav>
+    
+    <!-- 页面内容 -->
+    <main class="p-6 bg-gray-50">
+        <div class="max-w-6xl mx-auto">
+            <!-- 统计卡片 -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-primary/10 rounded-lg">
+                            <i class="fa fa-paper-plane text-primary text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">总申请数</p>
+                            <p class="text-2xl font-bold text-gray-800" id="total-applications">0</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-warning/10 rounded-lg">
+                            <i class="fa fa-clock text-warning text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">待审核</p>
+                            <p class="text-2xl font-bold text-gray-800" id="pending-applications">0</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-success/10 rounded-lg">
+                            <i class="fa fa-check text-success text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">已通过</p>
+                            <p class="text-2xl font-bold text-gray-800" id="approved-applications">0</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-danger/10 rounded-lg">
+                            <i class="fa fa-times text-danger text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">已拒绝</p>
+                            <p class="text-2xl font-bold text-gray-800" id="rejected-applications">0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 筛选和搜索 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <div class="flex-1">
+                        <div class="relative">
+                            <input type="text" id="search-input" placeholder="搜索工作申请..." 
+                                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <select id="filter-status" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            <option value="">全部状态</option>
+                            <option value="pending">待审核</option>
+                            <option value="approved">已通过</option>
+                            <option value="rejected">已拒绝</option>
+                        </select>
+                        <button id="search-btn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                            <i class="fa fa-search mr-2"></i>搜索
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 工作申请列表 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-bold text-gray-800">我的工作申请</h3>
+                </div>
+                
+                <div id="applications-list">
+                    <!-- 工作申请列表将通过JavaScript动态加载 -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 申请详情模态框 -->
+    <div id="application-detail-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xl font-bold text-gray-800">申请详情</h3>
+                        <button id="close-application-modal" class="text-gray-400 hover:text-gray-600">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div id="application-detail-content">
+                        <!-- 申请详情内容将通过JavaScript动态加载 -->
+                    </div>
+                    
+                    <div class="flex justify-end gap-4 mt-6">
+                        <button id="close-application-btn" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                            关闭
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentApplications = [];
+
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            loadApplications();
+            setupEventListeners();
+        });
+        
+        // 加载工作申请数据
+        async function loadApplications() {
+            try {
+                const response = await fetch('/api/caregiver/applications', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        currentApplications = result.data || [];
+                        displayApplications();
+                    } else {
+                        console.error('加载工作申请失败:', result.message);
+                        showEmptyApplications();
+                    }
+                } else {
+                    console.error('加载工作申请失败:', response.statusText);
+                    showEmptyApplications();
+                }
+            } catch (error) {
+                console.error('加载工作申请失败:', error);
+                showEmptyApplications();
+            }
+        }
+        
+        // 显示空工作申请状态
+        function showEmptyApplications() {
+            const container = document.getElementById('applications-container');
+            container.innerHTML = `
+                <div class="p-6 text-center text-gray-500">
+                    <i class="fa fa-handshake text-4xl mb-4"></i>
+                    <p>暂无工作申请</p>
+                </div>
+            `;
+        }
+
+        // 检查认证状态
+        function checkAuth() {
+            const caregiverInfo = localStorage.getItem('caregiver_info');
+            if (!caregiverInfo) {
+                window.location.href = '/';
+                return;
+            }
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 搜索按钮
+            document.getElementById('search-btn').addEventListener('click', function() {
+                performSearch();
+            });
+
+            // 搜索输入框回车
+            document.getElementById('search-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+
+            // 状态筛选
+            document.getElementById('filter-status').addEventListener('change', function() {
+                performSearch();
+            });
+
+            // 关闭模态框
+            document.getElementById('close-application-modal').addEventListener('click', function() {
+                document.getElementById('application-detail-modal').classList.add('hidden');
+            });
+
+            document.getElementById('close-application-btn').addEventListener('click', function() {
+                document.getElementById('application-detail-modal').classList.add('hidden');
+            });
+
+            // 退出登录
+            document.getElementById('logout-btn').addEventListener('click', function() {
+                localStorage.removeItem('caregiver_info');
+                window.location.href = '/caregiver/';
+            });
+        }
+
+        // 加载工作申请
+        async function loadApplications() {
+            try {
+                const response = await fetch('/api/caregiver/applications', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentApplications = data.applications || [];
+                    displayApplications(currentApplications);
+                    updateStatistics(currentApplications);
+                } else {
+                    showNotification('加载工作申请失败', 'error');
+                }
+            } catch (error) {
+                console.error('加载工作申请失败:', error);
+                showNotification('加载工作申请失败，请重试', 'error');
+            }
+        }
+
+        // 执行搜索
+        function performSearch() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const status = document.getElementById('filter-status').value;
+
+            let filteredApplications = currentApplications;
+
+            if (searchTerm) {
+                filteredApplications = filteredApplications.filter(app => 
+                    app.job_title.toLowerCase().includes(searchTerm) ||
+                    app.job_description.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            if (status) {
+                filteredApplications = filteredApplications.filter(app => app.status === status);
+            }
+
+            displayApplications(filteredApplications);
+        }
+
+        // 显示工作申请列表
+        function displayApplications(applications) {
+            const applicationsList = document.getElementById('applications-list');
+            
+            if (applications.length === 0) {
+                applicationsList.innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="fa fa-handshake text-4xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-500 text-lg">暂无工作申请</p>
+                    </div>
+                `;
+                return;
+            }
+
+            applicationsList.innerHTML = applications.map(app => `
+                <div class="p-6 border-b border-gray-200 hover:bg-gray-50 transition-colors">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <h4 class="text-lg font-bold text-gray-800 mb-2">${app.job_title}</h4>
+                            <p class="text-gray-600 mb-3">${app.job_description}</p>
+                            
+                            <div class="flex items-center gap-4 text-sm text-gray-500 mb-3">
+                                <span><i class="fa fa-map-marker mr-1"></i>${app.job_location}</span>
+                                <span><i class="fa fa-clock mr-1"></i>${app.job_schedule}</span>
+                                <span><i class="fa fa-money mr-1"></i>¥${app.job_salary}/小时</span>
+                            </div>
+                            
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-1 text-xs rounded-full ${
+                                    app.status === 'pending' ? 'bg-warning/10 text-warning' :
+                                    app.status === 'approved' ? 'bg-success/10 text-success' :
+                                    'bg-danger/10 text-danger'
+                                }">
+                                    ${app.status === 'pending' ? '待审核' :
+                                      app.status === 'approved' ? '已通过' : '已拒绝'}
+                                </span>
+                                <span class="text-sm text-gray-500">申请时间：${app.applied_date}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-col gap-2">
+                            <button onclick="viewApplicationDetail(${app.id})" class="px-3 py-1 text-primary border border-primary rounded hover:bg-primary/10 transition-colors">
+                                查看详情
+                            </button>
+                            ${app.status === 'pending' ? `
+                                <button onclick="cancelApplication(${app.id})" class="px-3 py-1 text-danger border border-danger rounded hover:bg-danger/10 transition-colors">
+                                    取消申请
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 更新统计信息
+        function updateStatistics(applications) {
+            const total = applications.length;
+            const pending = applications.filter(app => app.status === 'pending').length;
+            const approved = applications.filter(app => app.status === 'approved').length;
+            const rejected = applications.filter(app => app.status === 'rejected').length;
+
+            document.getElementById('total-applications').textContent = total;
+            document.getElementById('pending-applications').textContent = pending;
+            document.getElementById('approved-applications').textContent = approved;
+            document.getElementById('rejected-applications').textContent = rejected;
+        }
+
+        // 查看申请详情
+        async function viewApplicationDetail(applicationId) {
+            try {
+                const response = await fetch(`/api/caregiver/applications/${applicationId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const application = await response.json();
+                    displayApplicationDetail(application);
+                    document.getElementById('application-detail-modal').classList.remove('hidden');
+                } else {
+                    showNotification('获取申请详情失败', 'error');
+                }
+            } catch (error) {
+                console.error('获取申请详情失败:', error);
+                showNotification('获取申请详情失败，请重试', 'error');
+            }
+        }
+
+        // 显示申请详情
+        function displayApplicationDetail(application) {
+            const content = document.getElementById('application-detail-content');
+            content.innerHTML = `
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="text-lg font-bold text-gray-800 mb-2">${application.job_title}</h4>
+                        <p class="text-gray-600">${application.job_description}</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">薪资</label>
+                            <p class="text-lg font-bold text-primary">¥${application.job_salary}/小时</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">工作类型</label>
+                            <p class="text-gray-800">${application.job_type}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">工作地点</label>
+                            <p class="text-gray-800">${application.job_location}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">工作时间</label>
+                            <p class="text-gray-800">${application.job_schedule}</p>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">申请状态</label>
+                        <span class="px-3 py-1 text-sm rounded-full ${
+                            application.status === 'pending' ? 'bg-warning/10 text-warning' :
+                            application.status === 'approved' ? 'bg-success/10 text-success' :
+                            'bg-danger/10 text-danger'
+                        }">
+                            ${application.status === 'pending' ? '待审核' :
+                              application.status === 'approved' ? '已通过' : '已拒绝'}
+                        </span>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">申请时间</label>
+                        <p class="text-gray-800">${application.applied_date}</p>
+                    </div>
+                    
+                    ${application.review_notes ? `
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">审核备注</label>
+                            <p class="text-gray-800">${application.review_notes}</p>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        // 取消申请
+        async function cancelApplication(applicationId) {
+            if (!confirm('确定要取消这个工作申请吗？')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/caregiver/applications/${applicationId}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('caregiver_token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    showNotification('申请已取消', 'success');
+                    loadApplications(); // 重新加载申请列表
+                } else {
+                    const error = await response.json();
+                    showNotification(error.message || '取消申请失败', 'error');
+                }
+            } catch (error) {
+                console.error('取消申请失败:', error);
+                showNotification('取消申请失败，请重试', 'error');
+            }
+        }
+
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+                type === 'success' ? 'bg-success text-white' :
+                type === 'error' ? 'bg-danger text-white' :
+                type === 'warning' ? 'bg-warning text-white' :
+                'bg-primary text-white'
+            }`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // 全局函数，供HTML调用
+        window.viewApplicationDetail = viewApplicationDetail;
+        window.cancelApplication = cancelApplication;
+    </script>
+</body>
+</html>

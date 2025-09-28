@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.IO连接测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="/js/config.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8 text-center">Socket.IO连接测试</h1>
+        
+        <!-- 连接状态 -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">连接状态</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="text-center">
+                    <div class="text-2xl font-bold" id="connection-status">未连接</div>
+                    <div class="text-sm text-gray-600">连接状态</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold" id="socket-id">-</div>
+                    <div class="text-sm text-gray-600">Socket ID</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold" id="user-info">-</div>
+                    <div class="text-sm text-gray-600">用户信息</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 测试控制 -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">测试控制</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <button onclick="testGlobalSocketManager()" class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mb-2">
+                        测试全局Socket管理器
+                    </button>
+                    <button onclick="testDirectConnection()" class="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 mb-2">
+                        测试直接连接
+                    </button>
+                    <button onclick="testWithAuth()" class="w-full bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 mb-2">
+                        测试认证连接
+                    </button>
+                </div>
+                <div>
+                    <button onclick="disconnectSocket()" class="w-full bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 mb-2">
+                        断开连接
+                    </button>
+                    <button onclick="sendTestMessage()" class="w-full bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 mb-2">
+                        发送测试消息
+                    </button>
+                    <button onclick="clearLogs()" class="w-full bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 mb-2">
+                        清除日志
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 测试结果 -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h2 class="text-xl font-semibold mb-4">测试日志</h2>
+            <div id="test-logs" class="bg-gray-50 p-4 rounded text-sm font-mono h-64 overflow-y-auto">
+                <div class="text-gray-500">等待测试...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSocket = null;
+        const testLogs = document.getElementById('test-logs');
+        
+        // 添加日志
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const colorClass = {
+                'success': 'text-green-600',
+                'error': 'text-red-600',
+                'warning': 'text-yellow-600',
+                'info': 'text-blue-600'
+            }[type] || 'text-gray-600';
+            
+            const logDiv = document.createElement('div');
+            logDiv.innerHTML = `<span class="text-gray-400">[${timestamp}]</span> <span class="${colorClass}">${message}</span>`;
+            testLogs.appendChild(logDiv);
+            testLogs.scrollTop = testLogs.scrollHeight;
+        }
+        
+        // 更新连接状态
+        function updateConnectionStatus() {
+            const statusEl = document.getElementById('connection-status');
+            const socketIdEl = document.getElementById('socket-id');
+            const userInfoEl = document.getElementById('user-info');
+            
+            if (currentSocket && currentSocket.connected) {
+                statusEl.textContent = '已连接';
+                statusEl.className = 'text-2xl font-bold text-green-600';
+                socketIdEl.textContent = currentSocket.id || '-';
+                
+                // 获取用户信息
+                const userToken = localStorage.getItem('user_token') || localStorage.getItem('caregiver_token') || localStorage.getItem('admin_token');
+                if (userToken) {
+                    try {
+                        const payload = JSON.parse(atob(userToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+                        userInfoEl.textContent = `${payload.user_type}_${payload.user_id}`;
+                    } catch (e) {
+                        userInfoEl.textContent = 'Token解析失败';
+                    }
+                } else {
+                    userInfoEl.textContent = '无Token';
+                }
+            } else {
+                statusEl.textContent = '未连接';
+                statusEl.className = 'text-2xl font-bold text-red-600';
+                socketIdEl.textContent = '-';
+                userInfoEl.textContent = '-';
+            }
+        }
+        
+        // 测试全局Socket管理器
+        function testGlobalSocketManager() {
+            addLog('🔌 测试全局Socket管理器...', 'info');
+            
+            if (window.SocketManager) {
+                addLog('✅ 全局Socket管理器存在', 'success');
+                currentSocket = window.SocketManager.socket;
+                
+                if (currentSocket) {
+                    addLog('✅ 全局Socket实例存在', 'success');
+                    setupSocketListeners();
+                    updateConnectionStatus();
+                } else {
+                    addLog('❌ 全局Socket实例不存在，尝试初始化...', 'warning');
+                    window.SocketManager.init();
+                    currentSocket = window.SocketManager.socket;
+                    if (currentSocket) {
+                        addLog('✅ 全局Socket初始化成功', 'success');
+                        setupSocketListeners();
+                        updateConnectionStatus();
+                    } else {
+                        addLog('❌ 全局Socket初始化失败', 'error');
+                    }
+                }
+            } else {
+                addLog('❌ 全局Socket管理器不存在', 'error');
+            }
+        }
+        
+        // 测试直接连接
+        function testDirectConnection() {
+            addLog('🔌 测试直接Socket连接...', 'info');
+            
+            if (currentSocket) {
+                currentSocket.disconnect();
+            }
+            
+            const socketUrl = window.SERVER_CONFIG ? window.SERVER_CONFIG.socketUrl : 'http://localhost:8000';
+            const config = window.SERVER_CONFIG ? window.SERVER_CONFIG.socketConfig : {};
+            
+            addLog(`连接URL: ${socketUrl}`, 'info');
+            addLog(`连接配置: ${JSON.stringify(config)}`, 'info');
+            
+            currentSocket = io(socketUrl, config);
+            setupSocketListeners();
+            updateConnectionStatus();
+        }
+        
+        // 测试认证连接
+        function testWithAuth() {
+            addLog('🔌 测试认证Socket连接...', 'info');
+            
+            if (currentSocket) {
+                currentSocket.disconnect();
+            }
+            
+            const socketUrl = window.SERVER_CONFIG ? window.SERVER_CONFIG.socketUrl : 'http://localhost:8000';
+            const config = window.SERVER_CONFIG ? window.SERVER_CONFIG.socketConfig : {};
+            
+            // 添加认证信息
+            const token = localStorage.getItem('user_token') || localStorage.getItem('caregiver_token') || localStorage.getItem('admin_token');
+            if (token) {
+                config.auth = { token: token };
+                addLog('✅ 添加认证Token', 'success');
+            } else {
+                addLog('❌ 未找到认证Token', 'warning');
+            }
+            
+            addLog(`连接URL: ${socketUrl}`, 'info');
+            addLog(`连接配置: ${JSON.stringify(config)}`, 'info');
+            
+            currentSocket = io(socketUrl, config);
+            setupSocketListeners();
+            updateConnectionStatus();
+        }
+        
+        // 设置Socket监听器
+        function setupSocketListeners() {
+            if (!currentSocket) return;
+            
+            currentSocket.on('connect', () => {
+                addLog('✅ Socket连接成功', 'success');
+                updateConnectionStatus();
+            });
+            
+            currentSocket.on('disconnect', (reason) => {
+                addLog(`❌ Socket连接断开: ${reason}`, 'error');
+                updateConnectionStatus();
+            });
+            
+            currentSocket.on('connect_error', (error) => {
+                addLog(`❌ Socket连接错误: ${error.message}`, 'error');
+                updateConnectionStatus();
+            });
+            
+            currentSocket.on('error', (error) => {
+                addLog(`❌ Socket错误: ${error.message}`, 'error');
+            });
+            
+            currentSocket.on('connected', (data) => {
+                addLog(`✅ 服务器确认连接: ${JSON.stringify(data)}`, 'success');
+            });
+        }
+        
+        // 断开连接
+        function disconnectSocket() {
+            if (currentSocket) {
+                currentSocket.disconnect();
+                addLog('🔌 已断开Socket连接', 'info');
+                updateConnectionStatus();
+            } else {
+                addLog('❌ 没有活动的Socket连接', 'warning');
+            }
+        }
+        
+        // 发送测试消息
+        function sendTestMessage() {
+            if (!currentSocket || !currentSocket.connected) {
+                addLog('❌ Socket未连接，无法发送消息', 'error');
+                return;
+            }
+            
+            const testMessage = {
+                recipient_id: 1,
+                recipient_type: 'user',
+                content: '这是一条测试消息',
+                message_type: 'text'
+            };
+            
+            addLog(`📤 发送测试消息: ${JSON.stringify(testMessage)}`, 'info');
+            currentSocket.emit('send_message', testMessage);
+        }
+        
+        // 清除日志
+        function clearLogs() {
+            testLogs.innerHTML = '<div class="text-gray-500">日志已清除...</div>';
+        }
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog('📋 Socket.IO连接测试页面已加载', 'info');
+            updateConnectionStatus();
+            
+            // 自动测试全局Socket管理器
+            setTimeout(() => {
+                testGlobalSocketManager();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

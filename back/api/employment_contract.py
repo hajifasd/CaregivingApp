@@ -126,6 +126,42 @@ def respond_to_application():
             'message': f'回复申请失败: {str(e)}'
         }), 500
 
+@employment_contract_bp.route('/api/employment/cancel', methods=['POST'])
+def cancel_application():
+    """用户取消聘用申请"""
+    try:
+        data = request.get_json()
+        
+        # 验证必需字段
+        if 'application_id' not in data:
+            return jsonify({
+                'success': False,
+                'message': '缺少申请ID'
+            }), 400
+        
+        application_id = data['application_id']
+        
+        # 调用服务取消申请
+        from services.employment_contract_service import employment_contract_service
+        result = employment_contract_service.cancel_application(application_id)
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'message': '申请已取消'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': result['message'] or '取消失败'
+            }), 400
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'取消申请失败: {str(e)}'
+        }), 500
+
 @employment_contract_bp.route('/api/employment/contract', methods=['POST'])
 def create_contract():
     """创建聘用合同"""

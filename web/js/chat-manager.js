@@ -26,20 +26,59 @@ class ChatManager {
     }
     
     getUserInfo() {
-        // 从localStorage或session获取用户信息
-        const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+        // 统一使用 user_info 和 caregiver_info 字段名
+        let userInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
+        let userType = 'user';
+        
+        // 如果用户端没有信息，尝试护工端
+        if (!userInfo.id) {
+            userInfo = JSON.parse(localStorage.getItem('caregiver_info') || '{}');
+            userType = 'caregiver';
+        }
+        
+        // 如果护工端也没有信息，尝试管理端
+        if (!userInfo.id) {
+            userInfo = JSON.parse(localStorage.getItem('admin_info') || '{}');
+            userType = 'admin';
+        }
+        
         this.userId = userInfo.id;
-        this.userName = userInfo.name || '用户';
+        this.userName = userInfo.name || userInfo.username || '用户';
+        this.userType = userType;
         
         if (!this.userId) {
-            console.warn('用户未登录，部分功能可能受限');
+            console.warn('⚠️ 用户未登录，部分功能可能受限');
+        } else {
+            console.log('✅ 用户信息加载成功:', { userType, userId: this.userId, userName: this.userName });
         }
     }
     
     initSocket() {
         try {
-            // 连接Socket.IO服务器
-            this.socket = io('http://localhost:8000');
+            // 优先使用全局Socket管理器
+            if (window.SocketManager && window.SocketManager.socket) {
+                this.socket = window.SocketManager.socket;
+                console.log('✅ ChatManager使用全局Socket管理器');
+            } else {
+                // 备用方案：创建新连接
+                const socketUrl = window.SERVER_CONFIG ? window.SERVER_CONFIG.socketUrl : 'http://localhost:8000';
+                const config = window.SERVER_CONFIG ? window.SERVER_CONFIG.socketConfig : {
+                    transports: ['websocket', 'polling'],
+                    timeout: 10000,
+                    reconnection: true,
+                    reconnectionAttempts: 5,
+                    reconnectionDelay: 1000
+                };
+                
+                // 添加认证信息
+                const token = localStorage.getItem('user_token') || localStorage.getItem('caregiver_token') || localStorage.getItem('admin_token');
+                if (token) {
+                    config.auth = { token: token };
+                }
+                
+                this.socket = io(socketUrl, config);
+                console.log('🔌 ChatManager创建新的Socket连接:', socketUrl);
+            }
             
             this.socket.on('connect', () => {
                 console.log('✅ 聊天服务器连接成功');
@@ -221,7 +260,14 @@ class ChatManager {
         // 获取真实的用户ID
         let userId = this.userId;
         if (!userId) {
-            const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            // 尝试从localStorage获取用户信息
+            let userInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
+            if (!userInfo.id) {
+                userInfo = JSON.parse(localStorage.getItem('caregiver_info') || '{}');
+            }
+            if (!userInfo.id) {
+                userInfo = JSON.parse(localStorage.getItem('admin_info') || '{}');
+            }
             userId = userInfo.id || '1';
         }
         
@@ -242,24 +288,44 @@ class ChatManager {
             }
         }
         
-        // 创建消息对象 - 使用后端期望的字段格式
-        const messageData = {
-            id: Date.now(),
-            sender_id: userId,
-            sender_name: this.userName || '用户',
-            sender_type: 'user', // 明确指定发送者类型
-            recipient_id: numericContactId,
-            recipient_type: receiverType, // 明确指定接收者类型
-            content: message,
-            timestamp: new Date().toISOString(),
-            type: 'text'
-        };
-        
-        console.log('发送消息:', messageData);
-        
-        // 发送到服务器
-        if (this.socket && this.socket.connected) {
-            this.socket.emit('send_message', messageData);
+        try {
+            // 使用标准化的消息格式
+            const messageData = MessageFormatUtils.buildSendMessageData(
+                numericContactId,
+                message,
+                {
+                    recipientType: receiverType,
+                    messageType: 'text',
+                    conversationId: MessageFormatUtils.generateConversationId(
+                        userId,
+                        this.userType || 'user',
+                        numericContactId,
+                        receiverType
+                    )
+                }
+            );
+            
+            // 验证消息数据
+            const validation = MessageFormatUtils.validateMessageData(messageData);
+            if (!validation.isValid) {
+                console.error('❌ 消息数据验证失败:', validation.errors);
+                this.showNotification('消息格式错误: ' + validation.errors.join(', '), 'error');
+                return;
+            }
+            
+            console.log('✅ 发送消息:', messageData);
+            
+            // 发送到服务器
+            if (this.socket && this.socket.connected) {
+                this.socket.emit('send_message', messageData);
+            } else {
+                console.error('❌ Socket未连接，无法发送消息');
+                this.showNotification('连接已断开，无法发送消息', 'error');
+            }
+            
+        } catch (error) {
+            console.error('❌ 发送消息失败:', error);
+            this.showNotification('发送消息失败: ' + error.message, 'error');
         }
         
         // 添加到本地消息历史（使用原始contactId作为key）
@@ -402,8 +468,14 @@ class ChatManager {
             // 获取真实的用户ID，如果没有则使用默认值
             let userId = this.userId;
             if (!userId) {
-                // 尝试从localStorage获取
-                const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                // 尝试从localStorage获取用户信息
+                let userInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
+                if (!userInfo.id) {
+                    userInfo = JSON.parse(localStorage.getItem('caregiver_info') || '{}');
+                }
+                if (!userInfo.id) {
+                    userInfo = JSON.parse(localStorage.getItem('admin_info') || '{}');
+                }
                 userId = userInfo.id;
                 
                 // 如果还是没有，使用默认值

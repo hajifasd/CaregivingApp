@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>认证测试页面</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/enhanced-auth-guard.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+        <h1 class="text-2xl font-bold text-center mb-6">认证测试页面</h1>
+        
+        <div class="space-y-4">
+            <div class="p-4 bg-green-100 rounded-lg">
+                <h3 class="font-semibold text-green-800">✅ 认证保护测试</h3>
+                <p class="text-green-700 text-sm mt-1">
+                    如果你能看到这个页面，说明认证保护正常工作！
+                </p>
+            </div>
+            
+            <div class="p-4 bg-blue-100 rounded-lg">
+                <h3 class="font-semibold text-blue-800">🔍 当前状态</h3>
+                <div id="auth-status" class="text-blue-700 text-sm mt-1">
+                    正在检查认证状态...
+                </div>
+            </div>
+            
+            <div class="flex space-x-2">
+                <button onclick="testUserAuth()" class="flex-1 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    测试用户端
+                </button>
+                <button onclick="testCaregiverAuth()" class="flex-1 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    测试护工端
+                </button>
+                <button onclick="testAdminAuth()" class="flex-1 bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                    测试管理端
+                </button>
+            </div>
+            
+            <div class="flex space-x-2">
+                <button onclick="clearAuth()" class="flex-1 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                    清除认证
+                </button>
+                <button onclick="goHome()" class="flex-1 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                    返回首页
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 显示当前认证状态
+        function updateAuthStatus() {
+            const statusDiv = document.getElementById('auth-status');
+            const userType = window.enhancedAuthGuard.getUserType();
+            const isValid = window.enhancedAuthGuard.isTokenValid();
+            
+            if (userType && isValid) {
+                statusDiv.innerHTML = `✅ 已登录 (${userType})`;
+            } else if (userType && !isValid) {
+                statusDiv.innerHTML = `❌ Token无效 (${userType})`;
+            } else {
+                statusDiv.innerHTML = `❌ 未登录`;
+            }
+        }
+        
+        // 测试用户端认证
+        function testUserAuth() {
+            localStorage.setItem('user_token', 'test-user-token');
+            localStorage.setItem('user_info', JSON.stringify({name: '测试用户'}));
+            updateAuthStatus();
+        }
+        
+        // 测试护工端认证
+        function testCaregiverAuth() {
+            localStorage.setItem('caregiver_token', 'test-caregiver-token');
+            localStorage.setItem('caregiver_info', JSON.stringify({name: '测试护工'}));
+            updateAuthStatus();
+        }
+        
+        // 测试管理端认证
+        function testAdminAuth() {
+            localStorage.setItem('admin_token', 'test-admin-token');
+            localStorage.setItem('admin_info', JSON.stringify({name: '测试管理员'}));
+            updateAuthStatus();
+        }
+        
+        // 清除认证
+        function clearAuth() {
+            window.enhancedAuthGuard.clearAuth();
+            updateAuthStatus();
+        }
+        
+        // 返回首页
+        function goHome() {
+            window.location.href = '/';
+        }
+        
+        // 页面加载时更新状态
+        document.addEventListener('DOMContentLoaded', function() {
+            updateAuthStatus();
+        });
+    </script>
+</body>
+</html>
+
+
+

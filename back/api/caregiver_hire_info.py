@@ -75,14 +75,7 @@ def create_or_update_caregiver_hire_info():
         caregiver_id = payload.get('user_id')
         data = request.get_json()
         
-        # 验证必填字段
-        required_fields = ['service_type', 'status', 'hourly_rate', 'work_time']
-        for field in required_fields:
-            if not data.get(field):
-                return jsonify({
-                    'success': False,
-                    'message': f'缺少必填字段: {field}'
-                }), 400
+        # 移除必填字段验证，允许所有字段为空
         
         # 获取或创建聘用信息
         CaregiverHireInfoModel = CaregiverHireInfo.get_model(db)
@@ -90,27 +83,27 @@ def create_or_update_caregiver_hire_info():
         
         if hire_info:
             # 更新现有信息
-            hire_info.service_type = data['service_type']
-            hire_info.status = data['status']
-            hire_info.hourly_rate = data['hourly_rate']
-            hire_info.work_time = data['work_time']
-            hire_info.service_area = data.get('service_area')
-            hire_info.available_time = data.get('available_time')
-            hire_info.skills = data.get('skills')
-            hire_info.commitment = data.get('commitment')
+            hire_info.service_type = data.get('service_type', '')
+            hire_info.status = data.get('status', '')
+            hire_info.hourly_rate = data.get('hourly_rate', 0)
+            hire_info.work_time = data.get('work_time', '')
+            hire_info.service_area = data.get('service_area', '')
+            hire_info.available_time = data.get('available_time', '')
+            hire_info.skills = data.get('skills', '')
+            hire_info.commitment = data.get('commitment', '')
             hire_info.updated_at = datetime.now(timezone.utc)
         else:
             # 创建新信息
             hire_info = CaregiverHireInfoModel(
                 caregiver_id=caregiver_id,
-                service_type=data['service_type'],
-                status=data['status'],
-                hourly_rate=data['hourly_rate'],
-                work_time=data['work_time'],
-                service_area=data.get('service_area'),
-                available_time=data.get('available_time'),
-                skills=data.get('skills'),
-                commitment=data.get('commitment')
+                service_type=data.get('service_type', ''),
+                status=data.get('status', ''),
+                hourly_rate=data.get('hourly_rate', 0),
+                work_time=data.get('work_time', ''),
+                service_area=data.get('service_area', ''),
+                available_time=data.get('available_time', ''),
+                skills=data.get('skills', ''),
+                commitment=data.get('commitment', '')
             )
             db.session.add(hire_info)
         
